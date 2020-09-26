@@ -76,10 +76,18 @@
 // Helper macros
 
 // Decode mod, r_m and reg fields in instruction
-#define DECODE_RM_REG scratch2_uint = 4 * !i_mod, \
-                      op_to_addr = rm_addr = i_mod < 3 ? SEGREG(seg_override_en ? seg_override : bios_table_lookup[scratch2_uint + 3][i_rm], bios_table_lookup[scratch2_uint][i_rm], regs16[bios_table_lookup[scratch2_uint + 1][i_rm]] + bios_table_lookup[scratch2_uint + 2][i_rm] * i_data1+) : GET_REG_ADDR(i_rm), \
-                      op_from_addr = GET_REG_ADDR(i_reg), \
-                      i_d && (scratch_uint = op_from_addr, op_from_addr = rm_addr, op_to_addr = scratch_uint)
+#define DECODE_RM_REG \
+  scratch2_uint = 4 * !i_mod, \
+  op_to_addr = rm_addr = i_mod < 3 ? \
+    SEGREG(seg_override_en ? \
+        seg_override : \
+        bios_table_lookup[scratch2_uint + 3][i_rm], \
+        bios_table_lookup[scratch2_uint][i_rm], \
+        regs16[ bios_table_lookup[scratch2_uint + 1][i_rm] ] + bios_table_lookup[scratch2_uint + 2][i_rm] * i_data1+ \
+    ) : \
+    GET_REG_ADDR(i_rm), \
+  op_from_addr = GET_REG_ADDR(i_reg), \
+  i_d && (scratch_uint = op_from_addr, op_from_addr = rm_addr, op_to_addr = scratch_uint)
 
 // Return memory-mapped register location (offset into mem array) for register #reg_id
 #define GET_REG_ADDR(reg_id) (REGS_BASE + (i_w ? 2 * reg_id : 2 * reg_id + reg_id / 4 & 7))
@@ -557,23 +565,27 @@ int main(int argc, char **argv)
             // MOV sreg, r/m | POP r/m | LEA reg, r/m
             case 10:
 
-                if (!i_w) // MOV
+                // MOV
+                if (!i_w)
                     i_w = 1,
                     i_reg += 8,
                     DECODE_RM_REG,
                     OP(=);
 
-                else if (!i_d) // LEA
+                // LEA
+                else if (!i_d)
                     seg_override_en = 1,
                     seg_override = REG_ZERO,
                     DECODE_RM_REG,
                     R_M_OP(mem[op_from_addr], =, rm_addr);
 
-                else // POP
+                // POP
+                else
                     R_M_POP(mem[rm_addr]);
                         break;
 
-            case 11: // MOV AL/AX, [loc]
+            // MOV AL/AX, [loc]
+            case 11:
                 i_mod = i_reg = 0;
                 i_rm = 6;
                 i_data1 = i_data0;
@@ -581,7 +593,8 @@ int main(int argc, char **argv)
                 MEM_OP(op_from_addr, =, op_to_addr);
                         break;
 
-            case 12: // ROL|ROR|RCL|RCR|SHL|SHR|???|SAR reg/mem, 1/CL/imm (80186)
+            // ROL|ROR|RCL|RCR|SHL|SHR|???|SAR reg/mem, 1/CL/imm (80186)
+            case 12:
                 scratch2_uint = SIGN_OF(mem[rm_addr]),
                 scratch_uint = extra ? // xxx reg/mem, imm
                     ++reg_ip,
