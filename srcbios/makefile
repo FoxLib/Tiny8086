@@ -1,0 +1,2 @@
+all:
+	fasm bios.asm
