@@ -68,7 +68,7 @@ void wbyte(int address, unsigned char value) {
 }
 
 // Запись значения в память
-void wrt(int address, unsigned int value, unsigned char wsize) {
+void wr(int address, unsigned int value, unsigned char wsize) {
 
     if (wsize == 1) {
         wbyte(address, value);
@@ -76,6 +76,15 @@ void wrt(int address, unsigned int value, unsigned char wsize) {
         wbyte(address,   value);
         wbyte(address+1, value>>8);
     }
+}
+
+// Чтение из памяти
+unsigned int rd(int address, unsigned char wsize) {
+
+    if (wsize == 1) return RAM[address];
+    if (wsize == 2) return RAM[address] + 256*RAM[address+1];
+
+    return 0;
 }
 
 int main() {
