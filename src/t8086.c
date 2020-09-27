@@ -52,7 +52,7 @@ void print_char(int col, int row, unsigned char pchar, uint8_t attr) {
 }
 
 // Реальная запись в память
-void wbyte(int address, unsigned char value) {
+void wb(int address, unsigned char value) {
 
     RAM[address] = value;
 
@@ -71,10 +71,10 @@ void wbyte(int address, unsigned char value) {
 void wr(int address, unsigned int value, unsigned char wsize) {
 
     if (wsize == 1) {
-        wbyte(address, value);
+        wb(address, value);
     } if (wsize == 2) {
-        wbyte(address,   value);
-        wbyte(address+1, value>>8);
+        wb(address,   value);
+        wb(address+1, value>>8);
     }
 }
 
