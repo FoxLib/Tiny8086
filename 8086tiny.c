@@ -1060,8 +1060,6 @@ int main(int argc, char **argv)
             pc_interrupt(0xA), int8_asap = 0, SDL_KEYBOARD_DRIVER;
     }
 
-#ifndef NO_GRAPHICS
     SDL_Quit();
-#endif
     return 0;
 }
