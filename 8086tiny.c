@@ -130,7 +130,7 @@
 #define R_M_POP(a) (i_w = 1, regs16[REG_SP] += 2, R_M_OP(a, =, mem[SEGREG(REG_SS, REG_SP, -2+)]))
 
 // Convert segment:offset to linear address in emulator memory space
-#define SEGREG(reg_seg, reg_ofs,op) 16 * regs16[reg_seg] + (unsigned short)(op regs16[reg_ofs])
+#define SEGREG(reg_seg, reg_ofs, op) 16 * regs16[reg_seg] + (unsigned short)(op regs16[reg_ofs])
 
 // Returns sign bit of an 8-bit or 16-bit operand
 #define SIGN_OF(a) (1 & (i_w ? CAST(short)a : a) >> (TOP_BIT - 1))

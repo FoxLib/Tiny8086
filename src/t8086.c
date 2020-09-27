@@ -5,14 +5,7 @@
 #include <fcntl.h>
 #include "font16.h"
 #include "SDL.h"
-
-SDL_Surface *   sdl_screen;
-SDL_Event       sdl_event;
-struct timeb    ms_clock;
-int             ms_prevtime;
-int             width;
-int             height;
-unsigned char   RAM[1024*1024+65536-16]; // 1mb + HiMem
+#include "t8086.h"
 
 // Нарисовать точку на экране
 void pset(int x, int y, uint32_t color) {
@@ -87,10 +80,72 @@ unsigned int rd(int address, unsigned char wsize) {
     return 0;
 }
 
+// Считывание очередного byte/word из CS:IP
+unsigned int fetch(unsigned char wsize) {
+
+    int address = regs16[REG_CS]*16 + regs16[REG_IP];
+    regs16[REG_IP] += wsize;
+    return rd(address, wsize);
+}
+
+// Считывание опкода 000h - 1FFh
+unsigned int fetch_opcode() {
+
+    i_size = 0;
+    i_rep  = 0;
+    segment_over_en = 0;
+    segment_id = REG_DS;
+
+    while (i_size < 16) {
+
+        uint8_t data = fetch(1);
+
+        switch (data) {
+
+            // Получен расширенный опкод
+            case 0x0F: return 0x100 + fetch(1);
+
+            // Сегментные префиксы
+            case 0x26: segment_over_en = 1; segment_id = REG_ES; break;
+            case 0x2E: segment_over_en = 1; segment_id = REG_CS; break;
+            case 0x36: segment_over_en = 1; segment_id = REG_SS; break;
+            case 0x3E: segment_over_en = 1; segment_id = REG_DS; break;
+            case 0x64:
+            case 0x65:
+            case 0x66:
+            case 0x67:
+                /* undefined opcode */
+                break;
+            case 0xF0: break; // lock:
+            case 0xF2: i_rep = REPNZ; break;
+            case 0xF3: i_rep = REPZ; break;
+            default:
+                return data;
+        }
+    }
+
+    /* undefind opcode */
+    return 0;
+}
+
+// Выполнение инструкции
+void step() {
+
+    opcode_id = fetch_opcode();
+}
+
 int main() {
 
     char in_start = 1;
     ms_prevtime = 0;
+
+    // Инициализация машины
+    regs16  = (unsigned short*) &regs;
+    flags.t = 0;
+
+    regs16[REG_CS] = 0xF000;  // CS = 0xF000
+    regs16[REG_IP] = 0x0100;  // IP = 0x0100
+    regs  [REG_DL] = 0x00;    // Загружаем с FD
 
     // Инициализация окна
     SDL_Init(SDL_INIT_VIDEO);

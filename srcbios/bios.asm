@@ -88,7 +88,6 @@ bios_entry:
     mov     [cs: boot_device], dl
 
     ; Set up Hercules graphics support. We start with the adapter in text mode
-
     push    dx
     mov     dx, 0x3b8
     mov     al, 0
