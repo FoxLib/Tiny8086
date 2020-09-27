@@ -9,8 +9,10 @@
 SDL_Surface *   sdl_screen;
 SDL_Event       sdl_event;
 struct timeb    ms_clock;
+int             ms_prevtime;
 int             width;
 int             height;
+unsigned char   RAM[1024*1024+65536-16]; // 1mb + HiMem
 
 // Нарисовать точку на экране
 void pset(int x, int y, uint32_t color) {
@@ -49,7 +51,37 @@ void print_char(int col, int row, unsigned char pchar, uint8_t attr) {
     }
 }
 
+// Реальная запись в память
+void wbyte(int address, unsigned char value) {
+
+    RAM[address] = value;
+
+    // Записываемый байт находится в видеопамяти
+    if (address >= 0xB8000 && address < 0xB8FA0) {
+
+        address = (address - 0xB8000) >> 1;
+        int col = address % 80;
+        int row = address / 80;
+        address = 0xB8000 + 160*row + 2*col;
+        print_char(col, row, RAM[address], RAM[address + 1]);
+    }
+}
+
+// Запись значения в память
+void wrt(int address, unsigned int value, unsigned char wsize) {
+
+    if (wsize == 1) {
+        wbyte(address, value);
+    } if (wsize == 2) {
+        wbyte(address,   value);
+        wbyte(address+1, value>>8);
+    }
+}
+
 int main() {
+
+    char in_start = 1;
+    ms_prevtime = 0;
 
     // Инициализация окна
     SDL_Init(SDL_INIT_VIDEO);
@@ -58,17 +90,8 @@ int main() {
     SDL_EnableKeyRepeat(500, 30);
     SDL_WM_SetCaption("Эмулятор 8086", 0);
 
-    for (int i = 0; i < 25; i++)
-    for (int j = 0; j < 80; j++)
-        print_char(j, i, i*j+1, 0x17);
-
-    SDL_Flip(sdl_screen);
-
-    // Цикл
-    char in_start = 1;
+    // Цикл исполнения одной инструкции
     while (in_start) {
-
-        int redraw = 0;
 
         // Проверить наличие нового события
         while (SDL_PollEvent(& sdl_event)) {
@@ -77,7 +100,23 @@ int main() {
             }
         }
 
-        ftime(&ms_clock); //  ms_clock.millitm
+        // Остановка на перерисовку и ожидание
+        ftime(&ms_clock);
+
+        // Вычисление разности времени
+        int time_curr = ms_clock.millitm;
+        int time_diff = time_curr - ms_prevtime;
+        if (time_diff < 0) time_diff += 1000;
+
+        // Если прошло 20 мс, выполнить инструкции, обновить экран
+        if (time_diff >= 20) {
+
+            ms_prevtime = time_curr;
+            // .. исполнение нескольких инструкции ..
+            SDL_Flip(sdl_screen);
+        }
+
+        // Задержка исполнения
         SDL_Delay(1);
     }
 
