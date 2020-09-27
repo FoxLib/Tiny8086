@@ -145,6 +145,8 @@ int main() {
 
     regs16[REG_CS] = 0xF000;  // CS = 0xF000
     regs16[REG_IP] = 0x0100;  // IP = 0x0100
+    regs16[REG_AX] = 0x0000;
+    regs16[REG_CX] = 0x0000;
     regs  [REG_DL] = 0x00;    // Загружаем с FD
 
     // Инициализация окна
