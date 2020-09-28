@@ -179,3 +179,29 @@ void put_rm(int i_w, unsigned short data) {
         wr(16*regs16[segment_id] + i_ea, data, i_w + 1);
     }
 }
+
+// Сброс процессора
+void reset() {
+
+    ms_prevtime = 0;
+
+    // Инициализация машины
+    regs16  = (unsigned short*) &regs;
+    flags.t = 0;
+
+    regs16[REG_AX] = 0x0000;
+    regs16[REG_CX] = 0x0000;  // CX:AX размер диска HD
+    regs16[REG_DX] = 0x0000;  // Загружаем с FD
+    regs16[REG_BX] = 0x0000;
+    regs16[REG_SP] = 0x0000;
+    regs16[REG_BP] = 0x0000;
+    regs16[REG_SI] = 0x0000;
+    regs16[REG_DI] = 0x0000;
+    regs16[REG_CS] = 0xF000;  // CS = 0xF000
+    regs16[REG_IP] = 0x0100;  // IP = 0x0100
+
+    // Загрузка bios в память
+    int bios_rom = open("bios.rom", 32898);
+    if (bios_rom < 0) { printf("No bios.rom present"); exit(1); }
+    (void) read(bios_rom, RAM + 0xF0100, 0xFF00);
+}

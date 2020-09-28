@@ -20,27 +20,6 @@ void step() {
 int main(int argc, char* argv[]) {
 
     char in_start = 1;
-    ms_prevtime = 0;
-
-    // Инициализация машины
-    regs16  = (unsigned short*) &regs;
-    flags.t = 0;
-
-    regs16[REG_AX] = 0x0000;
-    regs16[REG_CX] = 0x0000;  // CX:AX размер диска HD
-    regs16[REG_DX] = 0x0000;  // Загружаем с FD
-    regs16[REG_BX] = 0x0003;
-    regs16[REG_SP] = 0x0000;
-    regs16[REG_BP] = 0x0000;
-    regs16[REG_SI] = 0x0000;
-    regs16[REG_DI] = 0x0000;
-    regs16[REG_CS] = 0xF000;  // CS = 0xF000
-    regs16[REG_IP] = 0x0100;  // IP = 0x0100
-
-    // Загрузка bios в память
-    int bios_rom = open("bios.rom", 32898);
-    if (bios_rom < 0) { printf("No bios.rom present"); return 1; }
-    (void) read(bios_rom, RAM + 0xF0100, 0xFF00);
 
     // Инициализация окна
     SDL_Init(SDL_INIT_VIDEO);
@@ -48,6 +27,8 @@ int main(int argc, char* argv[]) {
     SDL_EnableUNICODE(1);
     SDL_EnableKeyRepeat(500, 30);
     SDL_WM_SetCaption("Эмулятор 8086", 0);
+
+    reset();
 
     // Цикл исполнения одной инструкции
     while (in_start) {
