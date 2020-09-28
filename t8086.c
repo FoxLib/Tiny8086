@@ -128,10 +128,54 @@ unsigned int fetch_opcode() {
     return 0;
 }
 
+int signed_byte(unsigned v) { return v & 0x80   ? v - 256 : v; }
+
+// Прочитать эффективный адрес i_ea и параметры modrm
+void get_modrm() {
+
+    i_modrm =  fetch(1);
+    i_mod   =  i_modrm >> 6;
+    i_reg   = (i_modrm >> 3) & 7;
+    i_rm    =  i_modrm & 7;
+    i_ea    =  0;
+
+    // Расчет индекса
+    switch (i_rm) {
+
+        case 0: i_ea = (regs16[REG_BX] + regs16[REG_SI]); break;
+        case 1: i_ea = (regs16[REG_BX] + regs16[REG_DI]); break;
+        case 2: i_ea = (regs16[REG_BP] + regs16[REG_SI]); break;
+        case 3: i_ea = (regs16[REG_BP] + regs16[REG_DI]); break;
+        case 4: i_ea =  regs16[REG_SI]; break;
+        case 5: i_ea =  regs16[REG_DI]; break;
+        case 6: i_ea =  regs16[REG_BP]; break;
+        case 7: i_ea =  regs16[REG_BX]; break;
+    }
+
+    // В случае если не segment override
+    if (!segment_over_en) {
+
+        if ((i_rm == 6 && i_mod) || (i_rm == 2) || (i_rm == 3))
+            segment_id = REG_SS;
+    }
+
+    // Модифицирующие биты modrm
+    switch (i_mod) {
+
+        case 0: if (i_rm == 6) i_ea = fetch(2); break;
+        case 1: i_ea += signed_byte(fetch(1)); break;
+        case 2: i_ea += fetch(2); break;
+        case 3: break;
+    }
+}
+
 // Выполнение инструкции
 void step() {
 
     opcode_id = fetch_opcode();
+
+    // Если есть байт modrm, запустить его разбор
+    if (opcodemap_modrm[opcode_id]) get_modrm();
 }
 
 int main() {
