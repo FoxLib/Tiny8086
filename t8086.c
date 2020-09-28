@@ -128,8 +128,6 @@ unsigned int fetch_opcode() {
     return 0;
 }
 
-int signed_byte(unsigned v) { return v & 0x80   ? v - 256 : v; }
-
 // Прочитать эффективный адрес i_ea и параметры modrm
 void get_modrm() {
 
@@ -163,9 +161,30 @@ void get_modrm() {
     switch (i_mod) {
 
         case 0: if (i_rm == 6) i_ea = fetch(2); break;
-        case 1: i_ea += signed_byte(fetch(1)); break;
+        case 1: i_ea += (signed char) fetch(1); break;
         case 2: i_ea += fetch(2); break;
-        case 3: break;
+        case 3: i_ea = 0; break;
+    }
+}
+
+// Получение R/M части; i_w = 1 (word), i_w = 0 (byte)
+unsigned int get_rm(int i_w) {
+
+    if (i_mod == 3) {
+        return i_w ? regs16[i_rm] : regs[i_rm];
+    } else {
+        return rd(16*segment_id + i_ea, i_w + 1);
+    }
+}
+
+// Сохранение данных в R/M
+void put_rm(int i_w, unsigned short data) {
+
+    if (i_mod == 3) {
+        if (i_w) regs16[i_rm] = data;
+        else     regs  [i_rm] = data;
+    } else {
+        wr(16*segment_id + i_ea, data, i_w + 1);
     }
 }
 
@@ -178,7 +197,7 @@ void step() {
     if (opcodemap_modrm[opcode_id]) get_modrm();
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 
     char in_start = 1;
     ms_prevtime = 0;
@@ -187,11 +206,21 @@ int main() {
     regs16  = (unsigned short*) &regs;
     flags.t = 0;
 
+    regs16[REG_AX] = 0x0000;
+    regs16[REG_CX] = 0x0000;  // CX:AX размер диска HD
+    regs16[REG_DX] = 0x0000;  // Загружаем с FD
+    regs16[REG_BX] = 0x0003;
+    regs16[REG_SP] = 0x0000;
+    regs16[REG_BP] = 0x0000;
+    regs16[REG_SI] = 0x0000;
+    regs16[REG_DI] = 0x0000;
     regs16[REG_CS] = 0xF000;  // CS = 0xF000
     regs16[REG_IP] = 0x0100;  // IP = 0x0100
-    regs16[REG_AX] = 0x0000;
-    regs16[REG_CX] = 0x0000;
-    regs  [REG_DL] = 0x00;    // Загружаем с FD
+
+    // Загрузка bios в память
+    int bios_rom = open("bios.rom", 32898);
+    if (bios_rom < 0) { printf("No bios.rom present"); return 1; }
+    (void) read(bios_rom, RAM + 0xF0100, 0xFF00);
 
     // Инициализация окна
     SDL_Init(SDL_INIT_VIDEO);

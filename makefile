@@ -1,4 +1,4 @@
-OPTS_ALL=-O3 -fsigned-char -std=c99
+OPTS_ALL=-O3 -fsigned-char -std=c99 -Wno-unused-result
 OPTS_SDL=`sdl-config --cflags --libs`
 
 all: t8086

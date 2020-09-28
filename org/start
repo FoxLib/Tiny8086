@@ -5,6 +5,6 @@ if [ -f hd.img ]
 then
     ./8086tiny bios fd.img hd.img
 else
-    ./8086tiny bios fd.img
+    ./8086tiny bios fd.img > cpu.log
 fi
 stty cooked echo
