@@ -2,7 +2,7 @@
 
         org     100h
 
-        cwd
+        mov     bh, $FF
 
         jmp     bios_entry
 

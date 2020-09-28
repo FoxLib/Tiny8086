@@ -33,24 +33,18 @@ void step() {
         // CBW, CWD
         case 0x98: regs  [REG_AH] = regs  [REG_AL] &   0x80 ?   0xFF :   0x00; break;
         case 0x99: regs16[REG_DX] = regs16[REG_AX] & 0x8000 ? 0xFFFF : 0x0000; break;
-
-        // FWAIT
-        case 0x9B: break;
-
-        // SAHF
-        case 0x9E: {
+        case 0x9B: break; // FWAIT
+        case 0x9E: { // SAHF
 
             i_tmp   = regs[REG_AH];
-            flags.c = i_tmp & 0x01 ? 1 : 0;
-            flags.p = i_tmp & 0x04 ? 1 : 0;
-            flags.a = i_tmp & 0x10 ? 1 : 0;
-            flags.z = i_tmp & 0x40 ? 1 : 0;
-            flags.s = i_tmp & 0x80 ? 1 : 0;
+            flags.c = !!(i_tmp & 0x01);
+            flags.p = !!(i_tmp & 0x04);
+            flags.a = !!(i_tmp & 0x10);
+            flags.z = !!(i_tmp & 0x40);
+            flags.s = !!(i_tmp & 0x80);
             break;
         }
-
-        // LAHF
-        case 0x9F: {
+        case 0x9F: { // LAHF
 
             regs[REG_AH] =
             /* 0 */ (!!flags.c) |
@@ -64,22 +58,42 @@ void step() {
             break;
         }
 
-        // XLAT
-        case 0xD7: {
+        // MOV r8, imm8
+        case 0xB0: case 0xB1: case 0xB2: case 0xB3:
+        case 0xB4: case 0xB5: case 0xB6: case 0xB7: {
+
+            regs[ ((opcode_id & 4) >> 2) | ((opcode_id & 3) << 1) ] = fetch(1);
+            break;
+        }
+
+        // MOV r16, imm16
+        case 0xB8: case 0xB9: case 0xBA: case 0xBB:
+        case 0xBC: case 0xBD: case 0xBE: case 0xBF: {
+
+            regs16[ opcode_id & 7 ] = fetch(2);
+            break;
+        }
+
+        // SALC
+        case 0xD6: regs[REG_AL] = flags.c ? 0xFF : 0x00; break;
+        case 0xD7: { // XLAT
             regs[REG_AL] = rd(16*regs16[segment_id] + regs16[REG_BX] + regs[REG_AL], 1);
             break;
         }
 
         // Установка и сброс флагов
-        case 0xD6: regs[REG_AL] = flags.c ? 0xFF : 0x00; break; // SALC
         case 0xF4: regs16[REG_IP]--; break;   // HLT
         case 0xF5: flags.c = !flags.c; break; // CMC
+        // 0xF6
+        // 0xF7
         case 0xF8: flags.c = 0; break;        // CLC
         case 0xF9: flags.c = 1; break;        // STC
         case 0xFA: flags.i = 0; break;        // CLI
         case 0xFB: flags.i = 1; break;        // STI
         case 0xFC: flags.d = 0; break;        // CLD
         case 0xFD: flags.d = 1; break;        // STD
+        // 0xFE
+        // 0xFF
 
         default: ud_opcode(opcode_id);
     }
