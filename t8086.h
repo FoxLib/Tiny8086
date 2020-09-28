@@ -35,13 +35,14 @@ enum regs_name {
 };
 
 // Машинное состояние
-unsigned char   RAM[1024*1024+65536-16]; // 1mb + HiMem
+unsigned char   RAM[1024*1024+65536-256]; // 1mb + HiMem + Xlat
 unsigned char   regs[32];
 unsigned short* regs16;
 struct flags_struct flags;
 
 int i_size;
 int i_rep;
+int i_tmp;
 int opcode_id;
 int segment_over_en;
 int segment_id;

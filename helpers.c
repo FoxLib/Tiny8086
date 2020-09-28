@@ -180,6 +180,13 @@ void put_rm(int i_w, unsigned short data) {
     }
 }
 
+// Неизвестный опкод
+void ud_opcode(int data) {
+
+    printf("UNDEFINED OPCODE: %x\n", data);
+    exit(2); // Завершить выполнение машины
+}
+
 // Сброс процессора
 void reset() {
 
@@ -204,4 +211,14 @@ void reset() {
     int bios_rom = open("bios.rom", 32898);
     if (bios_rom < 0) { printf("No bios.rom present"); exit(1); }
     (void) read(bios_rom, RAM + 0xF0100, 0xFF00);
+}
+
+
+// Отладка
+void regdump() {
+
+    printf("| ax %04X | cx %04X | dx %04X | bx %04X\n", regs16[REG_AX], regs16[REG_CX], regs16[REG_DX], regs16[REG_BX]);
+    printf("| sp %04X | bp %04X | si %04X | di %04X\n", regs16[REG_SP], regs16[REG_BP], regs16[REG_SI], regs16[REG_DI]);
+    printf("| cs %04X | es %04X | ss %04X | ds %04X\n", regs16[REG_CS], regs16[REG_ES], regs16[REG_SS], regs16[REG_DS]);
+    printf("| ip %04X\n", regs16[REG_IP]);
 }

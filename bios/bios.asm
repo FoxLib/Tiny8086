@@ -2,7 +2,7 @@
 
         org     100h
 
-        add     [$1234], ax
+        cwd
 
         jmp     bios_entry
 
