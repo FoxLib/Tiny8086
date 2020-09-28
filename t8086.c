@@ -173,7 +173,7 @@ unsigned int get_rm(int i_w) {
     if (i_mod == 3) {
         return i_w ? regs16[i_rm] : regs[i_rm];
     } else {
-        return rd(16*segment_id + i_ea, i_w + 1);
+        return rd(16*regs16[segment_id] + i_ea, i_w + 1);
     }
 }
 
@@ -184,7 +184,7 @@ void put_rm(int i_w, unsigned short data) {
         if (i_w) regs16[i_rm] = data;
         else     regs  [i_rm] = data;
     } else {
-        wr(16*segment_id + i_ea, data, i_w + 1);
+        wr(16*regs16[segment_id] + i_ea, data, i_w + 1);
     }
 }
 
