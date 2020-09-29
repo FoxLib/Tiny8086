@@ -19,6 +19,12 @@ void step() {
     // Выполнение инструкции
     switch (opcode_id) {
 
+        // MOV rm|r
+        case 0x88: put_rm(0, regs[REG8(i_reg)]); break;
+        case 0x89: put_rm(1, regs16[i_reg]); break;
+        case 0x8A: regs[REG8(i_reg)] = get_rm(0); break;
+        case 0x8B: regs16[i_reg] = get_rm(1); break;
+
         // XCHG AX, r16
         case 0x90: case 0x91: case 0x92: case 0x93:
         case 0x94: case 0x95: case 0x96: case 0x97: {
@@ -58,11 +64,17 @@ void step() {
             break;
         }
 
+        // MOV A, m16
+        case 0xA0: regs[REG_AL]   = rd(SEGREG(segment_id, fetch(2)), 1); break;
+        case 0xA1: regs16[REG_AX] = rd(SEGREG(segment_id, fetch(2)), 2); break;
+        case 0xA2: wr(SEGREG(segment_id, fetch(2)), regs[REG_AL],    1); break;
+        case 0xA3: wr(SEGREG(segment_id, fetch(2)), regs16[REG_AX],  2); break;
+
         // MOV r8, imm8
         case 0xB0: case 0xB1: case 0xB2: case 0xB3:
         case 0xB4: case 0xB5: case 0xB6: case 0xB7: {
 
-            regs[ ((opcode_id & 4) >> 2) | ((opcode_id & 3) << 1) ] = fetch(1);
+            regs[ REG8(opcode_id) ] = fetch(1);
             break;
         }
 
@@ -73,6 +85,10 @@ void step() {
             regs16[ opcode_id & 7 ] = fetch(2);
             break;
         }
+
+        // MOV rm, i8/16
+        case 0xC6: put_rm(0, fetch(1)); break;
+        case 0xC7: put_rm(1, fetch(2)); break;
 
         // SALC
         case 0xD6: regs[REG_AL] = flags.c ? 0xFF : 0x00; break;
@@ -113,6 +129,8 @@ int main(int argc, char* argv[]) {
     reset();
 
     step();
+    memdump(0);
+    memdump(0xF0100);
     regdump();
 
     // Цикл исполнения одной инструкции

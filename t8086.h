@@ -34,6 +34,9 @@ enum regs_name {
     REG_IP = 12
 };
 
+#define REG8(x) ((x & 4) >> 2) | ((x & 3) << 1)
+#define SEGREG(a,b) (16*regs16[a] + b)
+
 // Машинное состояние
 unsigned char   RAM[1024*1024+65536-256]; // 1mb + HiMem + Xlat
 unsigned char   regs[32];

@@ -2,12 +2,12 @@
 
         org     100h
 
-        mov     bh, $FF
+        mov     [$0020], ax
 
         jmp     bios_entry
 
 ; Эти данные необходимо обязательно чтобы были в Memory TOP
-biosstr db  '8086tiny BIOS Revision 1.61!', 0, 0
+biosstr db  'Fox8086 BIOS Revision 0.0001', 0, 0
 mem_top db  0xEA, 0x00, 0x01, 0x00, 0xF0    ; JMP F000:0100
         db  '28/09/20', 0x00, 0xFE, 0x00    ; Параметры
 

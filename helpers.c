@@ -163,7 +163,7 @@ void get_modrm() {
 unsigned int get_rm(int i_w) {
 
     if (i_mod == 3) {
-        return i_w ? regs16[i_rm] : regs[i_rm];
+        return i_w ? regs16[i_rm] : regs[REG8(i_rm)];
     } else {
         return rd(16*regs16[segment_id] + i_ea, i_w + 1);
     }
@@ -174,7 +174,7 @@ void put_rm(int i_w, unsigned short data) {
 
     if (i_mod == 3) {
         if (i_w) regs16[i_rm] = data;
-        else     regs  [i_rm] = data;
+        else regs[REG8(i_rm)] = data;
     } else {
         wr(16*regs16[segment_id] + i_ea, data, i_w + 1);
     }
@@ -196,14 +196,17 @@ void reset() {
     regs16  = (unsigned short*) &regs;
     flags.t = 0;
 
-    regs16[REG_AX] = 0x0000;
+    regs16[REG_AX] = 0x4253;
     regs16[REG_CX] = 0x0000;  // CX:AX размер диска HD
     regs16[REG_DX] = 0x0000;  // Загружаем с FD
-    regs16[REG_BX] = 0x0000;
+    regs16[REG_BX] = 0x0001;
     regs16[REG_SP] = 0x0000;
     regs16[REG_BP] = 0x0000;
     regs16[REG_SI] = 0x0000;
     regs16[REG_DI] = 0x0000;
+    regs16[REG_SS] = 0x0000;
+    regs16[REG_DS] = 0x0000;
+    regs16[REG_ES] = 0x0000;
     regs16[REG_CS] = 0xF000;  // CS = 0xF000
     regs16[REG_IP] = 0x0100;  // IP = 0x0100
 
@@ -221,4 +224,16 @@ void regdump() {
     printf("| sp %04X | bp %04X | si %04X | di %04X\n", regs16[REG_SP], regs16[REG_BP], regs16[REG_SI], regs16[REG_DI]);
     printf("| cs %04X | es %04X | ss %04X | ds %04X\n", regs16[REG_CS], regs16[REG_ES], regs16[REG_SS], regs16[REG_DS]);
     printf("| ip %04X\n", regs16[REG_IP]);
+}
+
+void memdump(int address) {
+
+    for (int i = 0; i < 4; i++) {
+
+        printf("%05X | ", address + i*16);
+        for (int j = 0; j < 16; j++) {
+            printf("%02X ", RAM[address + i*16 + j]);
+        }
+        printf("\n");
+    }
 }
