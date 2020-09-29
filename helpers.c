@@ -37,9 +37,9 @@ void print_char(int col, int row, unsigned char pchar, uint8_t attr) {
 }
 
 // Реальная запись в память
-void wb(int address, unsigned char value) {
+void wb(unsigned int address, unsigned char value) {
 
-    RAM[address] = value;
+    RAM[address % RAMTOP] = value;
 
     // Записываемый байт находится в видеопамяти
     if (address >= 0xB8000 && address < 0xB8FA0) {
@@ -53,7 +53,7 @@ void wb(int address, unsigned char value) {
 }
 
 // Запись значения в память
-void wr(int address, unsigned int value, unsigned char wsize) {
+void wr(unsigned int address, unsigned int value, unsigned char wsize) {
 
     if (wsize == 1) {
         wb(address, value);
@@ -64,10 +64,10 @@ void wr(int address, unsigned int value, unsigned char wsize) {
 }
 
 // Чтение из памяти
-unsigned int rd(int address, unsigned char wsize) {
+unsigned int rd(unsigned int address, unsigned char wsize) {
 
-    if (wsize == 1) return RAM[address];
-    if (wsize == 2) return RAM[address] + 256*RAM[address+1];
+    if (wsize == 1) return RAM[address % RAMTOP];
+    if (wsize == 2) return RAM[address % RAMTOP] + 256*RAM[(address+1) % RAMTOP];
 
     return 0;
 }
@@ -75,7 +75,7 @@ unsigned int rd(int address, unsigned char wsize) {
 // Считывание очередного byte/word из CS:IP
 unsigned int fetch(unsigned char wsize) {
 
-    int address = regs16[REG_CS]*16 + regs16[REG_IP];
+    unsigned int address = SEGREG(REG_CS, regs16[REG_IP]);
     regs16[REG_IP] += wsize;
     return rd(address, wsize);
 }
@@ -165,7 +165,7 @@ unsigned int get_rm(int i_w) {
     if (i_mod == 3) {
         return i_w ? regs16[i_rm] : regs[REG8(i_rm)];
     } else {
-        return rd(16*regs16[segment_id] + i_ea, i_w + 1);
+        return rd(SEGREG(segment_id, i_ea), i_w + 1);
     }
 }
 
@@ -176,7 +176,7 @@ void put_rm(int i_w, unsigned short data) {
         if (i_w) regs16[i_rm] = data;
         else regs[REG8(i_rm)] = data;
     } else {
-        wr(16*regs16[segment_id] + i_ea, data, i_w + 1);
+        wr(SEGREG(segment_id, i_ea), data, i_w + 1);
     }
 }
 

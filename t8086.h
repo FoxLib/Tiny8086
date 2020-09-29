@@ -38,7 +38,8 @@ enum regs_name {
 #define SEGREG(a,b) (16*regs16[a] + b)
 
 // Машинное состояние
-unsigned char   RAM[1024*1024+65536-256]; // 1mb + HiMem + Xlat
+#define RAMTOP  (1024*1024+65536+256)  // 1mb + HiMem + Xlat
+unsigned char   RAM[RAMTOP];
 unsigned char   regs[32];
 unsigned short* regs16;
 struct flags_struct flags;

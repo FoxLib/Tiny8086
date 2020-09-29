@@ -2,7 +2,7 @@
 
         org     100h
 
-        mov     [$0020], ax
+        lea     bx, [bx + 3]
 
         jmp     bios_entry
 

@@ -25,6 +25,15 @@ void step() {
         case 0x8A: regs[REG8(i_reg)] = get_rm(0); break;
         case 0x8B: regs16[i_reg] = get_rm(1); break;
 
+        // MOV rm16, seg
+        case 0x8C: put_rm(1, regs16[REG_ES + (i_reg & 3)]); break;
+
+        // LEA rm16, [address]
+        case 0x8D: regs16[i_reg] = i_ea; break;
+
+        // MOV seg, rm16
+        case 0x8E: regs16[REG_ES + (i_reg & 3)] = get_rm(1); break;
+
         // XCHG AX, r16
         case 0x90: case 0x91: case 0x92: case 0x93:
         case 0x94: case 0x95: case 0x96: case 0x97: {
