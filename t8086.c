@@ -3,10 +3,10 @@
 #include <memory.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "font16.h"
 #include "SDL.h"
 #include "t8086.h"
 #include "helpers.c"
+#include "alu.c"
 
 // Выполнение инструкции
 void step() {
