@@ -28,10 +28,7 @@ enum regs_name {
     REG_AH = 1, REG_CH = 3, REG_DH = 5, REG_BH = 7,
 
     // Segment
-    REG_ES = 8, REG_CS = 9, REG_SS = 10, REG_DS = 11,
-
-    // System
-    REG_IP = 12
+    REG_ES = 8, REG_CS = 9, REG_SS = 10, REG_DS = 11
 };
 
 #define REG8(x) ((x & 4) >> 2) | ((x & 3) << 1)
@@ -42,11 +39,13 @@ enum regs_name {
 unsigned char   RAM[RAMTOP];
 unsigned char   regs[32];
 unsigned short* regs16;
+unsigned short  reg_ip;
 struct flags_struct flags;
 
+int is_halt;
 int i_size;
 int i_rep;
-int i_tmp;
+int i_tmp, i_tmp2;
 int opcode_id;
 int segment_over_en;
 int segment_id;

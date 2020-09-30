@@ -19,6 +19,30 @@ void step() {
     // Выполнение инструкции
     switch (opcode_id) {
 
+        // Jccc b8
+        case 0x70: case 0x71: case 0x72: case 0x73:
+        case 0x74: case 0x75: case 0x76: case 0x77:
+        case 0x78: case 0x79: case 0x7A: case 0x7B:
+        case 0x7C: case 0x7D: case 0x7E: case 0x7F:
+
+            i_tmp = (signed char) fetch(1);
+            if (cond(opcode_id & 15))
+                reg_ip += i_tmp;
+
+            break;
+
+        // Jccc b16
+        case 0x180: case 0x181: case 0x182: case 0x183:
+        case 0x184: case 0x185: case 0x186: case 0x187:
+        case 0x188: case 0x189: case 0x18A: case 0x18B:
+        case 0x18C: case 0x18D: case 0x18E: case 0x18F:
+
+            i_tmp = fetch(2);
+            if (cond(opcode_id & 15))
+                reg_ip += i_tmp;
+
+            break;
+
         // MOV rm|r
         case 0x88: put_rm(0, regs[REG8(i_reg)]); break;
         case 0x89: put_rm(1, regs16[i_reg]); break;
@@ -98,27 +122,64 @@ void step() {
         // MOV rm, i8/16
         case 0xC6: put_rm(0, fetch(1)); break;
         case 0xC7: put_rm(1, fetch(2)); break;
+        case 0xD6: { // SALC
 
-        // SALC
-        case 0xD6: regs[REG_AL] = flags.c ? 0xFF : 0x00; break;
+            regs[REG_AL] = flags.c ? 0xFF : 0x00;
+            break;
+        }
         case 0xD7: { // XLAT
+
             regs[REG_AL] = rd(16*regs16[segment_id] + regs16[REG_BX] + regs[REG_AL], 1);
             break;
         }
 
+        // JMP near
+        case 0xE9: i_tmp = fetch(2); reg_ip += i_tmp; break;
+
+        // JMP far offset:segment
+        case 0xEA:
+
+            i_tmp  = fetch(2);
+            i_tmp2 = fetch(2);
+            reg_ip = i_tmp;
+            regs16[REG_CS] = i_tmp2;
+            break;
+
+        // JMP short
+        case 0xEB: i_tmp = fetch(1); reg_ip += (signed char) i_tmp; break;
+
         // Установка и сброс флагов
-        case 0xF4: regs16[REG_IP]--; break;   // HLT
+        case 0xF4: reg_ip--; is_halt = 1; break;   // HLT
         case 0xF5: flags.c = !flags.c; break; // CMC
+
         // 0xF6
         // 0xF7
-        case 0xF8: flags.c = 0; break;        // CLC
-        case 0xF9: flags.c = 1; break;        // STC
-        case 0xFA: flags.i = 0; break;        // CLI
-        case 0xFB: flags.i = 1; break;        // STI
-        case 0xFC: flags.d = 0; break;        // CLD
-        case 0xFD: flags.d = 1; break;        // STD
+
+        // Снятие и установка флагов
+        case 0xF8: case 0xF9: flags.c = opcode_id & 1; break; // CLC | STC
+        case 0xFA: case 0xFB: flags.i = opcode_id & 1; break; // CLI | STI
+        case 0xFC: case 0xFD: flags.d = opcode_id & 1; break; // CLD | STD
+
         // 0xFE
-        // 0xFF
+
+        // Групповая инструкция
+        case 0xFF:
+
+            switch (i_reg) {
+
+                // JMP r/m
+                case 4: reg_ip = get_rm(1); break;
+
+                // jmp far [bx] как пример
+                case 5:
+
+                    i_tmp  = SEGREG(segment_id, i_ea);
+                    reg_ip = rd(i_tmp, 2);
+                    regs16[REG_CS] = rd(i_tmp + 2, 2);
+                    break;
+            }
+
+            break;
 
         default: ud_opcode(opcode_id);
     }

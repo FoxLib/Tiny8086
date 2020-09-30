@@ -2,9 +2,7 @@
 
         org     100h
 
-        lea     bx, [bx + 3]
-
-        jmp     bios_entry
+        jmp    far [cs:bx]
 
 ; Эти данные необходимо обязательно чтобы были в Memory TOP
 biosstr db  'Fox8086 BIOS Revision 0.0001', 0, 0

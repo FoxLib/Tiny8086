@@ -75,8 +75,8 @@ unsigned int rd(unsigned int address, unsigned char wsize) {
 // Считывание очередного byte/word из CS:IP
 unsigned int fetch(unsigned char wsize) {
 
-    unsigned int address = SEGREG(REG_CS, regs16[REG_IP]);
-    regs16[REG_IP] += wsize;
+    unsigned int address = SEGREG(REG_CS, reg_ip);
+    reg_ip += wsize;
     return rd(address, wsize);
 }
 
@@ -187,6 +187,32 @@ void ud_opcode(int data) {
     exit(2); // Завершить выполнение машины
 }
 
+// Проверка условий
+int cond(int cond_id) {
+
+    switch (cond_id & 15) {
+
+        case 0:  return  flags.o; // O
+        case 1:  return !flags.o; // NO
+        case 2:  return  flags.c; // C
+        case 3:  return !flags.c; // NC
+        case 4:  return  flags.z; // Z
+        case 5:  return !flags.z; // NZ
+        case 6:  return  flags.c ||  flags.z; // BE
+        case 7:  return !flags.c && !flags.z; // A
+        case 8:  return  flags.s; // S
+        case 9:  return !flags.s; // NS
+        case 10: return  flags.p; // P
+        case 11: return !flags.p; // NP
+        case 12: return  flags.s != flags.o; // L
+        case 13: return  flags.s == flags.o; // NL
+        case 14: return (flags.s != flags.o) ||  flags.z; // LE
+        case 15: return (flags.s == flags.o) && !flags.z; // G
+    }
+
+    return 0;
+}
+
 // Сброс процессора
 void reset() {
 
@@ -195,11 +221,12 @@ void reset() {
     // Инициализация машины
     regs16  = (unsigned short*) &regs;
     flags.t = 0;
+    is_halt = 0;
 
     regs16[REG_AX] = 0x4253;
     regs16[REG_CX] = 0x0000;  // CX:AX размер диска HD
     regs16[REG_DX] = 0x0000;  // Загружаем с FD
-    regs16[REG_BX] = 0x0001;
+    regs16[REG_BX] = 0x0102;
     regs16[REG_SP] = 0x0000;
     regs16[REG_BP] = 0x0000;
     regs16[REG_SI] = 0x0000;
@@ -208,7 +235,7 @@ void reset() {
     regs16[REG_DS] = 0x0000;
     regs16[REG_ES] = 0x0000;
     regs16[REG_CS] = 0xF000;  // CS = 0xF000
-    regs16[REG_IP] = 0x0100;  // IP = 0x0100
+    reg_ip         = 0x0100;  // IP = 0x0100
 
     // Загрузка bios в память
     int bios_rom = open("bios.rom", 32898);
@@ -216,14 +243,13 @@ void reset() {
     (void) read(bios_rom, RAM + 0xF0100, 0xFF00);
 }
 
-
 // Отладка
 void regdump() {
 
     printf("| ax %04X | cx %04X | dx %04X | bx %04X\n", regs16[REG_AX], regs16[REG_CX], regs16[REG_DX], regs16[REG_BX]);
     printf("| sp %04X | bp %04X | si %04X | di %04X\n", regs16[REG_SP], regs16[REG_BP], regs16[REG_SI], regs16[REG_DI]);
     printf("| cs %04X | es %04X | ss %04X | ds %04X\n", regs16[REG_CS], regs16[REG_ES], regs16[REG_SS], regs16[REG_DS]);
-    printf("| ip %04X\n", regs16[REG_IP]);
+    printf("| ip %04X\n", reg_ip);
 }
 
 void memdump(int address) {
