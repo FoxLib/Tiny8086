@@ -224,7 +224,7 @@ void reset() {
     is_halt = 0;
 
     regs16[REG_AX] = 0x4253;
-    regs16[REG_CX] = 0x0000;  // CX:AX размер диска HD
+    regs16[REG_CX] = 0x0001;  // CX:AX размер диска HD
     regs16[REG_DX] = 0x0000;  // Загружаем с FD
     regs16[REG_BX] = 0x0102;
     regs16[REG_SP] = 0x0000;

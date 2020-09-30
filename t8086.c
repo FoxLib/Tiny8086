@@ -133,6 +133,31 @@ void step() {
             break;
         }
 
+        // LOOPxx b8
+        case 0xE0:
+        case 0xE1:
+        case 0xE2: {
+
+            i_tmp = (signed char) fetch(1);
+
+            // Сперва CX уменьшается
+            regs16[REG_CX]--;
+
+            // Если CX <> 0, то можно выполнить переход
+            if (regs16[REG_CX]) {
+
+                if ((/* LOOPNZ */ opcode_id == 0xE0 && !flags.z) ||
+                    (/* LOOPZ  */ opcode_id == 0xE1 &&  flags.z) ||
+                    (/* LOOP   */ opcode_id == 0xE2))
+                        reg_ip += i_tmp;
+            }
+
+            break;
+        }
+
+        // JCXZ short
+        case 0xE3: i_tmp = (signed char) fetch(1); if (!regs16[REG_CX]) reg_ip += i_tmp; break;
+
         // JMP near
         case 0xE9: i_tmp = fetch(2); reg_ip += i_tmp; break;
 

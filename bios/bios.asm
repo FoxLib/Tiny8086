@@ -2,7 +2,7 @@
 
         org     100h
 
-        jmp    far [cs:bx]
+        jcxz    bios_entry
 
 ; Эти данные необходимо обязательно чтобы были в Memory TOP
 biosstr db  'Fox8086 BIOS Revision 0.0001', 0, 0
