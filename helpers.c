@@ -88,7 +88,7 @@ unsigned int fetch_opcode() {
     segment_over_en = 0;
     segment_id = REG_DS;
 
-    while (i_size < 16) {
+    while (i_size++ < 16) {
 
         uint8_t data = fetch(1);
 
@@ -167,6 +167,17 @@ unsigned int get_rm(int i_w) {
     } else {
         return rd(SEGREG(segment_id, i_ea), i_w + 1);
     }
+}
+
+// Получение значения регистра из ModRM
+uint16_t get_reg(int i_w) {
+    return i_w ? regs16[i_reg] : regs[REG8(i_reg)];
+}
+
+// Сохранение в регистр
+void put_reg(int i_w, uint16_t data) {
+    if (i_w) regs16[i_reg] = data;
+    else     regs[REG8(i_reg)] = data;
 }
 
 // Сохранение данных в R/M

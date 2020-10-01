@@ -6,7 +6,6 @@
 #include "SDL.h"
 #include "t8086.h"
 #include "helpers.c"
-#include "alu.c"
 
 // Выполнение инструкции
 void step() {
@@ -18,6 +17,34 @@ void step() {
 
     // Выполнение инструкции
     switch (opcode_id) {
+
+        // Базовые инструкции АЛУ
+        case 0x00: case 0x01: case 0x02: case 0x03: // ADD modrm
+        case 0x08: case 0x09: case 0x0A: case 0x0B: // OR  modrm
+        case 0x10: case 0x11: case 0x12: case 0x13: // ADC modrm
+        case 0x18: case 0x19: case 0x1A: case 0x1B: // SBB modrm
+        case 0x20: case 0x21: case 0x22: case 0x23: // AND modrm
+        case 0x28: case 0x29: case 0x2A: case 0x2B: // SUB modrm
+        case 0x30: case 0x31: case 0x32: case 0x33: // XOR modrm
+        case 0x38: case 0x39: case 0x3A: case 0x3B: // CMP modrm
+
+            i_sel  = (opcode_id & 0x38) >> 3; // Режим
+            i_size = !!(opcode_id & 2); // Размер byte | word
+            i_dir  = opcode_id & 1; // Направление
+
+            // rm, r или r, rm
+            i_op1  = i_dir ? get_reg(i_size) : get_rm(i_size);
+            i_op2  = i_dir ? get_rm(i_size)  : get_reg(i_size);
+            i_res  = arithlogic(i_sel, i_size, i_op1, i_op2);
+
+            // Запись результата обратно в регистр или в память
+            if (i_sel != ALU_CMP) {
+
+                if (i_dir) put_reg(i_size, i_res);
+                    else   put_rm(i_size, i_res);
+            }
+
+            break;
 
         // Jccc b8
         case 0x70: case 0x71: case 0x72: case 0x73:

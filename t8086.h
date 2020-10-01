@@ -56,11 +56,14 @@ struct flags_struct flags;
 
 int is_halt;
 int i_size;
+int i_dir;
 int i_rep;
 int i_tmp, i_tmp2;
+int i_sel;
 int opcode_id;
 int segment_over_en;
 int segment_id;
+uint16_t i_op1, i_op2, i_res;
 
 unsigned short i_ea;
 int i_modrm, i_mod, i_reg, i_rm;
