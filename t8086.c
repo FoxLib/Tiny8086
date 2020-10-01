@@ -223,6 +223,8 @@ int main(int argc, char* argv[]) {
 
     reset();
 
+    printf("=%x\n", arithlogic(ALU_ADD, 0, 0x01, 0x7E));
+
     step();
     memdump(0);
     memdump(0xF0100);

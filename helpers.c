@@ -213,6 +213,78 @@ int cond(int cond_id) {
     return 0;
 }
 
+// Вычисление четности
+uint8_t parity(uint8_t b) {
+
+    b = (b >> 4) ^ (b & 15);
+    b = (b >> 2) ^ (b & 3);
+    b = (b >> 1) ^ (b & 1);
+    return !b;
+}
+
+// Вычисление АЛУ двух чисел 8 (i_w=0) или 16 бит (i_w=1)
+// id = 0-ADD, 1-OR, 2-ADC, 3-SBB, 4-AND, 5-SUB, 6-XOR, 7-CMP
+uint16_t arithlogic(char id, char i_w, uint16_t op1, uint16_t op2) {
+
+    uint32_t res = 0;
+
+    // Расчет битности
+    int bits = i_w ? 0x08000 : 0x080;
+    int bitw = i_w ? 0x0FFFF : 0x0FF;
+    int bitc = i_w ? 0x10000 : 0x100;
+
+    // Выбор режима работы
+    switch (id) {
+
+        case 0: // ADD
+        case 2: // ADC
+
+            res = op1 + op2;
+
+            // Если это ADC, добавляется флаг CF
+            if (id == 2) res += !!flags.c;
+
+            flags.c = !!(res & bitc);
+            flags.a = !!((op1 ^ op2 ^ res) & 0x10);
+            flags.o = !!((op1 ^ op2 ^ bits) & (op1 ^ res) & bits);
+            break;
+
+        case 3: // SBB
+        case 5: // SUB
+        case 7: // CMP
+
+            res = op1 - op2;
+
+            // Если это SBB, вычитается флаг CF
+            if (id == 3) res -= !!flags.c;
+
+            flags.c = !!(res & bitc);
+            flags.a = !!((op1 ^ op2 ^ res) & 0x10);
+            flags.o = !!((op1 ^ op2) & (op1 ^ res) & bits);
+            break;
+
+        case 1: // OR
+        case 4: // AND
+        case 6: // XOR
+
+            if (id == 1) res = op1 | op2;
+            if (id == 4) res = op1 & op2;
+            if (id == 6) res = op1 ^ op2;
+
+            flags.c = 0;
+            flags.a = !!(res & 0x10); // Unknown
+            flags.o = 0;
+            break;
+    }
+
+    // Эти флаги проставляются для всех одинаково
+    flags.p = parity(res);
+    flags.z = !(res & bitw);
+    flags.s = !!(res & bits);
+
+    return res & bitw;
+}
+
 // Сброс процессора
 void reset() {
 
@@ -250,6 +322,10 @@ void regdump() {
     printf("| sp %04X | bp %04X | si %04X | di %04X\n", regs16[REG_SP], regs16[REG_BP], regs16[REG_SI], regs16[REG_DI]);
     printf("| cs %04X | es %04X | ss %04X | ds %04X\n", regs16[REG_CS], regs16[REG_ES], regs16[REG_SS], regs16[REG_DS]);
     printf("| ip %04X\n", reg_ip);
+    printf("| %c%c%c%c%c%c%c%c%c\n",
+        flags.o ? 'O' : '-', flags.d ? 'D' : '-', flags.i ? 'I' : '-',
+        flags.t ? 'T' : '-', flags.s ? 'S' : '-', flags.z ? 'Z' : '-',
+        flags.a ? 'A' : '-', flags.p ? 'P' : '-', flags.c ? 'C' : '-');
 }
 
 void memdump(int address) {

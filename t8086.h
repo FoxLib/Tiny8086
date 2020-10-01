@@ -17,6 +17,18 @@ struct flags_struct {
     unsigned char c; //  0 carry
 };
 
+enum alu_name {
+
+    ALU_ADD = 0,
+    ALU_OR  = 1,
+    ALU_ADC = 2,
+    ALU_SBB = 3,
+    ALU_AND = 4,
+    ALU_SUB = 5,
+    ALU_XOR = 6,
+    ALU_CMP = 7
+};
+
 enum regs_name {
 
     // 16 bit
