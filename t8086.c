@@ -26,15 +26,17 @@ void step() {
         case 0x20: case 0x21: case 0x22: case 0x23: // AND modrm
         case 0x28: case 0x29: case 0x2A: case 0x2B: // SUB modrm
         case 0x30: case 0x31: case 0x32: case 0x33: // XOR modrm
-        case 0x38: case 0x39: case 0x3A: case 0x3B: // CMP modrm
+        case 0x38: case 0x39: case 0x3A: case 0x3B: { // CMP modrm
 
-            i_sel  = (opcode_id & 0x38) >> 3; // Режим
-            i_size = !!(opcode_id & 2); // Размер byte | word
-            i_dir  = opcode_id & 1; // Направление
+            i_sel  = (opcode_id & 0x38) >> 3; // Режим работы АЛУ
+            i_dir  = !!(opcode_id & 2); // Направление
+            i_size = opcode_id & 1; // Размер byte | word
 
             // rm, r или r, rm
             i_op1  = i_dir ? get_reg(i_size) : get_rm(i_size);
             i_op2  = i_dir ? get_rm(i_size)  : get_reg(i_size);
+
+            // Вычисление операндов
             i_res  = arithlogic(i_sel, i_size, i_op1, i_op2);
 
             // Запись результата обратно в регистр или в память
@@ -45,29 +47,95 @@ void step() {
             }
 
             break;
+        }
+
+        // Базовые АЛУ с AL/AX
+        case 0x04: case 0x05: case 0x0C: case 0x0D: // ADD | OR
+        case 0x14: case 0x15: case 0x1C: case 0x1D: // ADC | SBB
+        case 0x24: case 0x25: case 0x2C: case 0x2D: // AND | SUB
+        case 0x34: case 0x35: case 0x3C: case 0x3D: { // XOR | CMP
+
+            // Режим работы АЛУ
+            i_sel  = (opcode_id & 0x38) >> 3;
+            i_size = opcode_id & 1;
+
+            // Операнды
+            i_op1  = i_size ? regs16[REG_AX] : regs[REG_AL]; // AL, AX
+            i_op2  = fetch(i_size + 1); // 1 или 2 байта
+
+            // Вычисление
+            i_res  = arithlogic(i_sel, i_size, i_op1, i_op2);
+
+            if (i_sel != ALU_CMP) {
+
+                if (i_size) regs16[REG_AX] = i_res;
+                       else regs[REG_AL] = i_res;
+            }
+
+            break;
+        }
+
+        // INC r16
+        case 0x40: case 0x41: case 0x42: case 0x43:
+        case 0x44: case 0x45: case 0x46: case 0x47:
+
+        // DEC r16
+        case 0x48: case 0x49: case 0x4A: case 0x4B:
+        case 0x4C: case 0x4D: case 0x4E: case 0x4F: {
+
+            old_cf = flags.c;
+            i_op1 = regs16[opcode_id & 7];
+            regs16[opcode_id & 7] = arithlogic(opcode_id & 8 ? ALU_SUB : ALU_ADD, 1, i_op1, 1);
+            flags.c = old_cf;
+            break;
+        }
 
         // Jccc b8
         case 0x70: case 0x71: case 0x72: case 0x73:
         case 0x74: case 0x75: case 0x76: case 0x77:
         case 0x78: case 0x79: case 0x7A: case 0x7B:
-        case 0x7C: case 0x7D: case 0x7E: case 0x7F:
+        case 0x7C: case 0x7D: case 0x7E: case 0x7F: {
 
             i_tmp = (signed char) fetch(1);
             if (cond(opcode_id & 15))
                 reg_ip += i_tmp;
 
             break;
+        }
 
-        // Jccc b16
-        case 0x180: case 0x181: case 0x182: case 0x183:
-        case 0x184: case 0x185: case 0x186: case 0x187:
-        case 0x188: case 0x189: case 0x18A: case 0x18B:
-        case 0x18C: case 0x18D: case 0x18E: case 0x18F:
+        // Групповые инструкции АЛУ
+        case 0x80: case 0x82: // alu rm, i8
+        case 0x81:   // alu rm, i16
+        case 0x83: { // alu rm16, i8
 
-            i_tmp = fetch(2);
-            if (cond(opcode_id & 15))
-                reg_ip += i_tmp;
+            i_size = opcode_id & 1;
+            i_op2  = opcode_id == 0x81 ? fetch(2) : fetch(1);
 
+            // Знаковое расширение для 0x83 инструкции
+            if (opcode_id == 0x83 && (i_op2 & 0x80)) i_op2 |= 0xFF00;
+
+            // Вычисление
+            i_res = arithlogic(i_reg, i_size, get_rm(i_size), i_op2);
+
+            // Сохранение результата
+            if (i_reg != ALU_CMP) put_rm(i_size, i_res);
+            break;
+        }
+
+        // TEST rm, r
+        case 0x84: case 0x85:
+
+            i_size = opcode_id & 1;
+            arithlogic(ALU_AND, i_size, get_rm(i_size), get_reg(i_size));
+            break;
+
+        // TEST A, i8
+        case 0xA8: case 0xA9:
+
+            i_size = opcode_id & 1;
+            i_op1  = i_size ? regs16[REG_AX] : regs[REG8(REG_AL)];
+            i_op2  = fetch(1 + i_size);
+            arithlogic(ALU_AND, i_size, i_op1, i_op2);
             break;
 
         // MOV rm|r
@@ -189,13 +257,14 @@ void step() {
         case 0xE9: i_tmp = fetch(2); reg_ip += i_tmp; break;
 
         // JMP far offset:segment
-        case 0xEA:
+        case 0xEA: {
 
             i_tmp  = fetch(2);
             i_tmp2 = fetch(2);
             reg_ip = i_tmp;
             regs16[REG_CS] = i_tmp2;
             break;
+        }
 
         // JMP short
         case 0xEB: i_tmp = fetch(1); reg_ip += (signed char) i_tmp; break;
@@ -204,34 +273,113 @@ void step() {
         case 0xF4: reg_ip--; is_halt = 1; break;   // HLT
         case 0xF5: flags.c = !flags.c; break; // CMC
 
-        // 0xF6
-        // 0xF7
+        // Групповые арифметическо-логические с непосредственным операндом
+        case 0xF6:
+        case 0xF7:
+
+            switch (i_reg) {
+
+                case 0:
+                case 1: // TEST rm, i8
+
+                    i_size = opcode_id & 1;
+                    i_op1  = get_rm(i_size);
+                    i_op2  = fetch(1 + i_size);
+                    arithlogic(ALU_AND, i_size, i_op1, i_op2);
+                    break;
+
+                case 2: // NOT
+
+                    i_size = opcode_id & 1;
+                    put_rm(i_size, ~get_rm(i_size));
+                    break;
+
+                case 3: // NEG
+
+                    i_size = opcode_id & 1;
+                    put_rm(i_size, arithlogic(ALU_SUB, i_size, 0, get_rm(i_size)));
+                    break;
+            }
+
+            break;
 
         // Снятие и установка флагов
         case 0xF8: case 0xF9: flags.c = opcode_id & 1; break; // CLC | STC
         case 0xFA: case 0xFB: flags.i = opcode_id & 1; break; // CLI | STI
         case 0xFC: case 0xFD: flags.d = opcode_id & 1; break; // CLD | STD
 
-        // 0xFE
-
-        // Групповая инструкция
-        case 0xFF:
+        // Групповая инструкция #4
+        case 0xFE: {
 
             switch (i_reg) {
+
+                case 0: // INC rm8
+                case 1: // DEC rm8
+
+                    i_op1   = get_rm(0);
+                    old_cf  = flags.c;
+                    put_rm(0, arithlogic(i_reg ? ALU_SUB : ALU_ADD, 0, i_op1, 1));
+                    flags.c = old_cf;
+                    break;
+
+                default:
+
+                    ud_opcode(opcode_id);
+            }
+
+            break;
+        }
+
+        // Групповая инструкция #5
+        case 0xFF: {
+
+            switch (i_reg) {
+
+                case 0: // INC rm8
+                case 1: // DEC rm8
+
+                    i_op1   = get_rm(1);
+                    old_cf  = flags.c;
+                    put_rm(1, arithlogic(i_reg ? ALU_SUB : ALU_ADD, 1, i_op1, 1));
+                    flags.c = old_cf;
+                    break;
+
+                // case 2: // CALL
+                // case 3: // CALLF
 
                 // JMP r/m
                 case 4: reg_ip = get_rm(1); break;
 
-                // jmp far [bx] как пример
+                // JMP far [bx] как пример
                 case 5:
 
                     i_tmp  = SEGREG(segment_id, i_ea);
                     reg_ip = rd(i_tmp, 2);
                     regs16[REG_CS] = rd(i_tmp + 2, 2);
                     break;
+
+                // case 6: // PUSH
+
+                default:
+
+                    ud_opcode(opcode_id);
             }
 
             break;
+        }
+
+        // Jccc b16
+        case 0x180: case 0x181: case 0x182: case 0x183:
+        case 0x184: case 0x185: case 0x186: case 0x187:
+        case 0x188: case 0x189: case 0x18A: case 0x18B:
+        case 0x18C: case 0x18D: case 0x18E: case 0x18F: {
+
+            i_tmp = fetch(2);
+            if (cond(opcode_id & 15))
+                reg_ip += i_tmp;
+
+            break;
+        }
 
         default: ud_opcode(opcode_id);
     }
@@ -250,9 +398,7 @@ int main(int argc, char* argv[]) {
 
     reset();
 
-    printf("=%x\n", arithlogic(ALU_ADD, 0, 0x01, 0x7E));
-
-    step();
+    for (int i = 0; i < 16; i++) step();
     memdump(0);
     memdump(0xF0100);
     regdump();

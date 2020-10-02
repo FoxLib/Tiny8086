@@ -2,7 +2,8 @@
 
         org     100h
 
-        jcxz    bios_entry
+        neg     bx
+        hlt
 
 ; Эти данные необходимо обязательно чтобы были в Memory TOP
 biosstr db  'Fox8086 BIOS Revision 0.0001', 0, 0

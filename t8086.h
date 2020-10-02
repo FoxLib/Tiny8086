@@ -60,6 +60,7 @@ int i_dir;
 int i_rep;
 int i_tmp, i_tmp2;
 int i_sel;
+int old_cf;
 int opcode_id;
 int segment_over_en;
 int segment_id;
