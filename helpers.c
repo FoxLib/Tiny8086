@@ -296,6 +296,142 @@ uint16_t arithlogic(char id, char i_w, uint16_t op1, uint16_t op2) {
     return res & bitw;
 }
 
+// Инструкции сдвига
+uint16_t shiftlogic(char id, char i_w, uint16_t op1, uint16_t op2) {
+
+    int cf = 0, i, msb;
+    int bits = i_w ? 0x08000 : 0x080;
+    int bitw = i_w ? 0x0FFFF : 0x0FF;
+    int bitc = i_w ? 0x10000 : 0x100;
+
+    op2 &= (i_w ? 15 : 7);
+
+    switch (id) {
+
+        case 0: { // ROL
+
+            for (i = 0; i < op2; i++) {
+
+                cf  = !!(op1 & bits);
+                op1 = ((op1 << 1) | cf) & bitw;
+            }
+
+            flags.c = cf;
+            flags.o = !!(op1 & bits) ^ cf;
+            break;
+        }
+
+        case 1: { // ROR
+
+            for (i = 0; i < op2; i++) {
+
+                cf  = op1 & 1;
+                op1 = ((op1 >> 1) | (cf ? bits : 0));
+            }
+
+            flags.c = cf;
+            flags.o = !!((op1 ^ (op1 << 1)) & bits);
+            break;
+        }
+
+        case 2: { // RCL
+
+            cf = flags.c;
+            for (i = 0; i < op2; i++) {
+
+                old_cf = cf;
+                cf  = !!(op1 & bits);
+                op1 = ((op1 << 1) | old_cf) & bitw;
+            }
+
+            flags.c = cf;
+            flags.o = cf ^ !!(op1 & bits);
+            break;
+        }
+
+        case 3: { // RCR
+
+            op1 &= bitw;
+            cf   = flags.c;
+
+            for (i = 0; i < op2; i++) {
+
+                old_cf = cf;
+                cf  = op1 & 1;
+                op1 = (op1 >> 1) | (old_cf ? bits : 0);
+            }
+
+            flags.c = cf;
+            flags.o = !!((op1 ^ (op1 << 1)) & bits);
+            break;
+        }
+
+        case 4:
+        case 6: { // SHL
+
+            for (i = 0; i < op2; i++) {
+
+                cf  = !!(op1 & bits);
+                op1 = (op1 << 1) & bitw;
+            }
+
+            if (op2) {
+
+                flags.s = !!(op1 & bits);
+                flags.z = !op1;
+                flags.p = parity(op1);
+                flags.c = cf;
+                flags.o = cf ^ flags.s;
+            }
+
+            break;
+        }
+
+        case 5: { // SHR
+
+            op1 &= bitw;
+            if (op2) flags.o = !!(op1 & bits);
+
+            for (i = 0; i < op2; i++) {
+
+                cf  = op1 & 1;
+                op1 = (op1 >> 1);
+            }
+
+            if (op2) {
+
+                flags.s = !!(op1 & bits);
+                flags.z = !op1;
+                flags.p = parity(op1);
+                flags.c = cf;
+            }
+
+            break;
+        }
+
+        case 7: { // SAR
+
+            op1 &= bitw;
+
+            for (i = 0; i < op2; i++) {
+
+                msb = op1 & bits;
+                cf  = op1 & 1;
+                op1 = ((op1 >> 1) | msb);
+            }
+
+            flags.o = 0;
+            flags.s = !!(op1 & bits);
+            flags.z = !op1;
+            flags.p = parity(op1);
+            flags.c = cf;
+            break;
+        }
+    }
+
+    return op1 & bitw;
+}
+
 // Сброс процессора
 void reset() {
 

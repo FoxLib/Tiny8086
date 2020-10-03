@@ -2,7 +2,11 @@
 
         org     100h
 
-        neg     bx
+        mov     ax, $b800
+        mov     ds, ax
+        mov     bx, 0
+        mov     ax, $1741
+        mov     [bx], ax
         hlt
 
 ; Эти данные необходимо обязательно чтобы были в Memory TOP

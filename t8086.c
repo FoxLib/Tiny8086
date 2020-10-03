@@ -398,10 +398,16 @@ int main(int argc, char* argv[]) {
 
     reset();
 
+// ------------------------------------- test
     for (int i = 0; i < 16; i++) step();
     memdump(0);
     memdump(0xF0100);
+
+// flags.c = 1;
+// printf("%x ", shiftlogic(ALU_SAR, 0, 0x81, 3));
+
     regdump();
+// -------------------------------------
 
     // Цикл исполнения одной инструкции
     while (in_start) {

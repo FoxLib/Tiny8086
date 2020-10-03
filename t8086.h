@@ -19,14 +19,14 @@ struct flags_struct {
 
 enum alu_name {
 
-    ALU_ADD = 0,
-    ALU_OR  = 1,
-    ALU_ADC = 2,
-    ALU_SBB = 3,
-    ALU_AND = 4,
-    ALU_SUB = 5,
+    ALU_ADD = 0,  ALU_ROL = 0,
+    ALU_OR  = 1,  ALU_ROR = 1,
+    ALU_ADC = 2,  ALU_RCL = 2,
+    ALU_SBB = 3,  ALU_RCR = 3,
+    ALU_AND = 4,  ALU_SHL = 4,
+    ALU_SUB = 5,  ALU_SHR = 5,
     ALU_XOR = 6,
-    ALU_CMP = 7
+    ALU_CMP = 7,  ALU_SAR = 7,
 };
 
 enum regs_name {
