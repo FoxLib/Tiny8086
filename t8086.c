@@ -123,20 +123,22 @@ void step() {
         }
 
         // TEST rm, r
-        case 0x84: case 0x85:
+        case 0x84: case 0x85: {
 
             i_size = opcode_id & 1;
             arithlogic(ALU_AND, i_size, get_rm(i_size), get_reg(i_size));
             break;
+        }
 
         // TEST A, i8
-        case 0xA8: case 0xA9:
+        case 0xA8: case 0xA9: {
 
             i_size = opcode_id & 1;
             i_op1  = i_size ? regs16[REG_AX] : regs[REG8(REG_AL)];
             i_op2  = fetch(1 + i_size);
             arithlogic(ALU_AND, i_size, i_op1, i_op2);
             break;
+        }
 
         // MOV rm|r
         case 0x88: put_rm(0, regs[REG8(i_reg)]); break;
@@ -214,9 +216,26 @@ void step() {
             break;
         }
 
+        // <SHIFT> rm, i8
+        case 0xC0: case 0xC1: {
+
+            i_size = opcode_id & 1;
+            put_rm(i_size, shiftlogic(i_reg, i_size, get_rm(i_size), fetch(1)));
+            break;
+        }
+
         // MOV rm, i8/16
         case 0xC6: put_rm(0, fetch(1)); break;
         case 0xC7: put_rm(1, fetch(2)); break;
+
+        // <SHIFT> rm, 1|cl
+        case 0xD0: case 0xD1: case 0xD2: case 0xD3: {
+
+            i_size = opcode_id & 1;
+            put_rm(i_size, shiftlogic(i_reg, i_size, get_rm(i_size), opcode_id & 2 ? regs[REG_CL] : 1));
+            break;
+        }
+
         case 0xD6: { // SALC
 
             regs[REG_AL] = flags.c ? 0xFF : 0x00;
