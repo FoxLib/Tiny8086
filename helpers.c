@@ -447,6 +447,40 @@ uint16_t pop() {
     return tw;
 }
 
+// Получение флагов
+uint16_t get_flags() {
+
+    return
+    /* 0 */ (!!flags.c) |
+    /* 1 */ 0x02 |
+    /* 2 */ (!!flags.p<<2) |
+    /* 3 */ 0 |
+    /* 4 */ (!!flags.a<<4) |
+    /* 5 */ 0 |
+    /* 6 */ (!!flags.z<<6) |
+    /* 7 */ (!!flags.s<<7) |
+    /* 8 */ (!!flags.t<<8) |
+    /* 9 */ (!!flags.i<<9) |
+    /* 10 */ (!!flags.d<<10) |
+    /* 11 */ (!!flags.o<<11);
+}
+
+// Сохранить флаги
+void set_flags(uint16_t data) {
+
+    // basic
+    flags.c = !!(data & 0x01);
+    flags.p = !!(data & 0x04);
+    flags.a = !!(data & 0x10);
+    flags.z = !!(data & 0x40);
+    flags.s = !!(data & 0x80);
+    // extend
+    flags.t = !!(data & 0x100);
+    flags.i = !!(data & 0x200);
+    flags.d = !!(data & 0x400);
+    flags.o = !!(data & 0x800);
+}
+
 // Сброс процессора
 void reset() {
 

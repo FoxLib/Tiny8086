@@ -10,8 +10,8 @@
         mov     ax, $1741
         mov     [bx], ax
 
-        pusha
-        popa
+        push    ax
+        popf
 
         hlt
 

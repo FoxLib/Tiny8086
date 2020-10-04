@@ -228,7 +228,15 @@ void step() {
         case 0x98: regs  [REG_AH] = regs  [REG_AL] &   0x80 ?   0xFF :   0x00; break;
         case 0x99: regs16[REG_DX] = regs16[REG_AX] & 0x8000 ? 0xFFFF : 0x0000; break;
         case 0x9B: break; // FWAIT
-        case 0x9E: { // SAHF
+
+        // PUSHF
+        case 0x9C: push(get_flags()); break;
+
+        // POPF
+        case 0x9D: set_flags(pop()); break;
+
+        // SAHF
+        case 0x9E: {
 
             i_tmp   = regs[REG_AH];
             flags.c = !!(i_tmp & 0x01);
@@ -238,17 +246,11 @@ void step() {
             flags.s = !!(i_tmp & 0x80);
             break;
         }
-        case 0x9F: { // LAHF
 
-            regs[REG_AH] =
-            /* 0 */ (!!flags.c) |
-            /* 1 */ 0x02 |
-            /* 2 */ (!!flags.p<<2) |
-            /* 3 */ 0 |
-            /* 4 */ (!!flags.a<<4) |
-            /* 5 */ 0 |
-            /* 6 */ (!!flags.z<<6) |
-            /* 7 */ (!!flags.s<<7);
+        // LAHF
+        case 0x9F: {
+
+            regs[REG_AH] = (uint8_t) get_flags();
             break;
         }
 
