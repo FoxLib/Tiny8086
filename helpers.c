@@ -432,6 +432,21 @@ uint16_t shiftlogic(char id, char i_w, uint16_t op1, uint16_t op2) {
     return op1 & bitw;
 }
 
+// Вставить в стек
+void push(uint16_t data) {
+
+    regs16[REG_SP] -= 2;
+    wr(SEGREG(REG_SS, regs16[REG_SP]), data, 2);
+}
+
+// Извлечь из стека
+uint16_t pop() {
+
+    uint16_t tw = rd(SEGREG(REG_SS, regs16[REG_SP]), 2);
+    regs16[REG_SP] += 2;
+    return tw;
+}
+
 // Сброс процессора
 void reset() {
 

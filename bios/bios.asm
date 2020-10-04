@@ -2,15 +2,17 @@
 
         org     100h
 
+
+        mov     sp, $0040
         mov     ax, $b800
         mov     ds, ax
         mov     bx, 0
         mov     ax, $1741
         mov     [bx], ax
 
-        mov     bx, $03
-        mov     cl, 4
-        rol     bx, cl
+        pusha
+        popa
+
         hlt
 
 ; Эти данные необходимо обязательно чтобы были в Memory TOP

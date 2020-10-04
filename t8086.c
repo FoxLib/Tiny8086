@@ -75,6 +75,20 @@ void step() {
             break;
         }
 
+        // PUSH sreg
+        case 0x06: case 0x0E: case 0x16: case 0x1E: {
+
+            push(regs16[REG_ES + ((opcode_id >> 3) & 3)]);
+            break;
+        }
+
+        // POP sreg
+        case 0x07: case 0x17: case 0x1F: {
+
+            regs16[REG_ES + ((opcode_id >> 3) & 3)] = pop();
+            break;
+        }
+
         // INC r16
         case 0x40: case 0x41: case 0x42: case 0x43:
         case 0x44: case 0x45: case 0x46: case 0x47:
@@ -89,6 +103,47 @@ void step() {
             flags.c = old_cf;
             break;
         }
+
+        // PUSH r16
+        case 0x50: case 0x51: case 0x52: case 0x53:
+        case 0x54: case 0x55: case 0x56: case 0x57: {
+
+            push(regs16[opcode_id & 7]);
+            break;
+        }
+
+        // POP r16
+        case 0x58: case 0x59: case 0x5A: case 0x5B:
+        case 0x5C: case 0x5D: case 0x5E: case 0x5F: {
+
+            regs16[opcode_id & 7] = pop();
+            break;
+        }
+
+        // PUSHA
+        case 0x60: {
+
+            i_tmp = regs16[REG_SP];
+            for (int i = 0; i < 8; i++)
+                push(i == REG_SP ? i_tmp : regs16[i]);
+
+            break;
+        }
+
+        // POPA
+        case 0x61: {
+
+            for (int i = 7; i >= 0; i--) {
+                if (i == REG_SP) i_tmp = pop();
+                else regs16[i] = pop();
+            }
+            regs16[REG_SP] = i_tmp;
+            break;
+        }
+
+        // PUSH imm16, i8
+        case 0x68: push(fetch(2)); break;
+        case 0x6A: i_tmp = fetch(1); push(i_tmp & 0x80 ? i_tmp | 0xFF00 : i_tmp); break;
 
         // Jccc b8
         case 0x70: case 0x71: case 0x72: case 0x73:
@@ -154,6 +209,9 @@ void step() {
 
         // MOV seg, rm16
         case 0x8E: regs16[REG_ES + (i_reg & 3)] = get_rm(1); break;
+
+        // POP rm
+        case 0x8F: i_tmp = pop(); put_rm(1, i_tmp); break;
 
         // XCHG AX, r16
         case 0x90: case 0x91: case 0x92: case 0x93:
@@ -294,7 +352,7 @@ void step() {
 
         // Групповые арифметическо-логические с непосредственным операндом
         case 0xF6:
-        case 0xF7:
+        case 0xF7: {
 
             switch (i_reg) {
 
@@ -321,6 +379,7 @@ void step() {
             }
 
             break;
+        }
 
         // Снятие и установка флагов
         case 0xF8: case 0xF9: flags.c = opcode_id & 1; break; // CLC | STC
@@ -377,7 +436,8 @@ void step() {
                     regs16[REG_CS] = rd(i_tmp + 2, 2);
                     break;
 
-                // case 6: // PUSH
+                // PUSH rm
+                case 6: push(get_rm(1)); break;
 
                 default:
 
