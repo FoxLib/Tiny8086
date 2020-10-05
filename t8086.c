@@ -227,6 +227,21 @@ void step() {
         // CBW, CWD
         case 0x98: regs  [REG_AH] = regs  [REG_AL] &   0x80 ?   0xFF :   0x00; break;
         case 0x99: regs16[REG_DX] = regs16[REG_AX] & 0x8000 ? 0xFFFF : 0x0000; break;
+
+        // CALLF
+        case 0x9A: {
+
+            i_tmp  = fetch(2);
+            i_tmp2 = fetch(2);
+
+            push(regs16[REG_CS]);
+            push(reg_ip);
+
+            reg_ip = i_tmp;
+            regs16[REG_CS] = i_tmp2;
+            break;
+        }
+
         case 0x9B: break; // FWAIT
 
         // PUSHF
@@ -284,9 +299,33 @@ void step() {
             break;
         }
 
+        // RET, RET imm8
+        case 0xC2: case 0xC3: {
+
+            i_tmp  = pop();
+            if (opcode_id == 0xC2) regs16[REG_SP] += fetch(1);
+            reg_ip = i_tmp;
+            break;
+        }
+
         // MOV rm, i8/16
         case 0xC6: put_rm(0, fetch(1)); break;
         case 0xC7: put_rm(1, fetch(2)); break;
+
+        // RETF [imm]
+        case 0xCA:
+        case 0xCB: {
+
+            i_op1 = pop();
+            i_op2 = pop();
+
+            if (opcode_id == 0xCA) regs16[REG_SP] += fetch(1);
+
+            reg_ip = i_op1;
+            regs16[REG_CS] = i_op2;
+
+            break;
+        }
 
         // <SHIFT> rm, 1|cl
         case 0xD0: case 0xD1: case 0xD2: case 0xD3: {
@@ -331,6 +370,15 @@ void step() {
 
         // JCXZ short
         case 0xE3: i_tmp = (signed char) fetch(1); if (!regs16[REG_CX]) reg_ip += i_tmp; break;
+
+        // CALL near
+        case 0xE8: {
+
+            i_tmp = fetch(2);
+            push(reg_ip);
+            reg_ip += i_tmp;
+            break;
+        }
 
         // JMP near
         case 0xE9: i_tmp = fetch(2); reg_ip += i_tmp; break;
@@ -424,8 +472,25 @@ void step() {
                     flags.c = old_cf;
                     break;
 
-                // case 2: // CALL
-                // case 3: // CALLF
+                case 2: // CALL far
+
+                    push(reg_ip);
+                    reg_ip = get_rm(1);
+                    break;
+
+                case 3: // CALL far rm
+
+                    i_tmp = SEGREG(segment_id, i_ea);
+
+                    i_op1 = rd(i_tmp, 2);
+                    i_op2 = rd(i_tmp + 2, 2);
+
+                    push(regs16[REG_CS]);
+                    push(reg_ip);
+
+                    reg_ip = i_op1;
+                    regs16[REG_CS] = i_op2;
+                    break;
 
                 // JMP r/m
                 case 4: reg_ip = get_rm(1); break;
