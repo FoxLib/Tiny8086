@@ -2,21 +2,18 @@
 
         org     100h
 
-
         mov     sp, $0040
-
-        push    $cc34
-        push    $5555
-        retf
-
         mov     ax, $b800
         mov     ds, ax
         mov     bx, 0
         mov     ax, $1741
-        mov     [bx], ax
+        mov     cx, 4
+@@:     mov     [bx], ax
+        inc     bx
+        inc     bx
+        loop    @b
 
         hlt
-
 
 ; Эти данные необходимо обязательно чтобы были в Memory TOP
 biosstr db  'Fox8086 BIOS Revision 0.0001', 0, 0

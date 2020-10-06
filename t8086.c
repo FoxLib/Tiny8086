@@ -327,6 +327,22 @@ void step() {
             break;
         }
 
+        // INT3, INT i8, INTO
+        case 0xCC: interrupt(3); break;
+        case 0xCD: interrupt(fetch(1)); break;
+        case 0xCE: if (flags.o) interrupt(4); break;
+
+        // IRET
+        case 0xCF: {
+
+            i_op1 = pop();
+            i_op2 = pop();
+            set_flags(pop());
+            regs16[REG_CS] = i_op2;
+            reg_ip = i_op1;
+            break;
+        }
+
         // <SHIFT> rm, 1|cl
         case 0xD0: case 0xD1: case 0xD2: case 0xD3: {
 
@@ -395,6 +411,9 @@ void step() {
 
         // JMP short
         case 0xEB: i_tmp = fetch(1); reg_ip += (signed char) i_tmp; break;
+
+        // Trap Flag
+        case 0xF1: interrupt(1); break;
 
         // Установка и сброс флагов
         case 0xF4: reg_ip--; is_halt = 1; break;   // HLT
@@ -529,6 +548,9 @@ void step() {
 
         default: ud_opcode(opcode_id);
     }
+
+    // Вызов Trap прерывания
+    if (flags.i && flags.t) interrupt(1);
 }
 
 int main(int argc, char* argv[]) {
@@ -545,6 +567,7 @@ int main(int argc, char* argv[]) {
     reset();
 
 // ------------------------------------- test
+
     for (int i = 0; i < 16; i++) step();
     memdump(0);
     memdump(0xF0100);

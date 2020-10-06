@@ -462,7 +462,8 @@ uint16_t get_flags() {
     /* 8 */ (!!flags.t<<8) |
     /* 9 */ (!!flags.i<<9) |
     /* 10 */ (!!flags.d<<10) |
-    /* 11 */ (!!flags.o<<11);
+    /* 11 */ (!!flags.o<<11) |
+    /* 12-15 */ 0xF000;
 }
 
 // Сохранить флаги
@@ -479,6 +480,21 @@ void set_flags(uint16_t data) {
     flags.i = !!(data & 0x200);
     flags.d = !!(data & 0x400);
     flags.o = !!(data & 0x800);
+}
+
+// Вызов прерывания
+void interrupt(uint8_t int_id) {
+
+    push(get_flags());
+    push(regs16[REG_CS]);
+    push(reg_ip);
+
+    // CS:IP копируется из памяти
+    reg_ip = rd(4*int_id, 2);
+    regs16[REG_CS] = rd(4*int_id+2, 2);
+
+    flags.i = 0;
+    flags.t = 0;
 }
 
 // Сброс процессора
