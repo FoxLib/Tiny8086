@@ -2,11 +2,6 @@
 
         org     100h
 
-        mov     ax, 0x101
-        aad
-        hlt
-
-
         mov     sp, $0040
         mov     ax, $b800
         mov     ds, ax

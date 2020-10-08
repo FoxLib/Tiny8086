@@ -280,13 +280,15 @@ void step() {
             break;
         }
 
-        // TEST A, i8
-        case 0xA8: case 0xA9: {
+        // XCHG rm, r
+        case 0x86:
+        case 0x87: {
 
             i_size = opcode_id & 1;
-            i_op1  = i_size ? regs16[REG_AX] : regs[REG8(REG_AL)];
-            i_op2  = fetch(1 + i_size);
-            arithlogic(ALU_AND, i_size, i_op1, i_op2);
+            i_op1  = get_rm(i_size);
+            i_op2 = get_reg(i_size);
+            put_rm(i_size, i_op2);
+            put_reg(i_size, i_op1);
             break;
         }
 
@@ -337,7 +339,8 @@ void step() {
             break;
         }
 
-        case 0x9B: break; // FWAIT
+        // FWAIT
+        case 0x9B: break;
 
         // PUSHF
         case 0x9C: push(get_flags()); break;
@@ -370,6 +373,16 @@ void step() {
         case 0xA2: wr(SEGREG(segment_id, fetch(2)), regs[REG_AL],    1); break;
         case 0xA3: wr(SEGREG(segment_id, fetch(2)), regs16[REG_AX],  2); break;
 
+        // TEST A, i8
+        case 0xA8: case 0xA9: {
+
+            i_size = opcode_id & 1;
+            i_op1  = i_size ? regs16[REG_AX] : regs[REG8(REG_AL)];
+            i_op2  = fetch(1 + i_size);
+            arithlogic(ALU_AND, i_size, i_op1, i_op2);
+            break;
+        }
+
         // MOV r8, imm8
         case 0xB0: case 0xB1: case 0xB2: case 0xB3:
         case 0xB4: case 0xB5: case 0xB6: case 0xB7: {
@@ -400,6 +413,18 @@ void step() {
             i_tmp  = pop();
             if (opcode_id == 0xC2) regs16[REG_SP] += fetch(1);
             reg_ip = i_tmp;
+            break;
+        }
+
+        // LES, LDS r, rm
+        case 0xC4: case 0xC5: {
+
+            i_tmp = SEGREG(segment_id, i_ea);
+            i_op1 = rd(i_tmp, 2);
+            i_op2 = rd(i_tmp+2, 2);
+
+            regs16[i_reg] = i_op1;
+            regs16[opcode_id == 0xC4 ? REG_ES : REG_DS] = i_op2;
             break;
         }
 
