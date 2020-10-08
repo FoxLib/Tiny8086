@@ -75,6 +75,101 @@ void step() {
             break;
         }
 
+        // DAA
+        case 0x27: {
+
+            // Раунд 1: Нижний ниббл
+            if (((regs[REG_AL] & 0xF) > 9) || flags.a) {
+
+                i_tmp = regs[REG_AL] + 6;
+                regs[REG_AL] = i_tmp;
+                flags.c = !!(i_tmp & 0xFF00);
+                flags.a = 1;
+            }
+
+            // Раунд 2: Верхний ниббл
+            if ((regs[REG_AL] > 0x9F) || flags.c) {
+
+                regs[REG_AL] += 0x60;
+                flags.c = 1;
+            }
+
+            // Установка флагов
+            i_tmp = regs[REG_AL];
+
+            flags.s = !!(i_tmp & 0x80);
+            flags.z = !i_tmp;
+            flags.p = parity(i_tmp);
+            break;
+        }
+
+        // DAS
+        case 0x2F: {
+
+            old_cf  = flags.c;
+            flags.c = 0;
+            i_op1   = regs[REG_AL];
+
+            // Раунд 1: Нижний ниббл
+            if (((i_op1 & 0x0F) > 9) || flags.a) {
+
+                i_tmp = regs[REG_AL] - 6;
+
+                regs[REG_AL] = i_tmp;
+                flags.c = !!(i_tmp & 0xFF00) | old_cf;
+                flags.a = 1;
+
+            } else {
+                flags.a = 0;
+            }
+
+            // Раунд 2: Верхний ниббл
+            if ((i_op1 > 0x99) || flags.c) {
+
+                regs[REG_AL] -= 0x60;
+                flags.c = 1;
+            }
+
+            // Установка флагов
+            i_tmp = regs[REG_AL];
+
+            flags.s = !!(i_tmp & 0x80);
+            flags.z = !i_tmp;
+            flags.p = parity(i_tmp);
+            break;
+        }
+
+        // AAA
+        case 0x37: {
+
+            if ((regs[REG_AL] & 0x0F) > 9 || flags.a) {
+                regs16[REG_AX] += 0x106;
+                flags.a = 1;
+                flags.c = 1;
+            } else {
+                flags.a = 0;
+                flags.c = 0;
+            }
+            regs[REG_AL] &= 0x0F;
+            break;
+        }
+
+        // AAS
+        case 0x3F: {
+
+            if ((regs[REG_AL] & 0x0F) > 9 || flags.a) {
+                regs16[REG_AX] -= 6;
+                regs[REG_AH] -= 1;
+                flags.a = 1;
+                flags.c = 1;
+            } else {
+                flags.a = 0;
+                flags.c = 0;
+            }
+            regs[REG_AL] &= 0x0F;
+            break;
+        }
+
         // PUSH sreg
         case 0x06: case 0x0E: case 0x16: case 0x1E: {
 
@@ -348,6 +443,27 @@ void step() {
 
             i_size = opcode_id & 1;
             put_rm(i_size, shiftlogic(i_reg, i_size, get_rm(i_size), opcode_id & 2 ? regs[REG_CL] : 1));
+            break;
+        }
+
+        // AAM
+        case 0xD4: {
+
+            i_tmp = fetch(1);
+            if (i_tmp == 0) interrupt(0);
+            else {
+                regs[REG_AH]  = regs[REG_AL] / i_tmp;
+                regs[REG_AL] %= i_tmp;
+            }
+            break;
+        }
+
+        // AAD
+        case 0xD5: {
+
+            i_tmp = fetch(1);
+            regs[REG_AL] = regs[REG_AL] + i_tmp*regs[REG_AL];
+            regs[REG_AH] = 0;
             break;
         }
 
