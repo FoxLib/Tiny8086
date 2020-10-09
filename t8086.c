@@ -373,6 +373,52 @@ void step() {
         case 0xA2: wr(SEGREG(segment_id, fetch(2)), regs[REG_AL],    1); break;
         case 0xA3: wr(SEGREG(segment_id, fetch(2)), regs16[REG_AX],  2); break;
 
+        // MOVSx
+        case 0xA4: case 0xA5: {
+
+            if (i_rep && regs16[REG_CX] == 0) break;
+
+            i_size = opcode_id & 1;
+            i_tmp  = rd(SEGREG(segment_id, regs16[REG_SI]), 1 + i_size);
+            wr(SEGREG(REG_ES, regs16[REG_DI]), i_tmp, 1 + i_size);
+
+            incsi(i_size);
+            incdi(i_size);
+            autorep(i_size, 0);
+            break;
+        }
+
+        // CMPSx
+        case 0xA6: case 0xA7: {
+
+            if (i_rep && regs16[REG_CX] == 0) break;
+
+            i_size = opcode_id & 1;
+            i_op1  = rd(SEGREG(segment_id, regs16[REG_SI]), 1 + i_size);
+            i_op2  = rd(SEGREG(REG_ES,     regs16[REG_DI]), 1 + i_size);
+            arithlogic(ALU_SUB, i_size, i_op1, i_op2);
+
+            incsi(i_size);
+            incdi(i_size);
+            autorep(i_size, 1);
+            break;
+        }
+
+        // SCASx
+        case 0xAE: case 0xAF: {
+
+            if (i_rep && regs16[REG_CX] == 0) break;
+
+            i_size = opcode_id & 1;
+            i_op1  = regs16[REG_AX];
+            i_op2  = rd(SEGREG(REG_ES, regs16[REG_DI]), 1 + i_size);
+            arithlogic(ALU_SUB, i_size, i_op1, i_op2);
+
+            incdi(i_size);
+            autorep(i_size, 1);
+            break;
+        }
+
         // TEST A, i8
         case 0xA8: case 0xA9: {
 
@@ -380,6 +426,32 @@ void step() {
             i_op1  = i_size ? regs16[REG_AX] : regs[REG8(REG_AL)];
             i_op2  = fetch(1 + i_size);
             arithlogic(ALU_AND, i_size, i_op1, i_op2);
+            break;
+        }
+
+        // STOSx
+        case 0xAA: case 0xAB: {
+
+            if (i_rep && regs16[REG_CX] == 0) break;
+
+            i_size = opcode_id & 1;
+            wr(SEGREG(REG_ES, regs16[REG_DI]), regs16[REG_AX], 1 + i_size);
+            incdi(i_size);
+            autorep(i_size, 0);
+            break;
+        }
+
+        // LODSx
+        case 0xAC: case 0xAD: {
+
+            if (i_rep && regs16[REG_CX] == 0) break;
+
+            i_size = opcode_id & 1;
+            i_tmp  = rd(SEGREG(segment_id, regs16[REG_SI]), 2);
+            if (i_size) regs16[REG_AX] = i_tmp; else regs[REG_AL] = i_tmp;
+
+            incsi(i_size);
+            autorep(i_size, 0);
             break;
         }
 
@@ -487,7 +559,7 @@ void step() {
         case 0xD5: {
 
             i_tmp = fetch(1);
-            regs[REG_AL] = regs[REG_AL] + i_tmp*regs[REG_AL];
+            regs[REG_AL] = regs[REG_AL] + i_tmp*regs[REG_AH];
             regs[REG_AH] = 0;
             break;
         }
@@ -709,7 +781,7 @@ int main(int argc, char* argv[]) {
 
 // ------------------------------------- test
 
-    for (int i = 0; i < 16; i++) step();
+    for (int i = 0; i < 32; i++) step();
     memdump(0);
     memdump(0xF0100);
 

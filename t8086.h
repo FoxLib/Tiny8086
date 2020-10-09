@@ -64,6 +64,7 @@ int old_cf;
 int opcode_id;
 int segment_over_en;
 int segment_id;
+uint16_t start_ip;
 uint16_t i_op1, i_op2, i_res;
 
 unsigned short i_ea;

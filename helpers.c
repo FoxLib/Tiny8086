@@ -87,6 +87,7 @@ unsigned int fetch_opcode() {
     i_rep  = 0;
     segment_over_en = 0;
     segment_id = REG_DS;
+    start_ip = reg_ip;
 
     while (i_size++ < 16) {
 
@@ -243,6 +244,9 @@ uint16_t arithlogic(char id, char i_w, uint16_t op1, uint16_t op2) {
     int bits = i_w ? 0x08000 : 0x080;
     int bitw = i_w ? 0x0FFFF : 0x0FF;
     int bitc = i_w ? 0x10000 : 0x100;
+
+    op1 &= bitw;
+    op2 &= bitw;
 
     // Выбор режима работы
     switch (id) {
@@ -495,6 +499,35 @@ void interrupt(uint8_t int_id) {
 
     flags.i = 0;
     flags.t = 0;
+}
+
+// Автоинкремент для строковых инструкции
+void incsi(int i_w) { regs16[REG_SI] += (flags.d ? -1 : 1) * (i_w + 1); }
+void incdi(int i_w) { regs16[REG_DI] += (flags.d ? -1 : 1) * (i_w + 1); }
+
+void autorep(int i_w, int flag_test) {
+
+    // Есть префикс REP, REPNZ, REPZ
+    if (i_rep) {
+
+        // Уменьшаем CX на 1
+        regs16[REG_CX]--;
+
+        // Проверка на REPNZ, REPZ
+        if (flag_test) {
+
+            // Если REPZ, но не ZERO, переход к следующей инструкции
+            if ((i_rep == REPZ)  && !flags.z)
+                return;
+
+            // Если REPNZ, но ZERO, переход к следующей инструкции
+            if ((i_rep == REPNZ) &&  flags.z)
+                return;
+        }
+
+        // Повтор инструкции
+        reg_ip = start_ip;
+    }
 }
 
 // Сброс процессора
