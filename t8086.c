@@ -600,6 +600,16 @@ void step() {
         // JCXZ short
         case 0xE3: i_tmp = (signed char) fetch(1); if (!regs16[REG_CX]) reg_ip += i_tmp; break;
 
+        // IN
+        case 0xE4: case 0xE5:
+        case 0xEC: case 0xED: {
+
+            i_tmp = opcode_id & 8 ? regs16[REG_DX] : fetch(1);
+            regs[REG_AL] = port_in(i_tmp);
+            if (opcode_id & 1) regs[REG_AH] = port_in(i_tmp);
+            break;
+        }
+
         // CALL near
         case 0xE8: {
 
@@ -624,6 +634,16 @@ void step() {
 
         // JMP short
         case 0xEB: i_tmp = fetch(1); reg_ip += (signed char) i_tmp; break;
+
+        // OUT
+        case 0xE6: case 0xE7:
+        case 0xEE: case 0xEF: {
+
+            i_tmp = opcode_id & 8 ? regs16[REG_DX] : fetch(1);
+            port_out(i_tmp, regs[REG_AL]);
+            if (opcode_id & 1) port_out(i_tmp, regs[REG_AH]);
+            break;
+        }
 
         // Trap Flag
         case 0xF1: interrupt(1); break;
@@ -764,6 +784,9 @@ void step() {
 
     // Вызов Trap прерывания
     if (flags.i && flags.t) interrupt(1);
+
+    // Вызов по таймеру
+    if (flags.i) call_interrupt8();
 }
 
 int main(int argc, char* argv[]) {

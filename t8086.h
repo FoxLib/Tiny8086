@@ -75,6 +75,12 @@ enum rep_prefix {
     REPZ  = 2,
 };
 
+// Devices
+int      io_hi_lo;
+int      irq8_prevtime;
+int      pit_frequency;
+int      pit_interval;
+
 // Карта наличия байта MODRM
 static const unsigned char opcodemap_modrm[512] = {
 

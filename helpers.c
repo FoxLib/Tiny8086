@@ -530,6 +530,40 @@ void autorep(int i_w, int flag_test) {
     }
 }
 
+// Ввод данных
+uint8_t port_in(uint16_t port) {
+    return 0xFF;
+}
+
+// Вывод
+void port_out(uint16_t port, uint8_t data) {
+}
+
+// Вызов INT 8
+void call_interrupt8() {
+
+    // Каждые 1..65535 инструкции вызывать проверки
+    if (--pit_interval <= 0) {
+
+        ftime(&ms_clock);
+
+        pit_interval  = pit_frequency;
+        int time_curr = ms_clock.millitm;
+        int time_diff = time_curr - irq8_prevtime;
+        if (time_diff < 0) time_diff += 1000;
+
+        // 54.9254 ms = 65536
+        int time_pit = pit_frequency / 1191;
+
+        // Вызов прерывания по истечению времени
+        if (time_diff >= time_pit) {
+
+            irq8_prevtime = time_curr;
+            interrupt(8);
+        }
+    }
+}
+
 // Сброс процессора
 void reset() {
 
@@ -539,6 +573,11 @@ void reset() {
     regs16  = (unsigned short*) &regs;
     flags.t = 0;
     is_halt = 0;
+
+    // Устройства
+    io_hi_lo = 0;
+    pit_frequency = 65536;
+    pit_interval  = pit_frequency;
 
     regs16[REG_AX] = 0x4253;
     regs16[REG_CX] = 0x0001;  // CX:AX размер диска HD
