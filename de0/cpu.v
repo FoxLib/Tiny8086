@@ -109,6 +109,8 @@ always @(posedge clock) begin
                 8'b1111110x: begin fn <= START; wf <= 1; wb_flag <= {flags[11], i_data[0], flags[9:0]}; end // IF
                 // Grp#1 ALU
                 8'b100000xx: begin fn <= MODRM; i_dir <= 0; end
+                // TEST rm, r
+                8'b1000010x: begin fn <= MODRM; alu <= ALU_AND; end
                 // CBW|CWD
                 8'b10011000: begin fn <= START; i_size <= 0; wb_reg <= REG_AH; wb <= 1; wb_data <= {8{r16[REG_AX][7]}};   end
                 8'b10011001: begin fn <= START; i_size <= 1; wb_reg <= REG_DX; wb <= 1; wb_data <= {16{r16[REG_AX][15]}}; end
@@ -392,6 +394,27 @@ always @(posedge clock) begin
                 end
 
             endcase
+
+            // MOV a,[m] | [m],a
+            8'b101000xx: case (s3)
+
+                // Прочесть адрес
+                0: begin ea[7:0]  <= i_data; ip <= ip + 1; s3 <= 1; wb_reg <= REG_AX; end
+                1: begin ea[15:8] <= i_data; ip <= ip + 1; bus <= 1; s3 <= i_dir ? 2 : 5; end
+
+                // Запись A
+                2: begin s3 <= 3; we <= 1;      o_data <= r16[REG_AX][ 7:0]; end
+                3: begin s3 <= 4; we <= i_size; o_data <= r16[REG_AX][15:8]; ea <= ea + 1; end
+                4: begin fn <= START; we <= 0; end
+
+                // Чтение A
+                5: begin s3 <= 6;     wb <= ~i_size; wb_data <= i_data; ea <= ea + 1; end
+                6: begin fn <= START; wb <=  i_size; wb_data[15:8] <= i_data; end
+
+            endcase
+
+            // TEST rm,r
+            8'b1000010x: begin wb_flag <= alu_f; wf <= 1; fn <= START; end
 
         endcase
 

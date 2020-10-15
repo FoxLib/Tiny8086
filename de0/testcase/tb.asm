@@ -1,5 +1,5 @@
 
-        mov     ax, $82f4
+        test    [bx], ax
         cwd
         pop     ds
         sub     cx, $1000

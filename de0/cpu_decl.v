@@ -39,7 +39,7 @@ reg [15:0] ip;
 
 initial begin
 
-    r16[REG_AX] = 16'h3452;
+    r16[REG_AX] = 16'h0408;
     r16[REG_CX] = 16'hFFFF;
     r16[REG_DX] = 16'h0000;
     r16[REG_BX] = 16'h0001;
