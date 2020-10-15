@@ -1,0 +1,15 @@
+00 | 00_xxx_000 bx+si
+02 | 00_xxx_010 bp+si
+03 | 00_xxx_011 bp+di
+04 | 00_xxx_100 si
+06 | 00_xxx_110 disp16
+07 | 00_xxx_111 bx
+40 | 01_xxx_000 bx+si+d8
+42 | 01_xxx_010 bp+si+d8
+46 | 01_xxx_110 bp+d8
+47 | 01_xxx_111 bx+d8
+80 | 10_xxx_000 bx+si+d16
+81 | 10_xxx_001 bp+si+d16
+87 | 10_xxx_111 bp+d16
+c0 | 11_xxx_001 cx
+

@@ -1,0 +1,379 @@
+<html>
+<head>
+    <title>Список инструкций</title>
+    <meta charset="utf8"/>
+</head>
+<style>
+    * { font-size: 16px; font-family: "Ubuntu Mono", Monospace; }
+    table { border-collapse: collapse; }
+    .done { background: #e0ffe0; }
+    .pref { background: #e0e0ff; }
+    .pros { background: #fcc; }
+    .disb { background: #ccc; }
+    td > b { font-weight: bold; display: block; }
+    h1 { font-size: 1.6em; }
+    th { background: #eee; }
+    tr { vertical-align: top; }
+</style>
+<body>
+    <h1>Список поддерживаемых инструкций</h1>
+    <p>Ревизия 2</p>
+<table cellpadding="8" cellspacing="0" border="1">
+    <tr><th width="32"></th><th width="64">+0</th><th width="64">+1</th><th width="64">+2</th><th width="64">+3</th><th width="64">+4</th><th width="64">+5</th><th width="64">+6</th><th width="64">+7</th></tr>
+    <tr>
+        <th>00</th>
+        <td class="done"><b>ADD</b>rm,r8</td>
+        <td class="done"><b>ADD</b>rm,r16</td>
+        <td class="done"><b>ADD</b>r8,rm</td>
+        <td class="done"><b>ADD</b>r16,rm</td>
+        <td class="done"><b>ADD</b>al,i8</td>
+        <td class="done"><b>ADD</b>ax,i16</td>
+        <td class="done"><b>PUSH</b>es</td>
+        <td class="done"><b>POP</b>es</td>
+    </tr>
+    <tr>
+        <th>08</th>
+        <td class="done"><b>OR</b>rm,r8</td>
+        <td class="done"><b>OR</b>rm,r16</td>
+        <td class="done"><b>OR</b>r8,rm</td>
+        <td class="done"><b>OR</b>r16,rm</td>
+        <td class="done"><b>OR</b>al,i8</td>
+        <td class="done"><b>OR</b>ax,i16</td>
+        <td class="done"><b>PUSH</b>cs</td>
+        <td class="pref"><b>EXT:</b></td>
+    </tr>
+    <tr>
+        <th>10</th>
+        <td class="done"><b>ADC</b>rm,r8</td>
+        <td class="done"><b>ADC</b>rm,r16</td>
+        <td class="done"><b>ADC</b>r8,rm</td>
+        <td class="done"><b>ADC</b>r16,rm</td>
+        <td class="done"><b>ADC</b>al,i8</td>
+        <td class="done"><b>ADC</b>ax,i16</td>
+        <td class="done"><b>PUSH</b>ss</td>
+        <td class="done"><b>POP</b>ss</td>
+    </tr>
+    <tr>
+        <th>18</th>
+        <td class="done"><b>SBB</b>rm,r8</td>
+        <td class="done"><b>SBB</b>rm,r16</td>
+        <td class="done"><b>SBB</b>r8,rm</td>
+        <td class="done"><b>SBB</b>r16,rm</td>
+        <td class="done"><b>SBB</b>al,i8</td>
+        <td class="done"><b>SBB</b>ax,i16</td>
+        <td class="done"><b>PUSH</b>ds</td>
+        <td class="done"><b>POP</b>ds</td>
+    </tr>
+    <tr>
+        <th>20</th>
+        <td class="done"><b>AND</b>rm,r8</td>
+        <td class="done"><b>AND</b>rm,r16</td>
+        <td class="done"><b>AND</b>r8,rm</td>
+        <td class="done"><b>AND</b>r16,rm</td>
+        <td class="done"><b>AND</b>al,i8</td>
+        <td class="done"><b>AND</b>ax,i16</td>
+        <td class="pref"><b>ES:</b></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>28</th>
+        <td class="done"><b>SUB</b>rm,r8</td>
+        <td class="done"><b>SUB</b>rm,r16</td>
+        <td class="done"><b>SUB</b>r8,rm</td>
+        <td class="done"><b>SUB</b>r16,rm</td>
+        <td class="done"><b>SUB</b>al,i8</td>
+        <td class="done"><b>SUB</b>ax,i16</td>
+        <td class="pref"><b>CS:</b></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>30</th>
+        <td class="done"><b>XOR</b>rm,r8</td>
+        <td class="done"><b>XOR</b>rm,r16</td>
+        <td class="done"><b>XOR</b>r8,rm</td>
+        <td class="done"><b>XOR</b>r16,rm</td>
+        <td class="done"><b>XOR</b>al,i8</td>
+        <td class="done"><b>XOR</b>ax,i16</td>
+        <td class="pref"><b>SS:</b></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>38</th>
+        <td class="done"><b>CMP</b>rm,r8</td>
+        <td class="done"><b>CMP</b>rm,r16</td>
+        <td class="done"><b>CMP</b>r8,rm</td>
+        <td class="done"><b>CMP</b>r16,rm</td>
+        <td class="done"><b>CMP</b>al,i8</td>
+        <td class="done"><b>CMP</b>ax,i16</td>
+        <td class="pref"><b>DS:</b></td>
+        <td></td>
+    </tr>
+
+    <tr>
+        <th>40</th>
+        <td class="done"><b>INC</b>ax</td>
+        <td class="done"><b>INC</b>cx</td>
+        <td class="done"><b>INC</b>dx</td>
+        <td class="done"><b>INC</b>bx</td>
+        <td class="done"><b>INC</b>sp</td>
+        <td class="done"><b>INC</b>bp</td>
+        <td class="done"><b>INC</b>si</td>
+        <td class="done"><b>INC</b>di</td>
+    </tr>
+    <tr>
+        <th>48</th>
+        <td class="done"><b>DEC</b>ax</td>
+        <td class="done"><b>DEC</b>cx</td>
+        <td class="done"><b>DEC</b>dx</td>
+        <td class="done"><b>DEC</b>bx</td>
+        <td class="done"><b>DEC</b>sp</td>
+        <td class="done"><b>DEC</b>bp</td>
+        <td class="done"><b>DEC</b>si</td>
+        <td class="done"><b>DEC</b>di</td>
+    </tr>
+    <tr>
+        <th>50</th>
+        <td class="done"><b>PUSH</b>ax</td>
+        <td class="done"><b>PUSH</b>cx</td>
+        <td class="done"><b>PUSH</b>dx</td>
+        <td class="done"><b>PUSH</b>bx</td>
+        <td class="done"><b>PUSH</b>sp</td>
+        <td class="done"><b>PUSH</b>bp</td>
+        <td class="done"><b>PUSH</b>si</td>
+        <td class="done"><b>PUSH</b>di</td>
+    </tr>
+    <tr>
+        <th>58</th>
+        <td class="done"><b>POP</b>ax</td>
+        <td class="done"><b>POP</b>cx</td>
+        <td class="done"><b>POP</b>dx</td>
+        <td class="done"><b>POP</b>bx</td>
+        <td class="done"><b>POP</b>sp</td>
+        <td class="done"><b>POP</b>bp</td>
+        <td class="done"><b>POP</b>si</td>
+        <td class="done"><b>POP</b>di</td>
+    </tr>
+    <tr>
+        <th>60</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>68</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>70</th>
+        <td class="done"><b>JO</b>b8</td>
+        <td class="done"><b>JNO</b>b8</td>
+        <td class="done"><b>JC</b>b8</td>
+        <td class="done"><b>JNC</b>b8</td>
+        <td class="done"><b>JZ</b>b8</td>
+        <td class="done"><b>JNZ</b>b8</td>
+        <td class="done"><b>JBE</b>b8</td>
+        <td class="done"><b>JA</b>b8</td>
+    </tr>
+    <tr>
+        <th>78</th>
+        <td class="done"><b>JS</b>b8</td>
+        <td class="done"><b>JNS</b>b8</td>
+        <td class="done"><b>JP</b>b8</td>
+        <td class="done"><b>JNP</b>b8</td>
+        <td class="done"><b>JL</b>b8</td>
+        <td class="done"><b>JNL</b>b8</td>
+        <td class="done"><b>JLE</b>b8</td>
+        <td class="done"><b>JG</b>b8</td>
+    </tr>
+    <tr>
+        <th>80</th>
+        <td class="done"><b>ArGrp</b>rm,i8</td>
+        <td class="done"><b>ArGrp</b>rm,i16</td>
+        <td class="done"><b>ArGrp</b>rm,i8</td>
+        <td class="done"><b>ArGrp</b>rm,e8</td>
+        <td class="done"><b>TEST</b>rm,r8</td>
+        <td class="done"><b>TEST</b>rm,r16</td>
+        <td class="done"><b>XCHG</b>rm,r8</td>
+        <td class="done"><b>XCHG</b>rm,r16</td>
+    </tr>
+    <tr>
+        <th>88</th>
+        <td class="done"><b>MOV</b>rm,r8</td>
+        <td class="done"><b>MOV</b>rm,r16</td>
+        <td class="done"><b>MOV</b>r8,rm</td>
+        <td class="done"><b>MOV</b>r16,rm</td>
+        <td class="pros"><b>MOV</b>rm,sreg</td>
+        <td class="pros"><b>LEA</b>r16,rm</td>
+        <td class="pros"><b>MOV</b>sreg,rm</td>
+        <td class="pros"><b>POP</b>rm16</td>
+    </tr>
+    <tr>
+        <th>90</th>
+        <td class="done"><b>NOP</b></td>
+        <td class="done"><b>XCHG</b>ax,cx</td>
+        <td class="done"><b>XCHG</b>ax,dx</td>
+        <td class="done"><b>XCHG</b>ax,bx</td>
+        <td class="done"><b>XCHG</b>ax,sp</td>
+        <td class="done"><b>XCHG</b>ax,bp</td>
+        <td class="done"><b>XCHG</b>ax,si</td>
+        <td class="done"><b>XCHG</b>ax,di</td>
+    </tr>
+    <tr>
+        <th>98</th>
+        <td class="done"><b>CBW</b></td>
+        <td class="done"><b>CWD</b></td>
+        <td></td>
+        <td></td>
+        <td class="done"><b>PUSHF</b></td>
+        <td class="done"><b>POPF</b></td>
+        <td class="done"><b>LAHF</b></td>
+        <td class="done"><b>SAHF</b></td>
+    </tr>
+    <tr>
+        <th>A0</th>
+        <td class="done"><b>MOV</b>al,[m16]</td>
+        <td class="done"><b>MOV</b>ax,[m16]</td>
+        <td class="done"><b>MOV</b>[m16],al</td>
+        <td class="done"><b>MOV</b>[m16],ax</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>A8</th>
+        <td class="pros"><b>TEST</b>al,i8</td>
+        <td class="pros"><b>TEST</b>ax,i16</td>
+        <td class="pros"><b>STOSB</b></td>
+        <td class="pros"><b>STOSW</b></td>
+        <td class="pros"><b>LODSB</b></td>
+        <td class="pros"><b>LODSW</b></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>B0</th>
+        <td class="done"><b>MOV</b>al,i8</td>
+        <td class="done"><b>MOV</b>cl,i8</td>
+        <td class="done"><b>MOV</b>dl,i8</td>
+        <td class="done"><b>MOV</b>bl,i8</td>
+        <td class="done"><b>MOV</b>ah,i8</td>
+        <td class="done"><b>MOV</b>ch,i8</td>
+        <td class="done"><b>MOV</b>dh,i8</td>
+        <td class="done"><b>MOV</b>bh,i8</td>
+    </tr>
+    <tr>
+        <th>B8</th>
+        <td class="done"><b>MOV</b>ax,i16</td>
+        <td class="done"><b>MOV</b>cx,i16</td>
+        <td class="done"><b>MOV</b>dx,i16</td>
+        <td class="done"><b>MOV</b>bx,i16</td>
+        <td class="done"><b>MOV</b>sp,i16</td>
+        <td class="done"><b>MOV</b>bp,i16</td>
+        <td class="done"><b>MOV</b>si,i16</td>
+        <td class="done"><b>MOV</b>di,i16</td>
+    </tr>
+    <tr>
+        <th>C0</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="pros"><b>MOV</b>rm,i8</td>
+        <td class="pros"><b>MOV</b>rm,i16</td>
+    </tr>
+    <tr>
+        <th>C8</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>D0</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="pros"><b>SALC</b></td>
+        <td class="pros"><b>XLATB</b></td>
+    </tr>
+    <tr class="disb">
+        <th>D8</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>E0</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="pros"><b>IN</b>al,i8</td>
+        <td class="pros"><b>IN</b>ax,i8</td>
+        <td class="pros"><b>OUT</b>i8,al</td>
+        <td class="pros"><b>OUT</b>i8,ax</td>
+    </tr>
+    <tr>
+        <th>E8</th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="done"><b>JMP</b>b8</td>
+        <td class="pros"><b>IN</b>al,dx</td>
+        <td class="pros"><b>IN</b>ax,dx</td>
+        <td class="pros"><b>OUT</b>dx,al</td>
+        <td class="pros"><b>OUT</b>dx,ax</td>
+    </tr>
+    <tr>
+        <th>F0</th>
+        <td></td>
+        <td></td>
+        <td class="pref"><b>REPNZ</b></td>
+        <td class="pref"><b>REPZ</b></td>
+        <td class="done"><b>HLT</b></td>
+        <td class="done"><b>CMC</b></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <th>F8</th>
+        <td class="done"><b>CLC</b></td>
+        <td class="done"><b>STC</b></td>
+        <td class="done"><b>CLI</b></td>
+        <td class="done"><b>STI</b></td>
+        <td class="done"><b>CLD</b></td>
+        <td class="done"><b>STD</b></td>
+        <td></td>
+        <td></td>
+    </tr>
+
+</table>
+</body>
+</html>
