@@ -532,11 +532,12 @@ void autorep(int i_w, int flag_test) {
 
 // Ввод данных
 uint8_t port_in(uint16_t port) {
-    return 0xFF;
+    return io_ports[port];
 }
 
 // Вывод
 void port_out(uint16_t port, uint8_t data) {
+    io_ports[port] = data;
 }
 
 // Вызов INT 8

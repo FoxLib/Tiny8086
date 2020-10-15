@@ -2,23 +2,23 @@
 
         org     100h
 
-        mov     si, _a
-        mov     di, _b
-        mov     cx, 5
-
+        ; Инициализация
+        cli
+        cld
         mov     ax, cs
         mov     ds, ax
+        mov     ax, $9000
+        mov     ss, ax
+        mov     ax, $ffff
         mov     es, ax
-
-        repz cmpsw
-
+        mov     si, mem_top
+        xor     di, di
+        mov     cx, 16
+        rep     movsb           ; Копировать строку reboot-кода
+        xor     sp, sp          ; SS:SP = $9000:$0000
         hlt
 
-_a      db "1234"
-_b      db "1234"
-
-; Эти данные необходимо обязательно чтобы были в Memory TOP
-biosstr db  'Fox8086 BIOS Revision 0.0001', 0, 0
+; Эти данные обязательно надо, чтобы были в Memory TOP
 mem_top db  0xEA, 0x00, 0x01, 0x00, 0xF0    ; JMP F000:0100
         db  '28/09/20', 0x00, 0xFE, 0x00    ; Параметры
 

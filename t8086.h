@@ -52,6 +52,7 @@ unsigned char   RAM[RAMTOP];
 unsigned char   regs[32];
 unsigned short* regs16;
 unsigned short  reg_ip;
+uint8_t         io_ports[65536];
 struct flags_struct flags;
 
 int is_halt;
