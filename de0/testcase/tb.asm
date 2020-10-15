@@ -1,4 +1,5 @@
-
+        push    ax
+        pop     cx
         xchg    ax, bx
         jne     a
         mov     ax, $1234

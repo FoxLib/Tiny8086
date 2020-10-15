@@ -8,12 +8,6 @@ module cpu
     output  reg         we
 );
 
-// ------------------------------ ОТЛАДКА
-wire [15:0] _debug1 = r16[REG_AX];
-wire [15:0] _debug2 = r16[REG_CX];
-wire        _strob_ = fn == 1;
-// ------------------------------
-
 `include "cpu_decl.v"
 
 // Выбор текущего адреса
@@ -55,9 +49,8 @@ always @(posedge clock) begin
             i_size      <= 0;       // Направление 0=[rm,r], 1=[r,rm]
             wb_data     <= 0;       // Данные на запись (modrm | reg)
             wb_reg      <= 0;       // Номер регистра на запись
-            s1          <= 0;
-            s2          <= 0;
-            s3          <= 0;
+            s1 <= 0; s2 <= 0;
+            s3 <= 0; s4 <= 0;
 
         end
 
@@ -112,6 +105,17 @@ always @(posedge clock) begin
                             i_size <= 1;
 
                         end
+                        8'b01010xxx: begin // PUSH r16
+
+                            wb_data <= r16[i_data[2:0]];
+                            fn <= PUSH;
+
+                        end
+                        8'b01011xxx: begin fn <= POP; fnext <= INSTR; end // POP r16
+                        // Установка и снятие флагов CLx/STx
+                        8'b1111100x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:1], i_data[0]}; end // CF
+                        8'b1111101x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:10], i_data[0], flags[8:0]}; end // IF
+                        8'b1111110x: begin fn <= START; wf <= 1; wb_flag <= {flags[11], i_data[0], flags[9:0]}; end // IF
 
                     endcase
 
@@ -353,6 +357,9 @@ always @(posedge clock) begin
 
             endcase
 
+            // POP r16
+            8'b01011xxx: begin fn <= START; wb_reg <= opcode[2:0]; wb <= 1; end
+
         endcase
 
         // Расширенные инструции
@@ -402,15 +409,53 @@ always @(posedge clock) begin
 
         endcase
 
-        // Запись в стек
+        // Запись в стек <- wb_data | bus,wb,wb_reg,segment_id,ea,i_size
         // -------------------------------------------------------------
-        PUSH: begin
-        end
+        PUSH: case (s4)
 
-        // Чтение из стека
+            0: begin s4 <= 1;
+
+                segment_id <= SEG_SS;
+                ea      <= r16[REG_SP] - 2;
+                bus     <= 1;
+                o_data  <= wb_data[7:0];
+                we      <= 1;
+
+            end
+            1: begin s4 <= 2;
+
+                o_data  <= wb_data[15:8];
+                wb      <= 1;
+                wb_reg  <= REG_SP;
+                wb_data <= r16[REG_SP] - 2;
+                i_size  <= 1;
+                ea      <= ea + 1;
+
+            end
+            2: begin we <= 0; bus <= 0; fn <= fnext; s4 <= 0; end
+
+        endcase
+
+        // Чтение из стека -> wb_data | bus,wb,wb_reg,segment_id,ea,i_size
         // -------------------------------------------------------------
-        POP: begin
-        end
+        POP: case (s4)
+
+            0: begin s4 <= 1;
+
+                segment_id <= SEG_SS;
+                ea      <= r16[REG_SP];
+                bus     <= 1;
+                wb      <= 1;
+                wb_reg  <= REG_SP;
+                wb_data <= r16[REG_SP] + 2;
+                i_size  <= 1;
+
+            end
+
+            1: begin s4 <= 2; wb_data[ 7:0] <= i_data; ea <= ea + 1; end
+            2: begin s4 <= 0; wb_data[15:8] <= i_data; bus <= 0; fn <= fnext; end
+
+        endcase
 
     endcase
 
