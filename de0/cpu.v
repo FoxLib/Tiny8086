@@ -109,6 +109,9 @@ always @(posedge clock) begin
                 8'b1111110x: begin fn <= START; wf <= 1; wb_flag <= {flags[11], i_data[0], flags[9:0]}; end // IF
                 // Grp#1 ALU
                 8'b100000xx: begin fn <= MODRM; i_dir <= 0; end
+                // CBW|CWD
+                8'b10011000: begin fn <= START; i_size <= 0; wb_reg <= REG_AH; wb <= 1; wb_data <= {8{r16[REG_AX][7]}};   end
+                8'b10011001: begin fn <= START; i_size <= 1; wb_reg <= REG_DX; wb <= 1; wb_data <= {16{r16[REG_AX][15]}}; end
                 // Переход к исполнению инструкции
                 default: begin fn <= INSTR;
 
@@ -295,6 +298,7 @@ always @(posedge clock) begin
                     wb_data[15:8] <= i_data;
                     wb <= 1;
                     fn <= START;
+                    ip <= ip + 1;
 
                 end
 

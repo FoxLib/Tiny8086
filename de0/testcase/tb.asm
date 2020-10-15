@@ -1,5 +1,6 @@
 
-        push    ax
+        mov     ax, $82f4
+        cwd
         pop     ds
         sub     cx, $1000
         push    ax

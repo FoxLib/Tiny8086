@@ -2,7 +2,11 @@ parameter
     SEG_ES = 0, REG_AX = 0, REG_SP = 4, ALU_ADD = 0, ALU_AND = 4,
     SEG_CS = 1, REG_CX = 1, REG_BP = 5, ALU_OR  = 1, ALU_SUB = 5,
     SEG_SS = 2, REG_DX = 2, REG_SI = 6, ALU_ADC = 2, ALU_XOR = 6,
-    SEG_DS = 3, REG_BX = 3, REG_DI = 7, ALU_SBB = 3, ALU_CMP = 7;
+    SEG_DS = 3, REG_BX = 3, REG_DI = 7, ALU_SBB = 3, ALU_CMP = 7,
+    REG_AL = 0, REG_AH = 4,
+    REG_CL = 1, REG_CH = 5,
+    REG_DL = 2, REG_DH = 6,
+    REG_BL = 3, REG_BH = 7;
 
 parameter
     CF = 0, PF = 2, AF = 4,  ZF = 6, SF = 7,
@@ -21,7 +25,7 @@ parameter
 
 // ------------------------------ ОТЛАДКА
 wire [15:0] _debug1 = r16[REG_AX];
-wire [15:0] _debug2 = seg[SEG_DS];
+wire [15:0] _debug2 = r16[REG_DX];
 wire        _strob_ = fn == 1;
 // ------------------------------
 
