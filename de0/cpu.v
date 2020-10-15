@@ -54,69 +54,69 @@ always @(posedge clock) begin
 
         end
 
-        // Распознание опкода
+        // Дешифратор опкода
         // -------------------------------------------------------------
         LOAD: begin
 
+            // Параметры по умолчанию
+            i_size <= i_data[0];
+            i_dir  <= i_data[1];
+            opcode <= i_data;
+
+            // Поиск опкода по маске
             casex (i_data)
 
-                8'b0000_1111: begin fn <= EXTEND; end // Префикс расширения
-                8'b001x_x110: begin segment_id <= i_data[4:3]; segment_px <= 1; end // Сегментные префиксы
-                8'b1110_001x: begin rep <= i_data[1:0]; end // REPNZ, REPZ
-                8'b0110_010x, // FS, GS
-                8'b0110_011x, // opsize, adsize
-                8'b1110_0000: begin /* ничего не делать */ end
-                default: begin // Переход к исполнению инструкции
+                8'b00001111: begin fn <= EXTEND; end // Префикс расширения
+                8'b001xx110: begin fn <= LOAD; segment_id <= i_data[4:3]; segment_px <= 1; end // Сегментные префиксы
+                8'b1110001x: begin fn <= LOAD; rep <= i_data[1:0]; end // REPNZ, REPZ
+                // FS, GS, opsize, adsize
+                8'b0110010x,
+                8'b0110011x, /* begin fn <= UNDEF; end */
+                // LOCK:
+                8'b11100000: begin fn <= LOAD; end
+                // ALU rm | ALU a,imm
+                8'b00xxx0xx: begin fn <= MODRM; alu <= i_data[5:3]; end
+                8'b00xxx10x: begin fn <= INSTR; alu <= i_data[5:3]; end
+                // MOV rm, i | LEA r, m
+                8'b1100011x, 8'b10001101: begin fn <= INSTR; busen <= 0; end
+                // INC|DEC r
+                8'b0100xxxx: begin fn <= INSTR;
 
-                    // Параметры по умолчанию
-                    i_size <= i_data[0];
-                    i_dir  <= i_data[1];
-                    opcode <= i_data;
+                    alu <= i_data[3] ? ALU_SUB : ALU_ADD;
+                    op1 <= r16[i_data[2:0]];
+                    op2 <= 1;
+                    i_size <= 1;
+
+                end
+                // XCHG r, a
+                8'b10010xxx: begin fn <= INSTR;
+
+                    op1 <= r16[REG_AX];
+                    op2 <= r16[i_data[2:0]];
+                    i_size <= 1;
+
+                end
+                // PUSH r
+                8'b01010xxx: begin fn <= PUSH; wb_data <= r16[i_data[2:0]]; end
+                // POP r|s
+                8'b01011xxx,
+                8'b000xx111: begin fn <= POP;  fnext <= INSTR; end
+                // PUSH s
+                8'b000xx110: begin fn <= PUSH; wb_data <= seg[i_data[4:3]]; end
+                // Установка и снятие флагов CLx/STx
+                8'b1111100x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:1], i_data[0]}; end // CF
+                8'b1111101x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:10], i_data[0], flags[8:0]}; end // IF
+                8'b1111110x: begin fn <= START; wf <= 1; wb_flag <= {flags[11], i_data[0], flags[9:0]}; end // IF
+                // Grp#1 ALU
+                8'b100000xx: begin fn <= MODRM; i_dir <= 0; end
+                // Переход к исполнению инструкции
+                default: begin fn <= INSTR;
 
                     // Определить наличие байта ModRM для опкода
                     casex (i_data)
 
-                        8'b00xxx0xx, 8'b1000xxxx, 8'b1100000x, 8'b110001xx,
-                        8'b110100xx, 8'b11011xxx, 8'b1111x11x, 8'b0110001x,
-                        8'b011010x1: fn <= MODRM;
-                        default:     fn <= INSTR;
-
-                    endcase
-
-                    // Заранее подготовить к исполнению инструкции
-                    casex (i_data)
-
-                        8'b00xxx0xx, // ALU rm | ALU a,imm
-                        8'b00xxx10x: alu <= i_data[5:3];
-                        8'b1100011x,
-                        8'b10001101: busen <= 0;
-                        8'b0100xxxx: begin // INC|DEC
-
-                            alu <= i_data[3] ? ALU_SUB : ALU_ADD;
-                            op1 <= r16[i_data[2:0]];
-                            op2 <= 1;
-                            i_size <= 1;
-
-                        end
-                        8'b10010xxx: begin // XCHG r16
-
-                            op1 <= r16[REG_AX];
-                            op2 <= r16[i_data[2:0]];
-                            i_size <= 1;
-
-                        end
-                        8'b01010xxx: begin // PUSH r16
-
-                            wb_data <= r16[i_data[2:0]];
-                            fn <= PUSH;
-
-                        end
-                        8'b01011xxx: begin fn <= POP; fnext <= INSTR; end // POP r16
-                        // Установка и снятие флагов CLx/STx
-                        8'b1111100x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:1], i_data[0]}; end // CF
-                        8'b1111101x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:10], i_data[0], flags[8:0]}; end // IF
-                        8'b1111110x: begin fn <= START; wf <= 1; wb_flag <= {flags[11], i_data[0], flags[9:0]}; end // IF
-                        8'b100000xx: i_dir <= 0; // Grp#1 ALU
+                        8'b1000xxxx, 8'b1100000x, 8'b110001xx, 8'b011010x1,
+                        8'b110100xx, 8'b11011xxx, 8'b1111x11x, 8'b0110001x: fn <= MODRM;
 
                     endcase
 
@@ -358,8 +358,9 @@ always @(posedge clock) begin
 
             endcase
 
-            // POP r16
+            // POP r|s
             8'b01011xxx: begin fn <= START; wb_reg <= opcode[2:0]; wb <= 1; end
+            8'b000xx111: begin fn <= START; seg[opcode[4:3]] <= wb_data; end
 
             // <alu> imm
             8'b100000xx: case (s3)

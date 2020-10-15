@@ -1,5 +1,7 @@
 
-        sub     cx, $1234
+        push    ax
+        pop     ds
+        sub     cx, $1000
         push    ax
         pop     cx
         xchg    ax, bx
