@@ -42,7 +42,6 @@ always @(posedge clock) begin
             segment_px  <= 1'b0;    // Наличие сегментного префикса
             rep         <= 2'b0;    // Нет префикса REP:
             ea          <= 0;       // Эффективный адрес
-            fn          <= LOAD;    // Номер главной фунции
             fnext       <= START;   // Возврат по умолчанию
             we          <= 0;       // Разрешение записи
             i_dir       <= 0;       // Ширина операнда 0=8, 1=16
@@ -51,6 +50,9 @@ always @(posedge clock) begin
             wb_reg      <= 0;       // Номер регистра на запись
             s1 <= 0; s2 <= 0;
             s3 <= 0; s4 <= 0;
+
+            // Номер главной фунции
+            fn <= halt ? START : LOAD;
 
         end
 
@@ -62,6 +64,7 @@ always @(posedge clock) begin
             i_size <= i_data[0];
             i_dir  <= i_data[1];
             opcode <= i_data;
+            ip     <= ip + 1;
 
             // Поиск опкода по маске
             casex (i_data)
@@ -98,17 +101,26 @@ always @(posedge clock) begin
                 end
                 // PUSH r
                 8'b01010xxx: begin fn <= PUSH; wb_data <= r16[i_data[2:0]]; end
-                // POP r|s
+                // POP r|s|f
                 8'b01011xxx,
-                8'b000xx111: begin fn <= POP;  fnext <= INSTR; end
+                8'b000xx111,
+                8'b10011101: begin fn <= POP; fnext <= INSTR; end
                 // PUSH s
                 8'b000xx110: begin fn <= PUSH; wb_data <= seg[i_data[4:3]]; end
-                // Установка и снятие флагов CLx/STx
+                // PUSHF
+                8'b10011100: begin fn <= PUSH; wb_data <= flags; end
+                // Установка и снятие флагов CLx/STx, простые инструкции
                 8'b1111100x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:1], i_data[0]}; end // CF
                 8'b1111101x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:10], i_data[0], flags[8:0]}; end // IF
                 8'b1111110x: begin fn <= START; wf <= 1; wb_flag <= {flags[11], i_data[0], flags[9:0]}; end // IF
-                // Grp#1 ALU
-                8'b100000xx: begin fn <= MODRM; i_dir <= 0; end
+                8'b10011110: begin fn <= START; wb_flag <= r16[REG_AX][15:8]; wf <= 1; end // SAHF
+                8'b10011111: begin fn <= START; wb_data <= {flags[7:2],1'b1,flags[0]}; wb_reg <= REG_AH; i_size <= 0; wb <= 1; end // LAHF
+                8'b11010110: begin fn <= START; wb_data <= {8{flags[0]}}; wb_reg <= REG_AL; i_size <= 0; wb <= 1; end // SALC
+                8'b11110100: begin fn <= START; halt <= 1; end // HALT
+                8'b11110101: begin fn <= START; wb_flag <= {flags[7:1], ~flags[0]}; wf <= 1; end // CMC
+                // Grp#1 ALU | XCHG rm, r
+                8'b100000xx,
+                8'b1000011x: begin fn <= MODRM; i_dir <= 0; end
                 // TEST rm, r
                 8'b1000010x: begin fn <= MODRM; alu <= ALU_AND; end
                 // CBW|CWD
@@ -128,8 +140,6 @@ always @(posedge clock) begin
                 end
 
             endcase
-
-            ip <= ip + 1;
 
         end
 
@@ -238,8 +248,7 @@ always @(posedge clock) begin
         // -------------------------------------------------------------
         INSTR: casex (opcode)
 
-            // <alu> rm
-            8'b00xxx0xx: begin
+            8'b00xxx0xx: begin // <alu> rm
 
                 wb_data <= alu_r;
                 wb_flag <= alu_f;
@@ -247,9 +256,7 @@ always @(posedge clock) begin
                 fn <= (alu != ALU_CMP) ? WBACK : START;
 
             end
-
-            // <alu> a, imm
-            8'b00xxx10x: case (s3)
+            8'b00xxx10x: case (s3) // <alu> a, imm
 
                 // Инициализация
                 0: begin
@@ -277,9 +284,7 @@ always @(posedge clock) begin
                 end
 
             endcase
-
-            // MOV r, i
-            8'b1011xxxx: case (s3)
+            8'b1011xxxx: case (s3) // MOV r, i
 
                 // 8 bit
                 0: begin
@@ -305,12 +310,13 @@ always @(posedge clock) begin
                 end
 
             endcase
+            8'b100010xx: begin // MOV rm
 
-            // MOV rm
-            8'b100010xx: begin wb_data <= op2; fn <= WBACK; end
+                wb_data <= op2;
+                fn      <= WBACK;
 
-            // MOV rm, i
-            8'b1100011x: case (s3)
+            end
+            8'b1100011x: case (s3) // MOV rm, i
 
                 // 8 bit
                 0: begin
@@ -328,12 +334,15 @@ always @(posedge clock) begin
                 1: begin wb_data[15:8] <= i_data; ip <= ip + 1; bus <= 1; fn <= WBACK; end
 
             endcase
+            8'b10001101: begin // LEA r16, m
 
-            // LEA r16, m
-            8'b10001101: begin wb_data <= ea; wb_reg <= modrm[5:3]; wb <= 1; fn <= START; end
+                wb_data <= ea;
+                wb_reg  <= modrm[5:3];
+                wb      <= 1;
+                fn      <= START;
 
-            // Jccc
-            8'b0111xxxx: begin
+            end
+            8'b0111xxxx: begin // Jccc
 
                 if (branches[ opcode[3:1] ] ^ opcode[0])
                     ip <= ip + 1 + {{8{i_data[7]}}, i_data[7:0]};
@@ -343,9 +352,7 @@ always @(posedge clock) begin
                 fn <= START;
 
             end
-
-            // INC | DEC r16
-            8'b0100xxxx: begin
+            8'b0100xxxx: begin // INC | DEC r16
 
                 wb_data <= alu_r;
                 wb_flag <= {alu_f[11:1], flags[CF]};
@@ -355,21 +362,19 @@ always @(posedge clock) begin
                 fn <= START;
 
             end
-
-            // XCHG ax, r16
-            8'b10010xxx: case (s3)
+            8'b10010xxx: case (s3) // XCHG ax, r16
 
                 0: begin s3 <= 1;     wb_data <= op2; wb <= 1; wb_reg <= REG_AX; end
                 1: begin fn <= START; wb_data <= op1; wb <= 1; wb_reg <= opcode[2:0]; end
 
             endcase
-
-            // POP r|s
-            8'b01011xxx: begin fn <= START; wb_reg <= opcode[2:0]; wb <= 1; end
-            8'b000xx111: begin fn <= START; seg[opcode[4:3]] <= wb_data; end
-
-            // <alu> imm
-            8'b100000xx: case (s3)
+            8'b01011xxx: begin fn <= START; // POP r
+                wb_reg <= opcode[2:0]; wb <= 1;
+            end
+            8'b000xx111: begin fn <= START; // POP s
+                seg[opcode[4:3]] <= wb_data;
+            end
+            8'b100000xx: case (s3) // <alu> imm
 
                 // Считывание imm и номера кода операции
                 0: begin s3 <= 1; alu <= modrm[5:3]; busen <= bus; bus <= 0; end
@@ -394,9 +399,7 @@ always @(posedge clock) begin
                 end
 
             endcase
-
-            // MOV a,[m] | [m],a
-            8'b101000xx: case (s3)
+            8'b101000xx: case (s3) // MOV a,[m] | [m],a
 
                 // Прочесть адрес
                 0: begin ea[7:0]  <= i_data; ip <= ip + 1; s3 <= 1; wb_reg <= REG_AX; end
@@ -412,9 +415,18 @@ always @(posedge clock) begin
                 6: begin fn <= START; wb <=  i_size; wb_data[15:8] <= i_data; end
 
             endcase
+            8'b1000010x: begin // TEST rm,r
+                wb_flag <= alu_f; wf <= 1; fn <= START;
+            end
+            8'b100001xx: case (s3) // XCHG rm,r
 
-            // TEST rm,r
-            8'b1000010x: begin wb_flag <= alu_f; wf <= 1; fn <= START; end
+                0: begin s3 <= 1;     wb_data <= op1; wb_reg <= modrm[5:3]; wb <= 1; end
+                1: begin fn <= WBACK; wb_data <= op2; end
+
+            endcase
+            8'b10011101: begin fn <= START; // POPF
+                wb_flag <= {wb_data[11:2],1'b1,wb_data[0]}; wf <= 1;
+            end
 
         endcase
 

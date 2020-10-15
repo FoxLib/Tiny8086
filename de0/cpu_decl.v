@@ -25,7 +25,7 @@ parameter
 
 // ------------------------------ ОТЛАДКА
 wire [15:0] _debug1 = r16[REG_AX];
-wire [15:0] _debug2 = r16[REG_DX];
+wire [15:0] _debug2 = r16[REG_CX];
 wire        _strob_ = fn == 1;
 // ------------------------------
 
@@ -39,7 +39,7 @@ reg [15:0] ip;
 
 initial begin
 
-    r16[REG_AX] = 16'h0408;
+    r16[REG_AX] = 16'h88AC;
     r16[REG_CX] = 16'hFFFF;
     r16[REG_DX] = 16'h0000;
     r16[REG_BX] = 16'h0001;
@@ -67,7 +67,7 @@ initial begin
     segment_id = SEG_DS;
 
     bus = 0; modrm   = 0; busen = 0;
-    fn  = 0; i_size  = 0;
+    fn  = 0; i_size  = 0; halt  = 0;
     s1  = 0; i_dir   = 0; s4 = 0;
     wb  = 0; wf      = 0;
     alu = 0; wb_data = 0;
@@ -104,4 +104,4 @@ reg [15:0]  wb_data;            // Какое значение записыва�
 reg [ 2:0]  wb_reg;             // Номер регистра (0..7)
 reg [11:0]  wb_flag;            // Какие флаги писать
 reg [ 2:0]  alu;                // Выбор АЛУ режима
-
+reg         halt;               // Процессор остановлен

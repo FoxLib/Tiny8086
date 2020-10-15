@@ -1,5 +1,9 @@
 
-        test    [bx], ax
+        cmc
+        hlt
+        salc
+        popf
+        xchg    bx, cx
         cwd
         pop     ds
         sub     cx, $1000
