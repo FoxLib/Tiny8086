@@ -116,6 +116,7 @@ always @(posedge clock) begin
                         8'b1111100x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:1], i_data[0]}; end // CF
                         8'b1111101x: begin fn <= START; wf <= 1; wb_flag <= {flags[11:10], i_data[0], flags[8:0]}; end // IF
                         8'b1111110x: begin fn <= START; wf <= 1; wb_flag <= {flags[11], i_data[0], flags[9:0]}; end // IF
+                        8'b100000xx: i_dir <= 0; // Grp#1 ALU
 
                     endcase
 
@@ -359,6 +360,33 @@ always @(posedge clock) begin
 
             // POP r16
             8'b01011xxx: begin fn <= START; wb_reg <= opcode[2:0]; wb <= 1; end
+
+            // <alu> imm
+            8'b100000xx: case (s3)
+
+                // Считывание imm и номера кода операции
+                0: begin s3 <= 1; alu <= modrm[5:3]; busen <= bus; bus <= 0; end
+                1: begin s3 <= 2; op2 <= i_data; ip <= ip + 1; end
+                2: begin s3 <= 3;
+
+                    case (opcode[1:0])
+                        2'b01: begin op2[15:8] <= i_data; ip <= ip + 1; end // imm16
+                        2'b11: begin op2[15:8] <= {8{op2[7]}}; end // sign8
+                    endcase
+
+                end
+                // Запись
+                3: begin
+
+                    bus     <= busen;
+                    wb_data <= alu_r;
+                    wb_flag <= alu_f;
+                    wf  <= 1;
+                    fn  <= (alu != ALU_CMP) ? WBACK : START;
+
+                end
+
+            endcase
 
         endcase
 

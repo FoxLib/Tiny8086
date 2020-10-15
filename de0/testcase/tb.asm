@@ -1,3 +1,5 @@
+
+        sub     cx, $1234
         push    ax
         pop     cx
         xchg    ax, bx

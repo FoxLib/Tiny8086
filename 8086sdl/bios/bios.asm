@@ -6,16 +6,25 @@
         cli
         cld
         mov     ax, cs
-        mov     ds, ax
-        mov     ax, $9000
-        mov     ss, ax
-        mov     ax, $ffff
-        mov     es, ax
+        mov     ds, ax          ; DS=CS
+        xor     ax, ax
+        mov     ss, ax          ; SS=$0000
+        mov     sp, $7c00       ; SP=$7C00
+        dec     ax
+        mov     es, ax          ; ES=$FFFF
+        xor     di, di          ; DI=$0000
         mov     si, mem_top
-        xor     di, di
         mov     cx, 16
         rep     movsb           ; Копировать строку reboot-кода
-        xor     sp, sp          ; SS:SP = $9000:$0000
+
+        ; Тестовая очистка экрана
+        mov     ax, $b800
+        mov     es, ax
+        xor     di, di
+        mov     ax, $1720
+        mov     cx, 2000
+        rep     stosw
+
         hlt
 
 ; Эти данные обязательно надо, чтобы были в Memory TOP

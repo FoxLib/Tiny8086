@@ -802,13 +802,6 @@ int main(int argc, char* argv[]) {
 
     reset();
 
-// ------------------------------------- test
-    for (int i = 0; i < 32; i++) step();
-    memdump(0);
-    memdump(0xF0100);
-    regdump();
-// -------------------------------------
-
     // Цикл исполнения одной инструкции
     while (in_start) {
 
@@ -831,13 +824,20 @@ int main(int argc, char* argv[]) {
         if (time_diff >= 20) {
 
             ms_prevtime = time_curr;
-            // .. исполнение нескольких инструкции ..
+
+            // Исполнение порции инструкции (256x50=12khz)
+            for (int i = 0; i < 256; i++) {
+                step();
+            }
+
             SDL_Flip(sdl_screen);
         }
 
         // Задержка исполнения
         SDL_Delay(1);
     }
+
+    // memdump(0); memdump(0xF0100); regdump();
 
     SDL_Quit();
     return 0;
