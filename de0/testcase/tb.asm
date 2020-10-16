@@ -1,6 +1,8 @@
 
         org     0
-        les     ax, [cs:$000a]
+        call    $f800:bm
+        hlt
+bm:     retf    $0304
 @@:     loopnz  @b
         mov     sp, $7c00
         mov     ax, $1721

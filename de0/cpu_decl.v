@@ -28,7 +28,7 @@ parameter
 wire [15:0] dr_ax = r16[REG_AX];
 wire [15:0] dr_cx = r16[REG_CX];
 wire [15:0] dr_sp = r16[REG_SP];
-wire [15:0] dr_se = seg[SEG_ES];
+wire [15:0] dr_se = seg[SEG_CS];
 wire        _strob_ = fn == 1;
 // ------------------------------
 
@@ -43,7 +43,7 @@ reg [15:0] ip;
 initial begin
 
     r16[REG_AX] = 16'h88AC;
-    r16[REG_CX] = 16'hFFFF;
+    r16[REG_CX] = 16'hFFFA;
     r16[REG_DX] = 16'h0000;
     r16[REG_BX] = 16'h0001;
     r16[REG_SP] = 16'h0000;
