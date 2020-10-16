@@ -800,6 +800,14 @@ int main(int argc, char* argv[]) {
     SDL_EnableKeyRepeat(500, 30);
     SDL_WM_SetCaption("Эмулятор 8086", 0);
 
+    // Загрузка bios в память
+    int bios_rom = open("bios.rom", 32898);
+    if (bios_rom < 0) {
+        bios_rom = argc > 1 ? open(argv[1], 32898) : -1;
+        if (bios_rom < 0) { printf("No bios.rom present"); exit(1); }
+    }
+    (void) read(bios_rom, RAM + 0xF0100, 0xFF00);
+
     reset();
 
     // Цикл исполнения одной инструкции

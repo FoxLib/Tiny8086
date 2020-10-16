@@ -589,15 +589,10 @@ void reset() {
     regs16[REG_SI] = 0x0000;
     regs16[REG_DI] = 0x0000;
     regs16[REG_SS] = 0x0000;
-    regs16[REG_DS] = 0x0000;
+    regs16[REG_DS] = 0xB800;
     regs16[REG_ES] = 0x0000;
     regs16[REG_CS] = 0xF000;  // CS = 0xF000
     reg_ip         = 0x0100;  // IP = 0x0100
-
-    // Загрузка bios в память
-    int bios_rom = open("bios.rom", 32898);
-    if (bios_rom < 0) { printf("No bios.rom present"); exit(1); }
-    (void) read(bios_rom, RAM + 0xF0100, 0xFF00);
 }
 
 // Отладка
