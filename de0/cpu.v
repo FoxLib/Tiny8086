@@ -71,12 +71,12 @@ always @(posedge clock) begin
 
                 8'b00001111: begin fn <= EXTEND; end // Префикс расширения
                 8'b001xx110: begin fn <= LOAD; segment_id <= i_data[4:3]; segment_px <= 1; end // Сегментные префиксы
-                8'b1110001x: begin fn <= LOAD; rep <= i_data[1:0]; end // REPNZ, REPZ
+                8'b1111001x: begin fn <= LOAD; rep <= i_data[1:0]; end // REPNZ, REPZ
                 // FS, GS, opsize, adsize
                 8'b0110010x,
                 8'b0110011x, /* begin fn <= UNDEF; end */
                 // LOCK:
-                8'b11100000: begin fn <= LOAD; end
+                8'b11110000: begin fn <= LOAD; end
                 // ALU rm | ALU a,imm
                 8'b00xxx0xx: begin fn <= MODRM; alu <= i_data[5:3]; end
                 8'b00xxx10x: begin fn <= INSTR; alu <= i_data[5:3]; end
@@ -121,11 +121,14 @@ always @(posedge clock) begin
                 // Grp#1 ALU | XCHG rm, r
                 8'b100000xx,
                 8'b1000011x: begin fn <= MODRM; i_dir <= 0; end
-                // TEST rm, r
+                // TEST rm | TEST a,i
                 8'b1000010x: begin fn <= MODRM; alu <= ALU_AND; end
                 // CBW|CWD
                 8'b10011000: begin fn <= START; i_size <= 0; wb_reg <= REG_AH; wb <= 1; wb_data <= {8{r16[REG_AX][7]}};   end
                 8'b10011001: begin fn <= START; i_size <= 1; wb_reg <= REG_DX; wb <= 1; wb_data <= {16{r16[REG_AX][15]}}; end
+                // LOOP|NZ|Z
+                8'b1110000x,
+                8'b11100010: begin fn <= INSTR; i_size <= 1; wb_reg <= REG_CX; wb_data <= r16[REG_CX] - 1; wb <= 1; end
                 // Переход к исполнению инструкции
                 default: begin fn <= INSTR;
 
@@ -218,7 +221,7 @@ always @(posedge clock) begin
             end
 
             // Чтение 8 битного signed disp
-            1: begin s1 <= 4; ip <= ip + 1; ea <= ea + {{8{i_data[7]}}, i_data}; bus <= busen; if (!busen) fn <= INSTR; end
+            1: begin s1 <= 4; ip <= ip + 1; ea <= ea + signex; bus <= busen; if (!busen) fn <= INSTR; end
 
             // Чтение 16 битного unsigned disp16
             2: begin s1 <= 3; ip <= ip + 1; ea <= ea + i_data; end
@@ -345,7 +348,7 @@ always @(posedge clock) begin
             8'b0111xxxx: begin // Jccc
 
                 if (branches[ opcode[3:1] ] ^ opcode[0])
-                    ip <= ip + 1 + {{8{i_data[7]}}, i_data[7:0]};
+                    ip <= ip + 1 + signex;
                 else
                     ip <= ip + 1;
 
@@ -426,6 +429,38 @@ always @(posedge clock) begin
             endcase
             8'b10011101: begin fn <= START; // POPF
                 wb_flag <= {wb_data[11:2],1'b1,wb_data[0]}; wf <= 1;
+            end
+            8'b1010100x: case (s3) // TEST a,i
+
+                0: begin s3 <= i_size ? 1 : 2; alu <= ALU_AND; op1 <= r16[REG_AX]; op2 <= i_data; ip <= ip + 1; end
+                1: begin s3 <= 2; op2[15:8] <= i_data; ip <= ip + 1; end
+                2: begin wf <= 1; wb_flag <= alu_f; fn <= START; end
+
+            endcase
+            8'b11101011: begin fn <= START; // JMP b8
+                ip <= ip + 1 + signex;
+            end
+            8'b11101001: case (s3) // JMP b16
+                0: begin s3 <= 1; ea <= i_data; ip <= ip + 1; end
+                1: begin fn <= START; ip <= ip + 1 + {i_data, ea[7:0]}; end
+            endcase
+            8'b11101010: case (s3) // JMP far
+
+                0: begin ip <= ip + 1; s3 <= 1; ea <= i_data; end
+                1: begin ip <= ip + 1; s3 <= 2; ea[15:8] <= i_data; end
+                2: begin ip <= ip + 1; s3 <= 3; op1 <= i_data; end
+                3: begin ip <= ea; seg[SEG_CS] <= {i_data, op1[7:0]}; fn <= START; end
+
+            endcase
+            8'b111000xx: begin fn <= START; // LOOP[NZ|Z], JCXZ
+
+                if (opcode[1:0] == 2'b11) // JCXZ
+                    ip <= ip + 1 + (r16[REG_CX] == 0 ? signex : 0);
+                else if (r16[REG_CX] && (opcode[1] || flags[ZF] == opcode[0])) // LOOP, LOOPNZ, LOOPZ
+                    ip <= ip + 1 + signex;
+                else
+                    ip <= ip + 1;
+
             end
 
         endcase
@@ -524,6 +559,10 @@ always @(posedge clock) begin
             2: begin s4 <= 0; wb_data[15:8] <= i_data; bus <= 0; fn <= fnext; end
 
         endcase
+
+        // Деление op1 на op2, i_size -> wb_data
+        // DIV: case (s5)
+        // endcase
 
     endcase
 
