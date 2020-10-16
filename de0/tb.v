@@ -30,13 +30,19 @@ always @(posedge clock) begin
 end
 // ---------------------------------------------------------------------
 
+wire [7:0] irq_id = 0;
+
 cpu CPU86
 (
     .clock      (clock25),
     .address    (address),
     .i_data     (i_data),
     .o_data     (o_data),
-    .we         (we)
+    .we         (we),
+
+    // PIC
+    .irq_signal (1'b0),
+    .irq_id     (irq_id)
 );
 
 endmodule

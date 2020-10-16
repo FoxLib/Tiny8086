@@ -1,7 +1,6 @@
 
         org     0
-        call    $1234:$5678
-        mov     ds, [cs:bx]
+        les     ax, [cs:$000a]
 @@:     loopnz  @b
         mov     sp, $7c00
         mov     ax, $1721

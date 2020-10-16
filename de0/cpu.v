@@ -5,7 +5,11 @@ module cpu
     output  wire [19:0] address,
     input   wire [ 7:0] i_data,             // i_data = ram[address]
     output  reg  [ 7:0] o_data,
-    output  reg         we
+    output  reg         we,
+
+    // PIC: Программируемый контроллер прерываний
+    input   wire        irq_signal,         // Счетчик IRQ (0 или 1)
+    input   wire [ 7:0] irq_id              // Номер IRQ (0..255)
 );
 
 `include "cpu_decl.v"
@@ -51,8 +55,26 @@ always @(posedge clock) begin
             s1 <= 0; s2 <= 0;
             s3 <= 0; s4 <= 0;
 
-            // Номер главной фунции
-            fn <= halt ? START : LOAD;
+            // IRQ прерывание вызывается, если счетчик изменился (irq_accept != irq_signal) и IF=1
+            if ((irq_accept ^ irq_signal) && flags[IF]) begin
+
+                fn          <= INTR;
+                wb_data     <= irq_id;
+                irq_accept  <= irq_signal;
+
+            end
+            // TF=1 (Trace Flag включен) и IF=1
+            else if (flags[IF] && flags[TF] && trace_ff) begin
+
+                wb_data  <= 1;
+                fn       <= INTR;
+
+            end
+            // Выбор номера главной фунции
+            else fn <= halt ? START : LOAD;
+
+            // FlipFlop: сначала выполнится инструкция, потом вызовается INT 1>
+            if (flags[IF] && flags[TF]) trace_ff <= ~trace_ff;
 
         end
 
@@ -132,6 +154,8 @@ always @(posedge clock) begin
                 8'b11100010: begin fn <= INSTR; i_size <= 1; wb_reg <= REG_CX; wb_data <= r16[REG_CX] - 1; wb <= 1; end
                 // MOV s,rm
                 8'b10001110: begin fn <= MODRM; i_size <= 1; end
+                // LES|LDS r,m
+                8'b1100010x: begin fn <= MODRM; i_size <= 1; i_dir <= 1; end
                 // Переход к исполнению инструкции
                 default: begin fn <= INSTR;
 
@@ -505,6 +529,13 @@ always @(posedge clock) begin
                          fn <= PUSH; wb_data <= seg[SEG_CS]; fnext <= INSTR; end
                 4: begin fn <= PUSH; wb_data <= ip; s3 <= 5; fnext <= INSTR; end
                 5: begin ip <= op1; seg[SEG_CS] <= op2; fn <= START; end
+
+            endcase
+            8'b1100010x: case (s3) // LES|LDS r,m
+
+                0: begin s3 <= 1; wb_data <= op2; wb <= 1; ea <= ea + 2; wb_reg <= modrm[5:3];  end
+                1: begin s3 <= 2; wb_data[7:0] <= i_data;  ea <= ea + 1; end
+                2: begin seg[ opcode[0] ? SEG_DS : SEG_ES ] <= {i_data, wb_data[7:0]}; fn <= START; end
 
             endcase
 

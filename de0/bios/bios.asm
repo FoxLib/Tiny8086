@@ -6,7 +6,7 @@
         xor     bx, bx
         mov     ah, $17
 @@:     mov     al, [bx]
-        add     al, 13
+        add     al, 1
         mov     [bx], ax
         add     bx, 2
         cmp     bx, 4000

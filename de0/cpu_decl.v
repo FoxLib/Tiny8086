@@ -28,7 +28,7 @@ parameter
 wire [15:0] dr_ax = r16[REG_AX];
 wire [15:0] dr_cx = r16[REG_CX];
 wire [15:0] dr_sp = r16[REG_SP];
-wire [15:0] dr_se = seg[SEG_CS];
+wire [15:0] dr_se = seg[SEG_ES];
 wire        _strob_ = fn == 1;
 // ------------------------------
 
@@ -78,6 +78,9 @@ initial begin
     op2 = 0; wb_reg  = 0;
     we  = 0; s2      = 0; s3 = 0;
 
+    irq_accept = 0;
+    trace_ff   = 0;
+
 end
 
 // Знаковое расширение
@@ -87,28 +90,30 @@ wire [15:0] signex = {{8{i_data[7]}}, i_data};
 // ---------------------------------------------------------------------
 
 reg [ 8:0]  opcode;
-reg [ 3:0]  fn;                 // Главное состояние процессора
-reg [ 3:0]  fnext;              // fn <- fnext после исполения процедуры
-reg [ 2:0]  s1;                 // Процедура ModRM
-reg [ 2:0]  s2;                 // Запись в ModRM -> память, регистр
-reg [ 2:0]  s3;                 // Микрокод
-reg [ 2:0]  s4;                 // PUSH/POP
-reg [ 2:0]  s5;                 // DIV
-reg         segment_px;         // Наличие префикса в инструкции
-reg [ 2:0]  segment_id;         // Номер выбранного сегмента
-reg [15:0]  ea;                 // Эффективный адрес
-reg         bus;                // 0 => CS:IP, 1 => segment_id:ea
-reg         busen;              // Использовать ли bus для modrm
-reg [ 1:0]  rep;                // REP[0] = NZ|Z; REP[1] = наличие префикса
-reg [ 7:0]  modrm;              // Сохраненный байт modrm
-reg [15:0]  op1;                // Операнд 1
-reg [15:0]  op2;                // Операнд 2
-reg         i_dir;              // 0=rm, r; 1=r, rm
-reg         i_size;             // 0=8 bit; 1=16 bit
-reg         wb;                 // Записать в регистры (размер i_size)
-reg         wf;                 // Запись флагов wb_flag
-reg [15:0]  wb_data;            // Какое значение записывать
-reg [ 2:0]  wb_reg;             // Номер регистра (0..7)
-reg [11:0]  wb_flag;            // Какие флаги писать
-reg [ 2:0]  alu;                // Выбор АЛУ режима
-reg         halt;               // Процессор остановлен
+reg [ 3:0]  fn;             // Главное состояние процессора
+reg [ 3:0]  fnext;          // fn <- fnext после исполения процедуры
+reg [ 2:0]  s1;             // Процедура ModRM
+reg [ 2:0]  s2;             // Запись в ModRM -> память, регистр
+reg [ 2:0]  s3;             // Микрокод
+reg [ 2:0]  s4;             // PUSH/POP
+reg [ 2:0]  s5;             // DIV
+reg         segment_px;     // Наличие префикса в инструкции
+reg [ 2:0]  segment_id;     // Номер выбранного сегмента
+reg [15:0]  ea;             // Эффективный адрес
+reg         bus;            // 0 => CS:IP, 1 => segment_id:ea
+reg         busen;          // Использовать ли bus для modrm
+reg [ 1:0]  rep;            // REP[0] = NZ|Z; REP[1] = наличие префикса
+reg [ 7:0]  modrm;          // Сохраненный байт modrm
+reg [15:0]  op1;            // Операнд 1
+reg [15:0]  op2;            // Операнд 2
+reg         i_dir;          // 0=rm, r; 1=r, rm
+reg         i_size;         // 0=8 bit; 1=16 bit
+reg         wb;             // Записать в регистры (размер i_size)
+reg         wf;             // Запись флагов wb_flag
+reg [15:0]  wb_data;        // Какое значение записывать
+reg [ 2:0]  wb_reg;         // Номер регистра (0..7)
+reg [11:0]  wb_flag;        // Какие флаги писать
+reg [ 2:0]  alu;            // Выбор АЛУ режима
+reg         halt;           // Процессор остановлен
+reg         trace_ff;       // FlipFlop для Trace, чтобы исполнялась 1 инструкция
+reg         irq_accept;     // Если irq_accept != irq_signal, есть IRQ на входе
