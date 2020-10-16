@@ -1,6 +1,5 @@
 
         cmc
-        hlt
         salc
         popf
         xchg    bx, cx
@@ -13,3 +12,4 @@
         jne     a
         mov     ax, $1234
 a:      mov     cx, $ffee
+        hlt

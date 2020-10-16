@@ -49,7 +49,7 @@ initial begin
     r16[REG_DI] = 16'h0000;
 
     seg[SEG_ES] = 16'h0000;
-    seg[SEG_CS] = 16'h0000;
+    seg[SEG_CS] = 16'hF800;
     seg[SEG_SS] = 16'h0000;
     seg[SEG_DS] = 16'h0000;
 

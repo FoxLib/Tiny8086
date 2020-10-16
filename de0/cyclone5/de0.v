@@ -77,7 +77,10 @@ assign HEX5 = 7'b1111111;
 
 // ---------------------------------------------------------------------
 wire clock_25;  wire clock_50;  wire clock_75;
-wire clock_100; wire clock_106;
+wire clock_100; wire clock_106; wire locked0;
+
+reg [1:0] locked1 = 2'b00;
+wire      locked  = locked1 == 2'b11;
 
 pll PLL(
 
@@ -90,7 +93,14 @@ pll PLL(
     .m75   (clock_75),
     .m100  (clock_100),
     .m106  (clock_106),
+
+    .locked (locked0),
 );
+
+// Схема стабилизации PLL
+always @(posedge clock_25) locked1 <= {locked1[0], locked0};
+
+// Видеоадаптер
 // -----------------------------------------------------------------------
 
 wire [12:0] cga_address;
@@ -110,13 +120,83 @@ cga CGA
     .cursor     (cga_cursor),
 );
 
-cgamem CGAMEM
+// Контроллер памяти
+// ---------------------------------------------------------------------
+
+wire [19:0] address;
+wire [ 7:0] o_data;
+wire        we;
+
+wire [ 7:0] q_cgamem;
+wire [ 7:0] q_memory;
+wire [ 7:0] q_bios;
+reg  [ 7:0] i_data;
+
+reg we_cgamem = 0;
+reg we_memory = 0;
+
+memory MEMORY // 256kb
+(
+    .clock      (clock_100),
+    .address_a  (address[17:0]),
+    .data_a     (o_data),
+    .wren_a     (we_memory),
+    .q_a        (q_memory)
+);
+
+cgamem CGAMEM // 8kb
 (
     .clock      (clock_100),
     .address_a  (cga_address),
     .q_a        (cga_data),
+    .address_b  (address[12:0]),
+    .data_b     (o_data),
+    .wren_b     (we_cgamem),
+    .q_b        (q_cgamem)
 );
 
+bios BIOS // 32kb
+(
+    .clock      (clock_100),
+    .address_a  (address[14:0]),
+    .q_a        (q_bios)
+);
+
+// Маршрутизация
+always @* begin
+
+    i_data = 8'hFF;
+    we_cgamem = 0;
+    we_memory = 0;
+
+    casex (address)
+
+        // 00000-3ffff 256k Общая память
+        20'b00xx_xxxx_xxxx_xxxx_xxxx: begin i_data = q_memory; we_memory = we; end
+
+        // b8000-b9fff 8k CGA
+        20'b1011_100x_xxxx_xxxx_xxxx: begin i_data = q_cgamem; we_cgamem = we; end
+
+        // f8000-fffff 32k BIOS
+        20'b1111_1xxx_xxxx_xxxx_xxxx: begin i_data = q_bios; end
+
+    endcase
+
+end
+
+// Процессор
+// ---------------------------------------------------------------------
+cpu CPU
+(
+    // Главный интерфейс
+    .clock      (clock_25 & locked),
+    .address    (address),
+    .i_data     (i_data),
+    .o_data     (o_data),
+    .we         (we)
+);
+
+// Клавиатура
 // ---------------------------------------------------------------------
 
 wire [7:0] ps2_data;
@@ -131,10 +211,6 @@ keyboard KEYBOARD
     .received_data      (ps2_data),    // Принятые данные
     .received_data_en   (ps2_hit),     // Нажата клавиша
 );
-
-always @(posedge clock_50)
-    if (ps2_hit)
-        cga_cursor <= cga_cursor + 1;
 
 endmodule
 

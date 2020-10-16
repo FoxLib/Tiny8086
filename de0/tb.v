@@ -19,7 +19,7 @@ reg  [ 7:0] i_data;
 wire [ 7:0] o_data;
 wire        we;
 
-initial $readmemh("program.hex", ram, 16'h0000);
+initial $readmemh("program.hex", ram, 20'hF8000);
 
 /* Формируется логика чтения и записи в память */
 always @(posedge clock) begin
