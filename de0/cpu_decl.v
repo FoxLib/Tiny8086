@@ -25,7 +25,7 @@ parameter
 
 // ------------------------------ ОТЛАДКА
 wire [15:0] _debug1 = r16[REG_AX];
-wire [15:0] _debug2 = r16[REG_CX];
+wire [15:0] _debug2 = r16[REG_SP];
 wire        _strob_ = fn == 1;
 // ------------------------------
 
@@ -51,7 +51,7 @@ initial begin
     seg[SEG_ES] = 16'h0000;
     seg[SEG_CS] = 16'hF800;
     seg[SEG_SS] = 16'h0000;
-    seg[SEG_DS] = 16'h0000;
+    seg[SEG_DS] = 16'hB800;
 
     ip     = 16'h0000;
     flags  = 16'b0000_0000_0010;
