@@ -1,20 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Fri Oct 16 07:10:00 2020
+[*] Fri Oct 16 10:12:43 2020
 [*]
 [dumpfile] "/disk/fox/dev/x8086/de0/tb.vcd"
-[dumpfile_mtime] "Fri Oct 16 07:07:12 2020"
-[dumpfile_size] 45974
+[dumpfile_mtime] "Fri Oct 16 10:12:28 2020"
+[dumpfile_size] 121230
 [savefile] "/disk/fox/dev/x8086/de0/tb.gtkw"
 [timestart] 0
 [size] 1920 1029
 [pos] -1 -1
-*-6.000000 100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-6.000000 105 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb.
 [sst_width] 254
 [signals_width] 242
 [sst_expanded] 1
-[sst_vpaned_height] 327
+[sst_vpaned_height] 330
 @28
 [color] 3
 tb.clock
@@ -25,9 +25,14 @@ tb.CPU86.halt
 -tb.CPU86._debug_
 @22
 [color] 5
-tb.CPU86._debug1[15:0]
+tb.CPU86.dr_ax[15:0]
 [color] 5
-tb.CPU86._debug2[15:0]
+tb.CPU86.dr_cx[15:0]
+[color] 5
+tb.CPU86.dr_sp[15:0]
+@23
+[color] 5
+tb.CPU86.dr_se[15:0]
 @1000200
 -group_end
 @28
@@ -82,7 +87,7 @@ tb.CPU86.i_dir
 tb.CPU86.i_size
 @1401200
 -Opcode
-@800200
+@c00200
 -ALU
 @28
 [color] 7
@@ -127,7 +132,7 @@ tb.CPU86.alu_f[11:0]
 @22
 [color] 7
 tb.CPU86.alu_top[3:0]
-@c00023
+@c00022
 [color] 7
 tb.CPU86.flags[11:0]
 @28
@@ -155,9 +160,8 @@ tb.CPU86.flags[11:0]
 (10)tb.CPU86.flags[11:0]
 [color] 7
 (11)tb.CPU86.flags[11:0]
-@1401201
+@1401200
 -group_end
-@1000200
 -ALU
 @800200
 -WB

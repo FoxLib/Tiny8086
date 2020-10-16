@@ -25,8 +25,10 @@ parameter
     DIV    = 9; // Деление 8 или 16 бит
 
 // ------------------------------ ОТЛАДКА
-wire [15:0] _debug1 = r16[REG_CX];
-wire [15:0] _debug2 = seg[SEG_CS];
+wire [15:0] dr_ax = r16[REG_AX];
+wire [15:0] dr_cx = r16[REG_CX];
+wire [15:0] dr_sp = r16[REG_SP];
+wire [15:0] dr_se = seg[SEG_DS];
 wire        _strob_ = fn == 1;
 // ------------------------------
 

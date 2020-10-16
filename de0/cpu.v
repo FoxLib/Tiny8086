@@ -101,10 +101,11 @@ always @(posedge clock) begin
                 end
                 // PUSH r
                 8'b01010xxx: begin fn <= PUSH; wb_data <= r16[i_data[2:0]]; end
-                // POP r|s|f
+                // POP r|s|f; RET [i]
                 8'b01011xxx,
                 8'b000xx111,
-                8'b10011101: begin fn <= POP; fnext <= INSTR; end
+                8'b10011101,
+                8'b1100001x: begin fn <= POP; fnext <= INSTR; end
                 // PUSH s
                 8'b000xx110: begin fn <= PUSH; wb_data <= seg[i_data[4:3]]; end
                 // PUSHF
@@ -129,6 +130,8 @@ always @(posedge clock) begin
                 // LOOP|NZ|Z
                 8'b1110000x,
                 8'b11100010: begin fn <= INSTR; i_size <= 1; wb_reg <= REG_CX; wb_data <= r16[REG_CX] - 1; wb <= 1; end
+                // MOV s,rm
+                8'b10001110: begin fn <= MODRM; i_size <= 1; end
                 // Переход к исполнению инструкции
                 default: begin fn <= INSTR;
 
@@ -461,6 +464,37 @@ always @(posedge clock) begin
                 else
                     ip <= ip + 1;
 
+            end
+            8'b11101000: case (s3) // CALL b16
+
+                0: begin s3 <= 1; ea <= i_data; ip <= ip + 1; end
+                1: begin fn <= PUSH; wb_data <= ip + 1; ip <= ip + 1 + {i_data, ea[7:0]}; end
+
+            endcase
+            8'b11000011: begin fn <= START; // RET
+                ip <= wb_data;
+            end
+            8'b11000010: case (s3) // RET i16
+
+                0: begin s3 <= 1; ea <= i_data; ip <= ip + 1; end
+                1: begin
+
+                    i_size  <= 1;
+                    ip      <= wb_data;
+                    wb_data <= r16[REG_SP] + {i_data, ea[7:0]};
+                    wb_reg  <= REG_SP;
+                    wb      <= 1;
+                    fn      <= START;
+
+                 end
+
+            endcase
+            8'b10001100: begin fn <= WBACK; // MOV rm,s
+                wb_data <= seg[modrm[4:3]];
+                i_size  <= 1;
+            end
+            8'b10001110: begin fn <= START; // MOV s,rm
+                seg[modrm[4:3]] <= op2;
             end
 
         endcase

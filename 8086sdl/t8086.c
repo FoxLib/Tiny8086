@@ -483,7 +483,7 @@ void step() {
         case 0xC2: case 0xC3: {
 
             i_tmp  = pop();
-            if (opcode_id == 0xC2) regs16[REG_SP] += fetch(1);
+            if (opcode_id == 0xC2) regs16[REG_SP] += fetch(2);
             reg_ip = i_tmp;
             break;
         }
@@ -511,7 +511,7 @@ void step() {
             i_op1 = pop();
             i_op2 = pop();
 
-            if (opcode_id == 0xCA) regs16[REG_SP] += fetch(1);
+            if (opcode_id == 0xCA) regs16[REG_SP] += fetch(2);
 
             reg_ip = i_op1;
             regs16[REG_CS] = i_op2;
@@ -833,8 +833,8 @@ int main(int argc, char* argv[]) {
 
             ms_prevtime = time_curr;
 
-            // Исполнение порции инструкции (256x50=12khz)
-            for (int i = 0; i < 256; i++) {
+            // Исполнение порции инструкции x 50
+            for (int i = 0; i < 20000; i++) {
                 step();
             }
 
