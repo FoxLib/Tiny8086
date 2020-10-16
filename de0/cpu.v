@@ -496,6 +496,17 @@ always @(posedge clock) begin
             8'b10001110: begin fn <= START; // MOV s,rm
                 seg[modrm[4:3]] <= op2;
             end
+            8'b10011010: case (s3) // CALLF b16
+
+                0: begin ip <= ip + 1; op1[ 7:0] <= i_data; s3 <= 1; end
+                1: begin ip <= ip + 1; op1[15:8] <= i_data; s3 <= 2; end
+                2: begin ip <= ip + 1; op2[ 7:0] <= i_data; s3 <= 3; end
+                3: begin ip <= ip + 1; op2[15:8] <= i_data; s3 <= 4;
+                         fn <= PUSH; wb_data <= seg[SEG_CS]; fnext <= INSTR; end
+                4: begin fn <= PUSH; wb_data <= ip; s3 <= 5; fnext <= INSTR; end
+                5: begin ip <= op1; seg[SEG_CS] <= op2; fn <= START; end
+
+            endcase
 
         endcase
 
