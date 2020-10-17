@@ -1,6 +1,6 @@
 
         org     0
-        xlatb
+        int     5
         hlt
 bm:     retf    $0304
 @@:     loopnz  @b

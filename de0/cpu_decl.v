@@ -69,14 +69,14 @@ initial begin
 
     segment_id = SEG_DS;
 
-    bus = 0; modrm   = 0; busen = 0;
-    fn  = 0; i_size  = 0; halt  = 0;
-    s1  = 0; i_dir   = 0; s4 = 0;
-    wb  = 0; wf      = 0; s5 = 0;
-    alu = 0; wb_data = 0;
+    bus = 0; modrm   = 0; busen  = 0;
+    fn  = 0; i_size  = 0; halt   = 0;
+    s1  = 0; i_dir   = 0; s4     = 0;
+    wb  = 0; wf      = 0; s5     = 0;
+    alu = 0; wb_data = 0; intr   = 0;
     op1 = 0; wb_flag = 0;
     op2 = 0; wb_reg  = 0;
-    we  = 0; s2      = 0; s3 = 0;
+    we  = 0; s2      = 0; s3     = 0;
 
     irq_accept = 0;
     trace_ff   = 0;
@@ -117,3 +117,4 @@ reg [ 2:0]  alu;            // Выбор АЛУ режима
 reg         halt;           // Процессор остановлен
 reg         trace_ff;       // FlipFlop для Trace, чтобы исполнялась 1 инструкция
 reg         irq_accept;     // Если irq_accept != irq_signal, есть IRQ на входе
+reg [ 7:0]  intr;           // Номер вызываемого прерывания для INTR

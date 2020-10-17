@@ -1,20 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Sat Oct 17 04:46:04 2020
+[*] Sat Oct 17 05:10:44 2020
 [*]
 [dumpfile] "/disk/fox/dev/x8086/de0/tb.vcd"
-[dumpfile_mtime] "Sat Oct 17 04:45:51 2020"
-[dumpfile_size] 44435
+[dumpfile_mtime] "Sat Oct 17 05:10:21 2020"
+[dumpfile_size] 45818
 [savefile] "/disk/fox/dev/x8086/de0/tb.gtkw"
 [timestart] 0
 [size] 1920 1029
 [pos] -1 -1
-*-6.000000 126 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-6.000000 75 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb.
 [sst_width] 254
 [signals_width] 242
 [sst_expanded] 1
-[sst_vpaned_height] 342
+[sst_vpaned_height] 345
 @28
 [color] 3
 tb.clock
@@ -67,7 +67,6 @@ tb.CPU86.we
 @22
 [color] 5
 tb.CPU86.fn[3:0]
-@23
 [color] 5
 tb.CPU86.fnext[3:0]
 @28
@@ -218,8 +217,11 @@ tb.CPU86.i_size
 tb.CPU86.i_dir
 @1000200
 -WB
-@c00200
+@800200
 -IRQ
+@23
+[color] 5
+tb.CPU86.intr[7:0]
 @28
 tb.CPU86.trace_ff
 tb.CPU86.irq_signal
@@ -227,7 +229,7 @@ tb.CPU86.irq_accept
 @22
 [color] 5
 tb.CPU86.irq_id[7:0]
-@1401200
+@1000200
 -IRQ
 [pattern_trace] 1
 [pattern_trace] 0

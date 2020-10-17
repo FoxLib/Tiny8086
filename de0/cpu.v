@@ -14,8 +14,8 @@ module cpu
 
 `include "cpu_decl.v"
 
-// Выбор текущего адреса
-assign address = bus ? {seg[segment_id], 4'h0} + ea : {seg[SEG_CS], 4'h0} + ip;
+// Выбор текущего адреса, segment_id[2] = 1 означает прерывание
+assign address = bus ? {(segment_id[2] ? 16'h0000 : seg[segment_id]), 4'h0} + ea : {seg[SEG_CS], 4'h0} + ip;
 
 // Вычисление условий
 wire [7:0] branches = {
@@ -172,6 +172,10 @@ always @(posedge clock) begin
                 8'b11010111: begin fn <= INSTR; ea <= r16[REG_BX] + r16[REG_AX][7:0]; bus <= 1; end
                 // LES|LDS r,m
                 8'b1100010x: begin fn <= MODRM; i_size <= 1; i_dir <= 1; end
+                // INT 1,3,4
+                8'b11001100: begin fn <= INTR; intr <= 3; end // INT 3
+                8'b11001110: begin fn <= flags[OF] ? INTR : START; intr <= 4; end // INTO
+                8'b11110001: begin fn <= INTR; intr <= 1; end // INT 1
                 // Переход к исполнению инструкции
                 default: begin fn <= INSTR;
 
@@ -617,6 +621,10 @@ always @(posedge clock) begin
                 i_size  <= 0;
                 wb      <= 1;
             end
+            8'b11001101: begin fn <= INTR;  // INT i
+                intr <= i_data;
+                ip   <= ip + 1;
+            end
 
         endcase
 
@@ -625,10 +633,20 @@ always @(posedge clock) begin
         EXTEND: begin
         end
 
-        // Прерывание
+        // Прерывание intr
         // -------------------------------------------------------------
-        INTR: begin
-        end
+        INTR: case (s2)
+
+            0: begin s2 <= 1;  fn <= PUSH; wb_data <= flags; fnext <= INTR; end
+            1: begin s2 <= 2;  fn <= PUSH; wb_data <= seg[SEG_CS]; end
+            2: begin s2 <= 3;  fn <= PUSH; wb_data <= ip; end
+            3: begin s2 <= 4;  ea <= {intr, 2'b00}; segment_id[2] <= 1; bus <= 1; end
+            4: begin s2 <= 5;  ea <= ea + 1; ip[ 7:0] <= i_data; end
+            5: begin s2 <= 6;  ea <= ea + 1; ip[15:8] <= i_data; end
+            6: begin s2 <= 7;  ea <= ea + 1; seg[SEG_CS][ 7:0] <= i_data; end
+            7: begin bus <= 0; ea <= ea + 1; seg[SEG_CS][15:8] <= i_data; fn <= START; end
+
+        endcase
 
         // Сохранение данных [wb_data, i_size, i_dir, modrm]
         // -------------------------------------------------------------
