@@ -7,6 +7,14 @@ module cpu
     output  reg  [ 7:0] o_data,
     output  reg         we,
 
+    // Порты ввода-вывода
+    output  reg  [15:0] port_address,
+    output  reg         port_write,
+    output  reg         port_read,
+    input   wire [ 7:0] port_in,
+    output  reg  [ 7:0] port_out,
+    input   wire        port_ready,
+
     // PIC: Программируемый контроллер прерываний
     input   wire        irq_signal,         // Счетчик IRQ (0 или 1)
     input   wire [ 7:0] irq_id              // Номер IRQ (0..255)
@@ -32,6 +40,8 @@ always @(posedge clock) begin
 
     wb <= 0; // Запись в регистр
     wf <= 0; // Запись флагов
+    port_read   <= 0; // Строб чтения из порта
+    port_write  <= 0; // Строб записи в порт
 
     case (fn)
 
@@ -129,7 +139,7 @@ always @(posedge clock) begin
                 8'b000xx111, // POP s
                 8'b10011101, // POPF
                 8'b1100101x, // RETF [i]
-                8'b10001111, // POP rm
+                8'b1x001111, // POP rm | IRET
                 8'b1100001x: begin fn <= POP; fnext <= INSTR; end // RET [i]
                 // PUSH s
                 8'b000xx110: begin fn <= PUSH; wb_data <= seg[i_data[4:3]]; end
@@ -577,6 +587,13 @@ always @(posedge clock) begin
                 end
 
             endcase
+            8'b11001111: case (s3)          // IRET
+
+                0: begin s3 <= 1; fn <= POP; ip <= wb_data; end
+                1: begin s3 <= 2; fn <= POP; seg[SEG_CS] <= wb_data; end
+                2: begin fn <= START; wb_flag <= {wb_data[11:2], 1'b1, wb_data[0]}; wf <= 1; end
+
+            endcase
             8'b10001100: begin fn <= WBACK; // MOV rm,s
                 wb_data <= seg[modrm[4:3]];
                 i_size  <= 1;
@@ -625,6 +642,35 @@ always @(posedge clock) begin
                 intr <= i_data;
                 ip   <= ip + 1;
             end
+            8'b1110x10x: case (s3)          // IN a,p
+
+                // Чтение номера порта
+                0: begin s3 <= 1;
+
+                    port_address <= opcode[3] ? r16[REG_DX] : i_data;
+                    if (opcode[3] == 0) ip <= ip + 1;
+                    busen <= 0;
+
+                end
+
+                // Чтение, ожидание результата 1 такт
+                1: begin s3 <= 2; port_read <= 1; end
+                2: begin s3 <= 3; end
+
+                // Запись ответа в AL|AH
+                3: begin
+
+                    if (i_size) begin s3 <= 1; busen <= 1; end
+                    else fn <= START;
+
+                    i_size  <= 0;
+                    wb_reg  <= busen ? REG_AH : REG_AL;
+                    wb_data <= port_in;
+                    wb      <= 1;
+
+                end
+
+            endcase
 
         endcase
 

@@ -189,15 +189,23 @@ end
 cpu CPU
 (
     // Главный интерфейс
-    .clock      (clock_25 & locked),
-    .address    (address),
-    .i_data     (i_data),
-    .o_data     (o_data),
-    .we         (we),
+    .clock          (clock_25 & locked),
+    .address        (address),
+    .i_data         (i_data),
+    .o_data         (o_data),
+    .we             (we),
 
     // PIC
-    .irq_signal (1'b0),
-    .irq_id     (irq_id),
+    .irq_signal     (1'b0),
+    .irq_id         (irq_id),
+
+    // Порты
+    .port_address   (port_address),
+    .port_write     (port_write),
+    .port_read      (port_read),
+    .port_in        (port_in),
+    .port_out       (port_out),
+    .port_ready     (port_ready)
 );
 
 // PIC
@@ -219,6 +227,33 @@ keyboard KEYBOARD
     .PS2_DAT            (PS2_DAT),     // Данные с PS/2
     .received_data      (ps2_data),    // Принятые данные
     .received_data_en   (ps2_hit),     // Нажата клавиша
+);
+
+// ---------------------------------------------------------------------
+// Контроллер портов-ввода вывода
+// ---------------------------------------------------------------------
+
+wire [15:0] port_address;
+wire [ 7:0] port_in;
+wire [ 7:0] port_out;
+wire        port_write;
+wire        port_read;
+wire        port_ready;
+
+ctl_port CTLPORT
+(
+    .clock_cpu      (clock_25),
+    .port_address   (port_address),
+    .port_in        (port_in),
+    .port_out       (port_out),
+    .port_write     (port_write),
+    .port_read      (port_read),
+    .port_ready     (port_ready),
+
+    // Клавиатура
+    .clock_50       (clock_50),
+    .kb_hit         (ps2_hit),
+    .kb_data        (ps2_data)
 );
 
 endmodule
@@ -316,4 +351,5 @@ endmodule
 
 // Модуль процессора
 `include "../cpu.v"
+`include "../ctl_port.v"
 

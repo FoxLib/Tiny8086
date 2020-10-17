@@ -1,25 +1,26 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Sat Oct 17 05:10:44 2020
+[*] Sat Oct 17 10:28:39 2020
 [*]
 [dumpfile] "/disk/fox/dev/x8086/de0/tb.vcd"
-[dumpfile_mtime] "Sat Oct 17 05:10:21 2020"
-[dumpfile_size] 45818
+[dumpfile_mtime] "Sat Oct 17 10:25:27 2020"
+[dumpfile_size] 52882
 [savefile] "/disk/fox/dev/x8086/de0/tb.gtkw"
-[timestart] 0
+[timestart] 370
 [size] 1920 1029
 [pos] -1 -1
-*-6.000000 75 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-6.000000 799 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb.
 [sst_width] 254
 [signals_width] 242
 [sst_expanded] 1
-[sst_vpaned_height] 345
+[sst_vpaned_height] 348
 @28
 [color] 3
 tb.clock
 [color] 4
 tb.clock25
+tb.CTLPORT.clock_50
 tb.CPU86.halt
 @800200
 -tb.CPU86._debug_
@@ -62,7 +63,7 @@ tb.CPU86.ea[15:0]
 tb.CPU86.we
 @1000200
 -Address
-@800200
+@c00200
 -Subroutines
 @22
 [color] 5
@@ -80,9 +81,9 @@ tb.CPU86.s3[2:0]
 tb.CPU86.s4[2:0]
 [color] 5
 tb.CPU86.s5[2:0]
-@1000200
+@1401200
 -Subroutines
-@800200
+@c00200
 -Opcode
 @22
 tb.CPU86.opcode[8:0]
@@ -90,9 +91,9 @@ tb.CPU86.modrm[7:0]
 @28
 tb.CPU86.i_dir
 tb.CPU86.i_size
-@1000200
+@1401200
 -Opcode
-@c00200
+@c00201
 -ALU
 @28
 [color] 7
@@ -167,8 +168,9 @@ tb.CPU86.flags[11:0]
 (11)tb.CPU86.flags[11:0]
 @1401200
 -group_end
+@1401201
 -ALU
-@800200
+@c00200
 -WB
 @28
 [color] 2
@@ -215,11 +217,11 @@ tb.CPU86.wb_reg[2:0]
 tb.CPU86.i_size
 [color] 7
 tb.CPU86.i_dir
-@1000200
+@1401200
 -WB
-@800200
+@c00200
 -IRQ
-@23
+@22
 [color] 5
 tb.CPU86.intr[7:0]
 @28
@@ -229,7 +231,33 @@ tb.CPU86.irq_accept
 @22
 [color] 5
 tb.CPU86.irq_id[7:0]
-@1000200
+@1401200
 -IRQ
+@c00200
+-Port
+@22
+[color] 5
+tb.CTLPORT.port_address[15:0]
+[color] 5
+tb.CPU86.port_in[7:0]
+[color] 5
+tb.CPU86.port_out[7:0]
+@28
+tb.CPU86.port_read
+tb.CPU86.port_write
+@22
+[color] 5
+tb.CTLPORT.kb_data[7:0]
+[color] 5
+tb.CTLPORT.kb_scancode[7:0]
+@28
+tb.CTLPORT.kb_flipflop_1
+tb.CTLPORT.kb_flipflop_2
+tb.CTLPORT.kb_hit
+[color] 2
+tb.CTLPORT.kb_latch
+tb.CTLPORT.kb_unpress
+@1401200
+-Port
 [pattern_trace] 1
 [pattern_trace] 0
