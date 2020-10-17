@@ -717,9 +717,50 @@ always @(posedge clock) begin
 
                 endcase
 
+            endcase
+            8'b1111111x: case (modrm[5:3])  // Grp#4|5
+
+                // INC|DEC rm
+                0, 1: case (s3)
+
+                    0: begin s3 <= 1; op2 <= 1; alu <= modrm[3] ? ALU_SUB : ALU_ADD; end
+                    1: begin fn <= WBACK; wb_data <= alu_r; wf <= 1; wb_flag <= alu_f; end
+
+                endcase
+
+                // CALL rm
+                2: begin ip <= op1; wb_data <= ip; fn <= i_size ? PUSH : UNDEF; end
+
+                // CALL far rm
+                3: case (s3)
+
+                    0: begin s3 <= 1; ea <= ea + 1; ip <= i_data; op1 <= ip; op2 <= seg[SEG_CS]; if (i_size == 0) fn <= UNDEF; end
+                    1: begin s3 <= 2; ea <= ea + 1; ip[15:8] <= i_data; end
+                    2: begin s3 <= 3; ea <= ea + 1; seg[SEG_CS][7:0] <= i_data; fnext <= INSTR; end
+                    3: begin s3 <= 4; fn <= PUSH; seg[SEG_CS][15:8] <= i_data; wb_data <= op2;  end
+                    4: begin s3 <= 5; fn <= PUSH; wb_data <= op1; end
+                    5: begin fn <= START; end
+
+                endcase
+
+                // JMP rm
+                4: begin ip <= op1; fn <= i_size ? START : UNDEF; end
+
+                // JMP far rm
+                5: case (s3)
+
+                    0: begin s3 <= 1; ea <= ea + 1; ip <= i_data; if (i_size == 0) fn <= UNDEF; end
+                    1: begin s3 <= 2; ea <= ea + 1; ip[15:8] <= i_data; end
+                    2: begin s3 <= 3; ea <= ea + 1; seg[SEG_CS][7:0] <= i_data; end
+                    3: begin fn <= START;           seg[SEG_CS][15:8] <= i_data;  end
+
+                endcase
+
+                // PUSH rm
+                6: begin wb_data <= op1; fn <= PUSH; end
+                7: begin fn <= UNDEF; end
 
             endcase
-
 
         endcase
 
