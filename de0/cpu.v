@@ -186,6 +186,7 @@ always @(posedge clock) begin
                 8'b11001100: begin fn <= INTR; intr <= 3; end // INT 3
                 8'b11001110: begin fn <= flags[OF] ? INTR : START; intr <= 4; end // INTO
                 8'b11110001: begin fn <= INTR; intr <= 1; end // INT 1
+                8'b1111x11x: begin fn <= MODRM; i_dir <= 0; end
                 // Переход к исполнению инструкции
                 default: begin fn <= INSTR;
 
@@ -693,6 +694,32 @@ always @(posedge clock) begin
                 end
 
             endcase
+            8'b1111011x: case (modrm[5:3])  // Grp#3
+
+                // TEST imm8/16
+                0, 1: case (s3)
+
+                    0: begin s3 <= 1; bus <= 0; alu <= ALU_AND; end
+                    1: begin s3 <= i_size ? 2 : 3; op2 <= i_data; ip <= ip + 1; end
+                    2: begin s3 <= 3; op2[15:8] <= i_data; ip <= ip + 1; end
+                    3: begin wf <= 1; wb_flag <= alu_f; fn <= START; end
+
+                endcase
+
+                // NOT rm
+                2: begin wb_data <= ~op1; fn <= WBACK; end
+
+                // NEG rm
+                3: case (s3)
+
+                    0: begin s3 <= 1; alu <= ALU_SUB; op2 <= op1; op1 <= 0; end
+                    1: begin fn <= WBACK; wb_data <= alu_r; wb_flag <= alu_f; wf <= 1; end
+
+                endcase
+
+
+            endcase
+
 
         endcase
 

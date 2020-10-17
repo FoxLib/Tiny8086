@@ -26,7 +26,7 @@ parameter
 
 // ------------------------------ ОТЛАДКА
 wire [15:0] dr_ax = r16[REG_AX];
-wire [15:0] dr_cx = r16[REG_CX];
+wire [15:0] dr_cx = r16[REG_BX];
 wire [15:0] dr_sp = r16[REG_SP];
 wire [15:0] dr_se = seg[SEG_CS];
 wire        _strob_ = fn == 1;
