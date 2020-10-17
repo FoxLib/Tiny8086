@@ -671,6 +671,28 @@ always @(posedge clock) begin
                 end
 
             endcase
+            8'b1110x11x: case (s3)          // OUT p,a
+
+                0: begin s3 <= 1;
+
+                    port_address <= opcode[3] ? r16[REG_DX] : i_data;
+                    if (opcode[3] == 0) ip <= ip + 1;
+
+                    port_out    <= r16[REG_AX][7:0];
+                    port_write  <= 1;
+
+                    if (i_size == 0) fn <= START;
+
+                end
+                1: begin
+
+                    port_out    <= r16[REG_AX][15:8];
+                    port_write  <= 1;
+                    fn <= START;
+
+                end
+
+            endcase
 
         endcase
 

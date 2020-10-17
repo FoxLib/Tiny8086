@@ -113,7 +113,7 @@ always @(posedge clock_cpu) begin
 
     end
 
-    // Запись в порт
+    // Процессор пишет в порт
     if (port_write) begin
 
         case (port_address)
