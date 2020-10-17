@@ -17,7 +17,7 @@ module cpu
 
     // PIC: Программируемый контроллер прерываний
     input   wire        irq_signal,         // Счетчик IRQ (0 или 1)
-    input   wire [ 7:0] irq_id              // Номер IRQ (0..255)
+    input   wire [ 7:0] irq                 // Номер IRQ (0..255)
 );
 
 `include "cpu_decl.v"
@@ -69,7 +69,7 @@ always @(posedge clock) begin
             if ((irq_accept ^ irq_signal) && flags[IF]) begin
 
                 fn          <= INTR;
-                wb_data     <= irq_id;
+                wb_data     <= irq;
                 irq_accept  <= irq_signal;
 
             end

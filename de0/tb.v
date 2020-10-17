@@ -48,6 +48,13 @@ wire [ 7:0] port_out;
 wire        port_write;
 wire        port_read;
 wire        port_ready;
+// ---------------------------------------------------------------------
+reg         kb_hit     = 0;
+reg  [7:0]  kb_data    = 0;
+// ---------------------------------------------------------------------
+wire        irq_signal;
+wire [7:0]  irq;
+// ---------------------------------------------------------------------
 
 ctl_port CTLPORT
 (
@@ -62,24 +69,21 @@ ctl_port CTLPORT
     // Клавиатура
     .clock_50       (clock50),
     .kb_hit         (kb_hit),
-    .kb_data        (kb_data)
+    .kb_data        (kb_data),
+
+    // PIC
+    .irq_signal     (irq_signal),
+    .irq            (irq)
 );
 
-// ---------------------------------------------------------------------
-wire [7:0]  irq_id = 0;
-wire        irq_signal = 0;
-// ---------------------------------------------------------------------
-reg         kb_hit = 0;
-reg  [7:0]  kb_data = 0;
-// ---------------------------------------------------------------------
-
+// Реализация процессора
 cpu CPU86
 (
-    .clock      (clock25),
-    .address    (address),
-    .i_data     (i_data),
-    .o_data     (o_data),
-    .we         (we),
+    .clock          (clock25),
+    .address        (address),
+    .i_data         (i_data),
+    .o_data         (o_data),
+    .we             (we),
 
     // Порты
     .port_address   (port_address),
@@ -91,7 +95,7 @@ cpu CPU86
 
     // PIC
     .irq_signal     (irq_signal),
-    .irq_id         (irq_id)
+    .irq            (irq)
 );
 
 endmodule

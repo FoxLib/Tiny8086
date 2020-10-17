@@ -196,8 +196,8 @@ cpu CPU
     .we             (we),
 
     // PIC
-    .irq_signal     (1'b0),
-    .irq_id         (irq_id),
+    .irq_signal     (irq_signal),
+    .irq            (irq),
 
     // Порты
     .port_address   (port_address),
@@ -211,7 +211,8 @@ cpu CPU
 // PIC
 // ---------------------------------------------------------------------
 
-wire [7:0] irq_id;
+wire [7:0] irq;
+wire       irq_signal;
 
 // Клавиатура
 // ---------------------------------------------------------------------
@@ -253,7 +254,11 @@ ctl_port CTLPORT
     // Клавиатура
     .clock_50       (clock_50),
     .kb_hit         (ps2_hit),
-    .kb_data        (ps2_data)
+    .kb_data        (ps2_data),
+
+    // PIC
+    .irq_signal     (irq_signal),
+    .irq            (irq)
 );
 
 endmodule

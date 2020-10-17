@@ -16,22 +16,44 @@ module ctl_port
     // Клавиатура
     input   wire        clock_50,
     input   wire        kb_hit,
-    input   wire [ 7:0] kb_data
+    input   wire [ 7:0] kb_data,
 
+    // PIC
+    output  wire        irq_signal,
+    output  wire [ 7:0] irq
 );
 
 initial port_in    = 8'hFF;
 initial port_ready = 1;
 
+assign  irq_signal = pic_dev;
+assign  irq        = pic_irq;
+
+// ---------------------------------------------------------------------
+// PIC
+// ---------------------------------------------------------------------
+
+// Маска для аппаратных прерываний
+reg [15:0] pic_irr = 16'b1111_1111_1111_1100;
+
+// Счетчик вызова конкретного прерывания
+reg        pic_dev = 1'b0;
+
+// Номер последнего прерывания
+reg [ 7:0] pic_irq = 8'h00;
+
+// Если =1, то ожидание разблокирование через out $20,$20
+reg        pic_block = 1'b0;
+
 // ---------------------------------------------------------------------
 // Контроллер клавиатуры
 // ---------------------------------------------------------------------
 
-reg [7:0] kb_scancode   = 8'h7F;
-reg       kb_latch      = 0;
-reg       kb_unpress    = 0;
-reg       kb_flipflop_1 = 0;
-reg       kb_flipflop_2 = 0;
+reg [7:0] kb_scancode   = 8'h7F;    // Полученный скан-код от клавиатуры
+reg       kb_latch      = 0;        // Признак наличия новых данных от kbd
+reg       kb_unpress    = 0;        // Клавиша была отпущена (=1)
+reg       kb_flipflop_1 = 0;        // Согласование тактов 50 мгц
+reg       kb_flipflop_2 = 0;        // С тактами 25 мгц
 
 always @(posedge clock_50) begin
 
@@ -62,8 +84,15 @@ always @(posedge clock_cpu) begin
 
     // Если пришли новые данные с клавиатуры
     if (kb_flipflop_1 != kb_flipflop_2) begin
-        kb_flipflop_2 <= kb_flipflop_1;     // Защелкнуть последнее состояние
-        kb_latch      <= 1;                 // Отметить, что данные есть
+
+        // Защелкнуть последнее состояние и отметить что данные есть
+        kb_flipflop_2 <= kb_flipflop_1;
+        kb_latch      <= 1;
+
+        // INT#9 Keyboard Interrupt (вызывается если размаскирован 1-й бит)
+        if (pic_irr[1] == 1'b0 && pic_block == 1'b0)
+        begin pic_dev <= ~pic_dev; pic_irq <= 9; pic_block <= 1'b1; end
+
     end
 
     // Процессор запросил чтение из порта
@@ -79,6 +108,18 @@ always @(posedge clock_cpu) begin
 
             // Неиспользуемый порт
             default: port_in <= 8'hFF;
+
+        endcase
+
+    end
+
+    // Запись в порт
+    if (port_write) begin
+
+        case (port_address)
+
+            // x010_0000 Отсылка EOI Master/Slave не имеет значения
+            16'h20: begin if (port_out[5]) pic_block <= 0; end
 
         endcase
 
