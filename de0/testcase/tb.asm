@@ -1,6 +1,6 @@
 
         org     0
-        call    $f800:bm
+        xlatb
         hlt
 bm:     retf    $0304
 @@:     loopnz  @b

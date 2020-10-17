@@ -121,13 +121,15 @@ always @(posedge clock) begin
                     i_size <= 1;
 
                 end
-                // PUSH r
-                8'b01010xxx: begin fn <= PUSH; wb_data <= r16[i_data[2:0]]; end
+                8'b01010xxx: begin fn <= PUSH; // PUSH r
+                    wb_data <= r16[i_data[2:0]];
+                end
                 // POP xxx
                 8'b01011xxx, // POP r
                 8'b000xx111, // POP s
                 8'b10011101, // POPF
                 8'b1100101x, // RETF [i]
+                8'b10001111, // POP rm
                 8'b1100001x: begin fn <= POP; fnext <= INSTR; end // RET [i]
                 // PUSH s
                 8'b000xx110: begin fn <= PUSH; wb_data <= seg[i_data[4:3]]; end
@@ -166,6 +168,8 @@ always @(posedge clock) begin
                 8'b11100010: begin fn <= INSTR; i_size <= 1; wb_reg <= REG_CX; wb_data <= r16[REG_CX] - 1; wb <= 1; end
                 // MOV s,rm
                 8'b10001110: begin fn <= MODRM; i_size <= 1; end
+                // XLATB
+                8'b11010111: begin fn <= INSTR; ea <= r16[REG_BX] + r16[REG_AX][7:0]; bus <= 1; end
                 // LES|LDS r,m
                 8'b1100010x: begin fn <= MODRM; i_size <= 1; i_dir <= 1; end
                 // Переход к исполнению инструкции
@@ -386,6 +390,7 @@ always @(posedge clock) begin
             end
             8'b0111xxxx: begin              // Jccc
 
+                // Проверка на выполнение условия в branches
                 if (branches[ opcode[3:1] ] ^ opcode[0])
                     ip <= ip + 1 + signex;
                 else
@@ -471,8 +476,13 @@ always @(posedge clock) begin
             end
             8'b1010100x: case (s3)          // TEST a,i
 
+                // Считывание младшего байта
                 0: begin s3 <= i_size ? 1 : 2; alu <= ALU_AND; op1 <= r16[REG_AX]; op2 <= i_data; ip <= ip + 1; end
+
+                // Если i_size, считывание старшего байта
                 1: begin s3 <= 2; op2[15:8] <= i_data; ip <= ip + 1; end
+
+                // Запись результата в АЛУ
                 2: begin wf <= 1; wb_flag <= alu_f; fn <= START; end
 
             endcase
@@ -485,6 +495,7 @@ always @(posedge clock) begin
             endcase
             8'b11101010: case (s3)          // JMP far
 
+                // Прочитаьть 4 байта для нового CS:IP
                 0: begin ip <= ip + 1; s3 <= 1; ea <= i_data; end
                 1: begin ip <= ip + 1; s3 <= 2; ea[15:8] <= i_data; end
                 2: begin ip <= ip + 1; s3 <= 3; op1 <= i_data; end
@@ -493,9 +504,12 @@ always @(posedge clock) begin
             endcase
             8'b111000xx: begin fn <= START; // LOOP[NZ|Z], JCXZ
 
-                if (opcode[1:0] == 2'b11) // JCXZ
+                // JCXZ
+                if (opcode[1:0] == 2'b11)
                     ip <= ip + 1 + (r16[REG_CX] == 0 ? signex : 0);
-                else if (r16[REG_CX] && (opcode[1] || flags[ZF] == opcode[0])) // LOOP, LOOPNZ, LOOPZ
+                // LOOP, LOOPNZ, LOOPZ
+                // Если бит 1 равен 1, то ZF=bit[0] не имеет значения
+                else if (r16[REG_CX] && (opcode[1] || flags[ZF] == opcode[0]))
                     ip <= ip + 1 + signex;
                 else
                     ip <= ip + 1;
@@ -512,7 +526,10 @@ always @(posedge clock) begin
             end
             8'b11000010: case (s3)          // RET i16
 
+                // Младший байт
                 0: begin s3 <= 1; ea <= i_data; ip <= ip + 1; end
+
+                // Старший байт
                 1: begin fn <= START;
 
                     i_size  <= 1;
@@ -532,6 +549,7 @@ always @(posedge clock) begin
             endcase
             8'b11001010: case (s3)          // RETF i16
 
+                // Младший байт
                 0: begin s3 <= 1;
 
                     fn  <= POP;
@@ -540,6 +558,8 @@ always @(posedge clock) begin
                     ip  <= ip + 1;
 
                 end
+
+                // Старший байт
                 1: begin fn <= START;
 
                     i_size  <= 1;
@@ -578,6 +598,25 @@ always @(posedge clock) begin
                 2: begin seg[ opcode[0] ? SEG_DS : SEG_ES ] <= {i_data, wb_data[7:0]}; fn <= START; end
 
             endcase
+            8'b10001111: case (s3)          // POP rm
+
+                0: begin s3 <= 1; busen <= 0; fn <= MODRM; i_dir <= 0; end
+                1: begin bus <= 1; fn <= WBACK; fnext <= START; end
+
+            endcase
+            8'b011010x0: case (s3)          // PUSH i
+
+                0: begin s3 <= opcode[1] ? 2 : 1; wb_data <= signex; ip <= ip + 1; end
+                1: begin s3 <= 2; wb_data[15:8] <= i_data; ip <= ip + 1; end
+                2: begin fn <= PUSH; fnext <= START; end
+
+            endcase
+            8'b11010111: begin fn <= START; // XLATB
+                wb_reg  <= REG_AX;
+                wb_data <= i_data;
+                i_size  <= 0;
+                wb      <= 1;
+            end
 
         endcase
 
