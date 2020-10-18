@@ -1,20 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Sat Oct 17 11:36:09 2020
+[*] Sun Oct 18 03:22:33 2020
 [*]
 [dumpfile] "/disk/fox/dev/x8086/de0/tb.vcd"
-[dumpfile_mtime] "Sat Oct 17 11:29:05 2020"
-[dumpfile_size] 109356
+[dumpfile_mtime] "Sun Oct 18 03:19:58 2020"
+[dumpfile_size] 53350
 [savefile] "/disk/fox/dev/x8086/de0/tb.gtkw"
-[timestart] 103
+[timestart] 163
 [size] 1920 1029
 [pos] -1 -1
-*-6.000000 255 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-6.000000 435 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb.
 [sst_width] 254
 [signals_width] 242
 [sst_expanded] 1
-[sst_vpaned_height] 351
+[sst_vpaned_height] 354
 @28
 [color] 3
 tb.clock
@@ -22,7 +22,7 @@ tb.clock
 tb.clock25
 tb.CTLPORT.clock_50
 tb.CPU86.halt
-@c00201
+@800200
 -tb.CPU86._debug_
 @22
 [color] 5
@@ -33,35 +33,36 @@ tb.CPU86.dr_cx[15:0]
 tb.CPU86.dr_sp[15:0]
 [color] 5
 tb.CPU86.dr_se[15:0]
-@1401201
+@1000200
 -group_end
 @28
 [color] 4
 tb.CPU86._strob_
-@c00200
+@800200
 -Address
 @28
 [color] 2
 tb.CPU86.bus
+@23
+[color] 7
+tb.CPU86.i_data[7:0]
 @22
 [color] 6
 tb.CPU86.address[19:0]
 [color] 7
 tb.CPU86.ip[15:0]
-[color] 7
-tb.CPU86.i_data[7:0]
-[color] 6
-tb.CPU86.o_data[7:0]
 @28
 [color] 6
 tb.CPU86.segment_id[2:0]
 @22
 [color] 6
 tb.CPU86.ea[15:0]
+[color] 6
+tb.CPU86.o_data[7:0]
 @28
 [color] 3
 tb.CPU86.we
-@1401200
+@1000200
 -Address
 @c00200
 -Subroutines
@@ -105,7 +106,7 @@ tb.CPU86.i_dir
 tb.CPU86.i_size
 @1401200
 -Opcode
-@c00200
+@800200
 -ALU
 @28
 [color] 7
@@ -180,8 +181,9 @@ tb.CPU86.flags[11:0]
 (11)tb.CPU86.flags[11:0]
 @1401200
 -group_end
+@1000200
 -ALU
-@c00200
+@800200
 -WB
 @28
 [color] 2
@@ -228,7 +230,7 @@ tb.CPU86.wb_reg[2:0]
 tb.CPU86.i_size
 [color] 7
 tb.CPU86.i_dir
-@1401200
+@1000200
 -WB
 @c00200
 -IRQ

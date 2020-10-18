@@ -1,6 +1,6 @@
 
         org     0
-        neg     bx
+        push    word [cs:bx]
 @@:     in      al, $64
         and     al, 1
         je      @b
