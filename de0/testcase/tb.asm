@@ -1,6 +1,6 @@
 
         org     0
-        push    word [cs:bx]
+        rol     ax, cl
 @@:     in      al, $64
         and     al, 1
         je      @b

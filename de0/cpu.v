@@ -40,8 +40,8 @@ always @(posedge clock) begin
 
     wb <= 0; // Запись в регистр
     wf <= 0; // Запись флагов
-    port_read   <= 0; // Строб чтения из порта
-    port_write  <= 0; // Строб записи в порт
+    port_read  <= 0; // Строб чтения из порта
+    port_write <= 0; // Строб записи в порт
 
     case (fn)
 
@@ -186,7 +186,9 @@ always @(posedge clock) begin
                 8'b11001100: begin fn <= INTR; intr <= 3; end // INT 3
                 8'b11001110: begin fn <= flags[OF] ? INTR : START; intr <= 4; end // INTO
                 8'b11110001: begin fn <= INTR; intr <= 1; end // INT 1
-                8'b1111x11x: begin fn <= MODRM; i_dir <= 0; end
+                8'b1111x11x, // Grp#4|5
+                8'b1100000x, // Сдвиги
+                8'b110100xx: begin fn <= MODRM; i_dir <= 0; end
                 // Переход к исполнению инструкции
                 default: begin fn <= INSTR;
 
@@ -643,6 +645,37 @@ always @(posedge clock) begin
                 intr <= i_data;
                 ip   <= ip + 1;
             end
+            8'b1100000x,
+            8'b110100xx: case (s3)          // Grp#2 Сдвиги
+
+                // Выбор второго операнда
+                0: begin s3 <= 1;
+
+                    alu <= modrm[5:3];
+
+                    if (opcode[4]) op2 <= (opcode[1] ? r16[REG_CX][3:0] : 1);
+                    else begin op2 <= i_data[3:0]; ip <= ip + 1; end
+
+                end
+
+                // Процедура сдвига на 0..15 шагов
+                1: begin
+
+                    if (op2) begin
+
+                        op1 <= rot_r;
+                        wf  <= 1;
+                        wb_flag <= rot_f;
+
+                    end
+                    // Запись результата
+                    else begin wb_data <= op1; fn <= WBACK; end
+
+                    op2 <= op2 - 1;
+
+                end
+
+            endcase
             8'b1110x10x: case (s3)          // IN a,p
 
                 // Чтение номера порта
@@ -939,6 +972,58 @@ always @* begin
     alu_f[SF] = alu_r[alu_top];
     alu_f[ZF] = (i_size ? alu_r[15:0] : alu_r[7:0]) == 0;
     alu_f[PF] = ~^alu_r[7:0];
+
+end
+
+// ---------------------------------------------------------------------
+// Сдвиговый регистр
+// ---------------------------------------------------------------------
+
+reg [15:0] rot_r;
+reg [11:0] rot_f;
+
+always @* begin
+
+    rot_f = flags;
+
+    case (alu)
+
+        ALU_ROL: rot_r = i_size ? {op1[14:0], op1[15]} : {op1[6:0], op1[7]};
+        ALU_ROR: rot_r = i_size ? {op1[0], op1[15:1]}  : {op1[0], op1[7:1]};
+        ALU_RCL: rot_r = i_size ? {op1[14:0], flags[CF]} : {op1[6:0], flags[CF]};
+        ALU_RCR: rot_r = i_size ? {flags[CF], op1[15:1]}  : {flags[CF], op1[7:1]};
+        ALU_SHL,
+        ALU_SAL: rot_r = i_size ? {op1[14:0], 1'b0} : {op1[6:0], 1'b0};
+        ALU_SHR: rot_r = i_size ? {1'b0, op1[15:1]}  : {1'b0, op1[7:1]};
+        ALU_SHR: rot_r = i_size ? {op1[15], op1[15:1]} : {op1[7], op1[7:1]};
+
+    endcase
+
+    // Флаг CF
+    rot_f[CF] = alu[0] ? op1[0] : op1[alu_top];
+
+    // Флаг OF
+    case (alu)
+
+        ALU_ROL,
+        ALU_RCL,
+        ALU_SAL,
+        ALU_SHL: rot_f[OF] = op1[alu_top] ^ op1[alu_top - 1];
+        ALU_ROR,
+        ALU_RCR: rot_f[OF] = rot_r[alu_top] ^ rot_r[alu_top - 1];
+        ALU_SHR: rot_f[OF] = op1[alu_top];
+        ALU_SAR: rot_f[OF] = 1'b0;
+
+    endcase
+
+    // S, Z, P для 4 инструкции
+    if (alu == ALU_SHL || alu == ALU_SHR || alu == ALU_SAL || alu == ALU_SHR) begin
+
+        rot_f[SF] = rot_r[alu_top];
+        rot_f[ZF] = i_size ? (rot_r[15:0] == 0) : (rot_r[7:0] == 0);
+        rot_f[PF] = ~^rot_r[7:0];
+
+    end
 
 end
 

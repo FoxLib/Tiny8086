@@ -3,10 +3,10 @@ parameter
     SEG_CS = 1, REG_CX = 1, REG_BP = 5, ALU_OR  = 1, ALU_SUB = 5,
     SEG_SS = 2, REG_DX = 2, REG_SI = 6, ALU_ADC = 2, ALU_XOR = 6,
     SEG_DS = 3, REG_BX = 3, REG_DI = 7, ALU_SBB = 3, ALU_CMP = 7,
-    REG_AL = 0, REG_AH = 4,
-    REG_CL = 1, REG_CH = 5,
-    REG_DL = 2, REG_DH = 6,
-    REG_BL = 3, REG_BH = 7;
+    REG_AL = 0, REG_AH = 4, ALU_ROL = 0, ALU_SHL = 4,
+    REG_CL = 1, REG_CH = 5, ALU_ROR = 1, ALU_SHR = 5,
+    REG_DL = 2, REG_DH = 6, ALU_RCL = 2, ALU_SAL = 6,
+    REG_BL = 3, REG_BH = 7, ALU_RCR = 3, ALU_SAR = 7;
 
 parameter
     CF = 0, PF = 2, AF = 4,  ZF = 6, SF = 7,
@@ -43,8 +43,8 @@ reg [15:0] ip;
 
 initial begin
 
-    r16[REG_AX] = 16'h30FF;
-    r16[REG_CX] = 16'hFFFA;
+    r16[REG_AX] = 16'h3082;
+    r16[REG_CX] = 16'hFFF3;
     r16[REG_DX] = 16'h1A3F;
     r16[REG_BX] = 16'h0001;
     r16[REG_SP] = 16'h0000;
