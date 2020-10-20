@@ -931,6 +931,47 @@ always @(posedge clock) begin
                 end
 
             endcase
+            8'b1010111x: case (s3)          // SCASx
+
+                0: begin s3 <= 1;
+
+                    bus <= 1;
+                    alu <= ALU_SUB;
+                    op1 <= r16[REG_AX];
+                    ea  <= r16[REG_DI];
+                    segment_id <= SEG_ES;
+
+                end
+                1: begin s3 <= i_size ? 2 : 3; op2 <= i_data; ea <= ea + 1; end
+                2: begin s3 <= 3; op2[15:8] <= i_data; end
+
+                // Инкремент или декремент SI
+                3: begin s3 <= 4;
+
+                    wf      <= 1;
+                    wb_flag <= alu_f;
+                    bus     <= 0;
+                    wb      <= 1;
+                    wb_reg  <= REG_SI;
+                    wb_data <= flags[DF] ? r16[REG_SI] - (opcode[0] + 1) : r16[REG_SI] + (opcode[0] + 1);
+                    i_size  <= 1;
+
+                end
+
+                // Инкремент или декремент DI
+                4: begin
+
+                    wb      <= 1;
+                    rep_ft  <= 1;       // Проверять на REPNZ или REPZ
+                    wb_reg  <= REG_DI;
+                    wb_data <= flags[DF] ? r16[REG_DI] - (opcode[0] + 1) : r16[REG_DI] + (opcode[0] + 1);
+
+                    // Использование REP:
+                    fn  <= rep[1] ? REPF : START;
+
+                end
+
+            endcase
 
         endcase
 
