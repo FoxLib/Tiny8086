@@ -27,8 +27,8 @@ parameter
     UNDEF  = 11; // Неизвестная инструкция
 
 // ------------------------------ ОТЛАДКА
-wire [15:0] dr_ax = r16[REG_AX];
-wire [15:0] dr_cx = r16[REG_CX];
+wire [15:0] dr_ax = r16[REG_SI];
+wire [15:0] dr_cx = r16[REG_DI];
 wire [15:0] dr_sp = r16[REG_SP];
 wire [15:0] dr_se = seg[SEG_CS];
 wire        _strob_ = fn == 1;
@@ -45,18 +45,18 @@ reg [15:0] ip;
 initial begin
 
     r16[REG_AX] = 16'h3082;
-    r16[REG_CX] = 16'hFFF3;
+    r16[REG_CX] = 16'h0003;
     r16[REG_DX] = 16'h1A3F;
     r16[REG_BX] = 16'h0001;
     r16[REG_SP] = 16'h0000;
     r16[REG_BP] = 16'h0000;
-    r16[REG_SI] = 16'h0001;
-    r16[REG_DI] = 16'h0000;
+    r16[REG_SI] = 16'h0002;
+    r16[REG_DI] = 16'h0001;
 
-    seg[SEG_ES] = 16'h0000;
-    seg[SEG_CS] = 16'hF800;
+    seg[SEG_ES] = 16'hF800;
+    seg[SEG_CS] = 16'hF800; // F800
     seg[SEG_SS] = 16'h0000;
-    seg[SEG_DS] = 16'hB800;
+    seg[SEG_DS] = 16'hF800; // B800
 
     ip     = 16'h0000;
     flags  = 16'b0000_0000_0010;

@@ -1,7 +1,8 @@
 
         org     0
-        mov     cx, 2
-        rep     stosw
+        mov     si, ab
+        mov     di, ac
+        repz    cmpsw
 @@:     in      al, $64
         and     al, 1
         je      @b
@@ -9,3 +10,5 @@
         out     $20, ax
         jmp     $
 
+ab:     db      0xAF, 0x20, 0x40
+ac:     db      0xAF, 0x20, 0x40
