@@ -526,7 +526,7 @@ void autorep(int i_w, int flag_test) {
         }
 
         // Повтор инструкции
-        reg_ip = start_ip;
+        if (regs16[REG_CX]) reg_ip = start_ip;
     }
 }
 

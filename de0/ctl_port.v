@@ -82,6 +82,8 @@ end
 
 always @(posedge clock_cpu) begin
 
+    // @todo Запрос прерывания таймера
+
     // Если пришли новые данные с клавиатуры
     if (kb_flipflop_1 != kb_flipflop_2) begin
 
@@ -90,10 +92,12 @@ always @(posedge clock_cpu) begin
         kb_latch      <= 1;
 
         // INT#9 Keyboard Interrupt (вызывается если размаскирован 1-й бит)
-        if (pic_irr[1] == 1'b0 && pic_block == 1'b0)
+        if ({pic_irr[1], pic_block} == 2'b00)
         begin pic_dev <= ~pic_dev; pic_irq <= 9; pic_block <= 1'b1; end
 
     end
+
+    // Встроить логику обработки нескольких одновременных irq
 
     // Процессор запросил чтение из порта
     if (port_read) begin

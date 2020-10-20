@@ -1,6 +1,7 @@
 
         org     0
-        rol     ax, cl
+        mov     cx, 2
+        rep     stosw
 @@:     in      al, $64
         and     al, 1
         je      @b

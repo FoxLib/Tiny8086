@@ -23,11 +23,12 @@ parameter
     PUSH   = 7, // Запись в стек
     POP    = 8, // Чтение из стека
     DIV    = 9,  // Деление 8 или 16 бит
-    UNDEF  = 10; // Неизвестная инструкция
+    REPF   = 10, // REP[Z|NZ]
+    UNDEF  = 11; // Неизвестная инструкция
 
 // ------------------------------ ОТЛАДКА
 wire [15:0] dr_ax = r16[REG_AX];
-wire [15:0] dr_cx = r16[REG_BX];
+wire [15:0] dr_cx = r16[REG_CX];
 wire [15:0] dr_sp = r16[REG_SP];
 wire [15:0] dr_se = seg[SEG_CS];
 wire        _strob_ = fn == 1;
@@ -75,12 +76,13 @@ initial begin
     s1  = 0; i_dir   = 0; s4     = 0;
     wb  = 0; wf      = 0; s5     = 0;
     alu = 0; wb_data = 0; intr   = 0;
-    op1 = 0; wb_flag = 0;
+    op1 = 0; wb_flag = 0; rep_ft = 0;
     op2 = 0; wb_reg  = 0;
     we  = 0; s2      = 0; s3     = 0;
 
     irq_accept = 0;
     trace_ff   = 0;
+    ip_start   = 0;
 
     port_address = 0;
     port_out     = 0;
@@ -96,6 +98,7 @@ wire [15:0] signex = {{8{i_data[7]}}, i_data};
 // ---------------------------------------------------------------------
 
 reg [ 8:0]  opcode;
+reg [15:0]  ip_start;       // Для REP:
 reg [ 3:0]  fn;             // Главное состояние процессора
 reg [ 3:0]  fnext;          // fn <- fnext после исполения процедуры
 reg [ 2:0]  s1;             // Процедура ModRM
@@ -121,6 +124,7 @@ reg [ 2:0]  wb_reg;         // Номер регистра (0..7)
 reg [11:0]  wb_flag;        // Какие флаги писать
 reg [ 2:0]  alu;            // Выбор АЛУ режима
 reg         halt;           // Процессор остановлен
+reg         rep_ft;         // =1 Если надо проверить REPZ/REPNZ
 reg         trace_ff;       // FlipFlop для Trace, чтобы исполнялась 1 инструкция
 reg         irq_accept;     // Если irq_accept != irq_signal, есть IRQ на входе
 reg [ 7:0]  intr;           // Номер вызываемого прерывания для INTR

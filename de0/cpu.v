@@ -57,11 +57,13 @@ always @(posedge clock) begin
             rep         <= 2'b0;    // Нет префикса REP:
             ea          <= 0;       // Эффективный адрес
             fnext       <= START;   // Возврат по умолчанию
+            rep_ft      <= 0;       // =0 REP, =1 REPZ|NZ
             we          <= 0;       // Разрешение записи
             i_dir       <= 0;       // Ширина операнда 0=8, 1=16
             i_size      <= 0;       // Направление 0=[rm,r], 1=[r,rm]
             wb_data     <= 0;       // Данные на запись (modrm | reg)
             wb_reg      <= 0;       // Номер регистра на запись
+            ip_start    <= ip;      // Для REP:
             s1 <= 0; s2 <= 0;
             s3 <= 0; s4 <= 0;
 
@@ -792,6 +794,39 @@ always @(posedge clock) begin
                 7: begin fn <= UNDEF; end
 
             endcase
+            8'b1010101x: case (s3)          // STOSx
+
+                0: begin // STOSB
+
+                    s3  <= i_size ? 1 : 2;
+                    bus <= 1;
+                    we  <= 1;
+                    ea  <= r16[REG_DI];
+                    o_data      <= r16[REG_AX][7:0];
+                    segment_id  <= SEG_ES;
+
+                end
+                1: begin // STOSW
+
+                    s3 <= 2;
+                    we <= 1;
+                    ea <= ea + 1;
+                    o_data <= r16[REG_AX][15:8];
+
+                end
+                2: begin
+
+                    we <= 0;
+                    wb <= 1;
+                    fn <= rep[1] ? REPF : START;
+
+                    wb_reg  <= REG_DI;
+                    wb_data <= flags[DF] ? r16[REG_DI] - (i_size + 1) : r16[REG_DI] + (i_size + 1);
+                    i_size  <= 1;
+
+                end
+
+            endcase
 
         endcase
 
@@ -897,6 +932,26 @@ always @(posedge clock) begin
 
             1: begin s4 <= 2; wb_data[ 7:0] <= i_data; ea <= ea + 1; end
             2: begin s4 <= 0; wb_data[15:8] <= i_data; bus <= 0; fn <= fnext; end
+
+        endcase
+
+        // Выполнение инструкции REP
+        REPF: case (s4)
+
+            // Уменьшить CX - 1
+            0: begin s4 <= 1; wb_reg <= REG_CX; wb_data <= r16[REG_CX] - 1; wb <= 1; i_size <= 1; end
+            1: begin
+
+                // CX=0, повтор закончен
+                if (r16[REG_CX] == 0) fn <= START;
+                // REPNZ|REPZ
+                else if (rep_ft) begin if (rep[0] == flags[ZF]) ip <= ip_start; end
+                // REP:
+                else ip <= ip_start;
+
+                fn <= START;
+
+            end
 
         endcase
 
