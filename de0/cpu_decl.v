@@ -54,9 +54,9 @@ initial begin
     r16[REG_DI] = 16'h0001;
 
     seg[SEG_ES] = 16'hF800;
-    seg[SEG_CS] = 16'hF800; // F800
+    seg[SEG_CS] = 16'hF800;
     seg[SEG_SS] = 16'h0000;
-    seg[SEG_DS] = 16'hF800; // B800
+    seg[SEG_DS] = 16'hB800;
 
     ip     = 16'h0000;
     flags  = 16'b0000_0000_0010;
