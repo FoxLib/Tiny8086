@@ -109,7 +109,8 @@ always @(posedge clock) begin
                 // FS, GS, opsize, adsize
                 8'b0110010x,
                 8'b0110011x, /* begin fn <= UNDEF; end */
-                // LOCK:
+                // LOCK: FWAIT
+                8'b10011011,
                 8'b11110000: begin fn <= LOAD; end
                 // ALU rm | ALU a,imm
                 8'b00xxx0xx: begin fn <= MODRM; alu <= i_data[5:3]; end
