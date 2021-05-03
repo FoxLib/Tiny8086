@@ -1,0 +1,100 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Sat Jul 11 05:05:26 2020
+[*]
+[dumpfile] "/disk/fox/dev/fpgacpu/x86/mc3/main.vcd"
+[dumpfile_mtime] "Sat Jul 11 05:04:49 2020"
+[dumpfile_size] 86478
+[savefile] "/disk/fox/dev/fpgacpu/x86/mc3/main.gtkw"
+[timestart] 0
+[size] 1920 1029
+[pos] -1 -1
+*-6.000000 105 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] main.
+[treeopen] main.IntelCore.
+[sst_width] 243
+[signals_width] 194
+[sst_expanded] 1
+[sst_vpaned_height] 309
+@28
+[color] 2
+main.clk
+[color] 2
+main.IntelCore.clock
+@800200
+-mem
+@28
+[color] 3
+main.IntelCore.swi
+@22
+main.IntelCore.address[19:0]
+@23
+main.IntelCore.data[7:0]
+@22
+main.IntelCore.seg[15:0]
+main.IntelCore.eff[15:0]
+main.IntelCore.out[7:0]
+@28
+main.IntelCore.wren
+@1000200
+-mem
+@800200
+-state
+@22
+[color] 7
+main.IntelCore.opcode[7:0]
+@28
+[color] 7
+main.IntelCore.sub[2:0]
+[color] 7
+main.IntelCore.fn[2:0]
+main.IntelCore.dir
+main.IntelCore.bit16
+@c00022
+main.IntelCore.modrm[7:0]
+@28
+(0)main.IntelCore.modrm[7:0]
+(1)main.IntelCore.modrm[7:0]
+(2)main.IntelCore.modrm[7:0]
+(3)main.IntelCore.modrm[7:0]
+(4)main.IntelCore.modrm[7:0]
+(5)main.IntelCore.modrm[7:0]
+(6)main.IntelCore.modrm[7:0]
+(7)main.IntelCore.modrm[7:0]
+@1401200
+-group_end
+@22
+main.IntelCore.wb[15:0]
+@1000200
+-state
+@800200
+-alu
+@22
+main.IntelCore.alu[3:0]
+main.IntelCore.op1[15:0]
+main.IntelCore.op2[15:0]
+main.IntelCore.ArithLogicUnit.result[16:0]
+main.IntelCore.ArithLogicUnit.flags_out[11:0]
+@1000200
+-alu
+@22
+main.IntelCore.__debug[15:0]
+@c00022
+main.IntelCore.flags[11:0]
+@28
+(0)main.IntelCore.flags[11:0]
+(1)main.IntelCore.flags[11:0]
+(2)main.IntelCore.flags[11:0]
+(3)main.IntelCore.flags[11:0]
+(4)main.IntelCore.flags[11:0]
+(5)main.IntelCore.flags[11:0]
+(6)main.IntelCore.flags[11:0]
+(7)main.IntelCore.flags[11:0]
+(8)main.IntelCore.flags[11:0]
+(9)main.IntelCore.flags[11:0]
+(10)main.IntelCore.flags[11:0]
+(11)main.IntelCore.flags[11:0]
+@1401200
+-group_end
+[pattern_trace] 1
+[pattern_trace] 0

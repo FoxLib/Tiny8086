@@ -1,0 +1,105 @@
+-- Copyright (C) 1991-2010 Altera Corporation
+-- Your use of Altera Corporation's design tools, logic functions 
+-- and other software and tools, and its AMPP partner logic 
+-- functions, and any output files from any of the foregoing 
+-- (including device programming or simulation files), and any 
+-- associated documentation or information are expressly subject 
+-- to the terms and conditions of the Altera Program License 
+-- Subscription Agreement, Altera MegaCore Function License 
+-- Agreement, or other applicable license agreement, including, 
+-- without limitation, that your use is for the sole purpose of 
+-- programming logic devices manufactured by Altera and sold by 
+-- Altera or its authorized distributors.  Please refer to the 
+-- applicable agreement for further details.
+
+-- Quartus II generated Memory Initialization File (.mif)
+
+WIDTH=8;
+DEPTH=16384;
+
+ADDRESS_RADIX=HEX;
+DATA_RADIX=HEX;
+
+CONTENT BEGIN
+	0000  :   87;
+	0001  :   DB;
+	0002  :   BC;
+	0003  :   00;
+	0004  :   C0;
+	0005  :   B8;
+	0006  :   20;
+	0007  :   07;
+	0008  :   E8;
+	0009  :   22;
+	000A  :   00;
+	000B  :   BF;
+	000C  :   00;
+	[000D..000E]  :   B0;
+	000F  :   00;
+	0010  :   89;
+	0011  :   05;
+	0012  :   40;
+	[0013..0014]  :   47;
+	0015  :   20;
+	0016  :   C0;
+	0017  :   75;
+	0018  :   F7;
+	0019  :   BF;
+	001A  :   80;
+	001B  :   B2;
+	001C  :   B4;
+	001D  :   17;
+	001E  :   E4;
+	001F  :   64;
+	0020  :   24;
+	0021  :   01;
+	0022  :   74;
+	0023  :   FA;
+	0024  :   E4;
+	0025  :   60;
+	0026  :   89;
+	0027  :   05;
+	0028  :   83;
+	0029  :   C7;
+	002A  :   02;
+	002B  :   EB;
+	002C  :   F1;
+	002D  :   BF;
+	002E  :   00;
+	002F  :   B0;
+	0030  :   B9;
+	0031  :   D0;
+	0032  :   07;
+	0033  :   89;
+	0034  :   05;
+	0035  :   83;
+	0036  :   C7;
+	0037  :   02;
+	0038  :   E2;
+	0039  :   F9;
+	003A  :   C3;
+	003B  :   BA;
+	003C  :   D4;
+	003D  :   03;
+	003E  :   B0;
+	003F  :   0F;
+	0040  :   EE;
+	0041  :   42;
+	0042  :   88;
+	0043  :   D8;
+	0044  :   EE;
+	0045  :   4A;
+	0046  :   B0;
+	0047  :   0E;
+	0048  :   EE;
+	0049  :   42;
+	004A  :   88;
+	004B  :   F8;
+	004C  :   EE;
+	004D  :   C3;
+	[004E..3FEF]  :   00;
+	3FF0  :   E9;
+	3FF1  :   0D;
+	3FF2  :   C0;
+	[3FF3..3FFF]  :   00;
+END;
