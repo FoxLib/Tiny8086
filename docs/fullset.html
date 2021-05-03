@@ -1,0 +1,378 @@
+<html>
+<head>
+    <title>Список инструкций</title>
+    <meta charset="utf8"/>
+</head>
+<style>
+    * { font-size: 16px; font-family: "Ubuntu Mono", Monospace; }
+    table { border-collapse: collapse; }
+    .mrm { background: #afa; }
+    .fpu { background: #ddd; }
+    .pref { background: #ccf; }
+    td > b { font-weight: bold; display: block; }
+    h1 { font-size: 1.6em; }
+    th { background: #eee; }
+    tr { vertical-align: top; }
+</style>
+<body>
+    <h1>Список базовых инструкций</h1>
+    <p>Ревизия 3</p>
+<table cellpadding="8" cellspacing="0" border="1">
+    <tr><th width="32"></th><th width="64">+0</th><th width="64">+1</th><th width="64">+2</th><th width="64">+3</th><th width="64">+4</th><th width="64">+5</th><th width="64">+6</th><th width="64">+7</th></tr>
+    <tr>
+        <th>00</th>
+        <td class="mrm"><b>ADD</b>rm,r8</td>
+        <td class="mrm"><b>ADD</b>rm,r16</td>
+        <td class="mrm"><b>ADD</b>r8,rm</td>
+        <td class="mrm"><b>ADD</b>r16,rm</td>
+        <td><b>ADD</b>al,i8</td>
+        <td><b>ADD</b>ax,i16</td>
+        <td><b>PUSH</b>es</td>
+        <td><b>POP</b>es</td>
+    </tr>
+    <tr>
+        <th>08</th>
+        <td class="mrm"><b>OR</b>rm,r8</td>
+        <td class="mrm"><b>OR</b>rm,r16</td>
+        <td class="mrm"><b>OR</b>r8,rm</td>
+        <td class="mrm"><b>OR</b>r16,rm</td>
+        <td><b>OR</b>al,i8</td>
+        <td><b>OR</b>ax,i16</td>
+        <td><b>PUSH</b>cs</td>
+        <td class="pref"><b>EXT:</b></td>
+    </tr>
+    <tr>
+        <th>10</th>
+        <td class="mrm"><b>ADC</b>rm,r8</td>
+        <td class="mrm"><b>ADC</b>rm,r16</td>
+        <td class="mrm"><b>ADC</b>r8,rm</td>
+        <td class="mrm"><b>ADC</b>r16,rm</td>
+        <td><b>ADC</b>al,i8</td>
+        <td><b>ADC</b>ax,i16</td>
+        <td><b>PUSH</b>ss</td>
+        <td><b>POP</b>ss</td>
+    </tr>
+    <tr>
+        <th>18</th>
+        <td class="mrm"><b>SBB</b>rm,r8</td>
+        <td class="mrm"><b>SBB</b>rm,r16</td>
+        <td class="mrm"><b>SBB</b>r8,rm</td>
+        <td class="mrm"><b>SBB</b>r16,rm</td>
+        <td><b>SBB</b>al,i8</td>
+        <td><b>SBB</b>ax,i16</td>
+        <td><b>PUSH</b>ds</td>
+        <td><b>POP</b>ds</td>
+    </tr>
+    <tr>
+        <th>20</th>
+        <td class="mrm"><b>AND</b>rm,r8</td>
+        <td class="mrm"><b>AND</b>rm,r16</td>
+        <td class="mrm"><b>AND</b>r8,rm</td>
+        <td class="mrm"><b>AND</b>r16,rm</td>
+        <td><b>AND</b>al,i8</td>
+        <td><b>AND</b>ax,i16</td>
+        <td class="pref"><b>ES:</b></td>
+        <td><b>DAA</b></td>
+    </tr>
+    <tr>
+        <th>28</th>
+        <td class="mrm"><b>SUB</b>rm,r8</td>
+        <td class="mrm"><b>SUB</b>rm,r16</td>
+        <td class="mrm"><b>SUB</b>r8,rm</td>
+        <td class="mrm"><b>SUB</b>r16,rm</td>
+        <td><b>SUB</b>al,i8</td>
+        <td><b>SUB</b>ax,i16</td>
+        <td class="pref"><b>CS:</b></td>
+        <td><b>DAS</b></td>
+    </tr>
+    <tr>
+        <th>30</th>
+        <td class="mrm"><b>XOR</b>rm,r8</td>
+        <td class="mrm"><b>XOR</b>rm,r16</td>
+        <td class="mrm"><b>XOR</b>r8,rm</td>
+        <td class="mrm"><b>XOR</b>r16,rm</td>
+        <td><b>XOR</b>al,i8</td>
+        <td><b>XOR</b>ax,i16</td>
+        <td class="pref"><b>SS:</b></td>
+        <td><b>AAA</b></td>
+    </tr>
+    <tr>
+        <th>38</th>
+        <td class="mrm"><b>CMP</b>rm,r8</td>
+        <td class="mrm"><b>CMP</b>rm,r16</td>
+        <td class="mrm"><b>CMP</b>r8,rm</td>
+        <td class="mrm"><b>CMP</b>r16,rm</td>
+        <td><b>CMP</b>al,i8</td>
+        <td><b>CMP</b>ax,i16</td>
+        <td class="pref"><b>DS:</b></td>
+        <td><b>AAS</b></td>
+    </tr>
+
+    <tr>
+        <th>40</th>
+        <td><b>INC</b>ax</td>
+        <td><b>INC</b>cx</td>
+        <td><b>INC</b>dx</td>
+        <td><b>INC</b>bx</td>
+        <td><b>INC</b>sp</td>
+        <td><b>INC</b>bp</td>
+        <td><b>INC</b>si</td>
+        <td><b>INC</b>di</td>
+    </tr>
+    <tr>
+        <th>48</th>
+        <td><b>DEC</b>ax</td>
+        <td><b>DEC</b>cx</td>
+        <td><b>DEC</b>dx</td>
+        <td><b>DEC</b>bx</td>
+        <td><b>DEC</b>sp</td>
+        <td><b>DEC</b>bp</td>
+        <td><b>DEC</b>si</td>
+        <td><b>DEC</b>di</td>
+    </tr>
+    <tr>
+        <th>50</th>
+        <td><b>PUSH</b>ax</td>
+        <td><b>PUSH</b>cx</td>
+        <td><b>PUSH</b>dx</td>
+        <td><b>PUSH</b>bx</td>
+        <td><b>PUSH</b>sp</td>
+        <td><b>PUSH</b>bp</td>
+        <td><b>PUSH</b>si</td>
+        <td><b>PUSH</b>di</td>
+    </tr>
+    <tr>
+        <th>58</th>
+        <td><b>POP</b>ax</td>
+        <td><b>POP</b>cx</td>
+        <td><b>POP</b>dx</td>
+        <td><b>POP</b>bx</td>
+        <td><b>POP</b>sp</td>
+        <td><b>POP</b>bp</td>
+        <td><b>POP</b>si</td>
+        <td><b>POP</b>di</td>
+    </tr>
+    <tr>
+        <th>60</th>
+        <td><b>PUSHA</b></td>
+        <td><b>POPA</b></td>
+        <td class="mrm"><b>BOUND</b> rm,m</td>
+        <td class="mrm"><b>ARPL</b> rm,r16</td>
+        <td class="pref"><b>FS:</b></td>
+        <td class="pref"><b>GS:</b></td>
+        <td class="pref"><b>opsize</b></td>
+        <td class="pref"><b>adsize</b></td>
+    </tr>
+    <tr>
+        <th>68</th>
+        <td><b>PUSH</b>i16</td>
+        <td class="mrm"><b>IMUL</b>r16,rm,i16</td>
+        <td><b>PUSH</b>i8</td>
+        <td class="mrm"><b>IMUL</b>r16,rm,i8</td>
+        <td><b>INSB</b></td>
+        <td><b>INSW</b></td>
+        <td><b>OUTSB</b></td>
+        <td><b>OUTSW</b></td>
+    </tr>
+    <tr>
+        <th>70</th>
+        <td><b>JO</b>b8</td>
+        <td><b>JNO</b>b8</td>
+        <td><b>JC</b>b8</td>
+        <td><b>JNC</b>b8</td>
+        <td><b>JZ</b>b8</td>
+        <td><b>JNZ</b>b8</td>
+        <td><b>JBE</b>b8</td>
+        <td><b>JA</b>b8</td>
+    </tr>
+    <tr>
+        <th>78</th>
+        <td><b>JS</b>b8</td>
+        <td><b>JNS</b>b8</td>
+        <td><b>JP</b>b8</td>
+        <td><b>JNP</b>b8</td>
+        <td><b>JL</b>b8</td>
+        <td><b>JNL</b>b8</td>
+        <td><b>JLE</b>b8</td>
+        <td><b>JG</b>b8</td>
+    </tr>
+    <tr>
+        <th>80</th>
+        <td class="mrm"><b>ARGrp</b>rm,i8</td>
+        <td class="mrm"><b>ARGrp</b>rm,i16</td>
+        <td class="mrm"><b>ARGrp</b>rm,i8</td>
+        <td class="mrm"><b>ARGrp</b>rm,e8</td>
+        <td class="mrm"><b>TEST</b>rm,r8</td>
+        <td class="mrm"><b>TEST</b>rm,r16</td>
+        <td class="mrm"><b>XCHG</b>r16,rm</td>
+        <td class="mrm"><b>XCHG</b>r16,rm</td>
+    </tr>
+    <tr>
+        <th>88</th>
+        <td class="mrm"><b>MOV</b>rm,r8</td>
+        <td class="mrm"><b>MOV</b>rm,r16</td>
+        <td class="mrm"><b>MOV</b>r8,rm</td>
+        <td class="mrm"><b>MOV</b>r16,rm</td>
+        <td class="mrm"><b>MOV</b>rm,sreg</td>
+        <td class="mrm"><b>LEA</b>r16,rm</td>
+        <td class="mrm"><b>MOV</b>sreg,rm</td>
+        <td class="mrm"><b>POP</b>rm16</td>
+    </tr>
+    <tr>
+        <th>90</th>
+        <td><b>NOP</b></td>
+        <td><b>XCHG</b>ax,cx</td>
+        <td><b>XCHG</b>ax,dx</td>
+        <td><b>XCHG</b>ax,bx</td>
+        <td><b>XCHG</b>ax,sp</td>
+        <td><b>XCHG</b>ax,bp</td>
+        <td><b>XCHG</b>ax,si</td>
+        <td><b>XCHG</b>ax,di</td>
+    </tr>
+    <tr>
+        <th>98</th>
+        <td><b>CBW</b></td>
+        <td><b>CWD</b></td>
+        <td><b>CALL</b>s16:o16</td>
+        <td><b>FWAIT</b></td>
+        <td><b>PUSHF</b></td>
+        <td><b>POPF</b></td>
+        <td><b>LAHF</b></td>
+        <td><b>SAHF</b></td>
+    </tr>
+    <tr>
+        <th>A0</th>
+        <td><b>MOV</b>al,[i16]</td>
+        <td><b>MOV</b>ax,[i16]</td>
+        <td><b>MOV</b>[i16],al</td>
+        <td><b>MOV</b>[i16],ax</td>
+        <td><b>MOVSB</b></td>
+        <td><b>MOVSW</b></td>
+        <td><b>CMPSB</b></td>
+        <td><b>CMPSW</b></td>
+    </tr>
+    <tr>
+        <th>A8</th>
+        <td><b>TEST</b>al,i8</td>
+        <td><b>TEST</b>ax,i16</td>
+        <td><b>STOSB</b></td>
+        <td><b>STOSW</b></td>
+        <td><b>LODSB</b></td>
+        <td><b>LODSW</b></td>
+        <td><b>SCASB</b></td>
+        <td><b>SCASW</b></td>
+    </tr>
+    <tr>
+        <th>B0</th>
+        <td><b>MOV</b>al,i8</td>
+        <td><b>MOV</b>cl,i8</td>
+        <td><b>MOV</b>dl,i8</td>
+        <td><b>MOV</b>bl,i8</td>
+        <td><b>MOV</b>ah,i8</td>
+        <td><b>MOV</b>ch,i8</td>
+        <td><b>MOV</b>dh,i8</td>
+        <td><b>MOV</b>bh,i8</td>
+    </tr>
+    <tr>
+        <th>B8</th>
+        <td><b>MOV</b>ax,i16</td>
+        <td><b>MOV</b>cx,i16</td>
+        <td><b>MOV</b>dx,i16</td>
+        <td><b>MOV</b>bx,i16</td>
+        <td><b>MOV</b>sp,i16</td>
+        <td><b>MOV</b>bp,i16</td>
+        <td><b>MOV</b>si,i16</td>
+        <td><b>MOV</b>di,i16</td>
+    </tr>
+    <tr>
+        <th>C0</th>
+        <td class="mrm"><b>SHGrp</b>rm8,i8</td>
+        <td class="mrm"><b>SHGrp</b>rm16,i8</td>
+        <td><b>RET</b>i16</td>
+        <td><b>RET</b></td>
+        <td class="mrm"><b>LES</b>r16,[rm]</td>
+        <td class="mrm"><b>LDS</b>r16,[rm]</td>
+        <td class="mrm"><b>MOV</b>rm,i8</td>
+        <td class="mrm"><b>MOV</b>rm,i16</td>
+    </tr>
+    <tr>
+        <th>C8</th>
+        <td><b>ENTER</b>i16,i8</td>
+        <td><b>LEAVE</b></td>
+        <td><b>RETF</b>i16</td>
+        <td><b>RETF</b></td>
+        <td><b>INT</b>3</td>
+        <td><b>INT</b>i8</td>
+        <td><b>INTO</b></td>
+        <td><b>IRET</b></td>
+    </tr>
+    <tr>
+        <th>D0</th>
+        <td class="mrm"><b>SHGrp</b>rm8,1</td>
+        <td class="mrm"><b>SHGrp</b>rm16,1</td>
+        <td class="mrm"><b>SHGrp</b>rm8,cl</td>
+        <td class="mrm"><b>SHGrp</b>rm16,cl</td>
+        <td><b>AAM</b></td>
+        <td><b>AAD</b></td>
+        <td><b>SALC</b></td>
+        <td><b>XLATB</b></td>
+    </tr>
+    <tr>
+        <th>D8</th>
+        <td class="fpu"><b>FPU0</b></td>
+        <td class="fpu"><b>FPU1</b></td>
+        <td class="fpu"><b>FPU2</b></td>
+        <td class="fpu"><b>FPU3</b></td>
+        <td class="fpu"><b>FPU4</b></td>
+        <td class="fpu"><b>FPU5</b></td>
+        <td class="fpu"><b>FPU6</b></td>
+        <td class="fpu"><b>FPU7</b></td>
+    </tr>
+    <tr>
+        <th>E0</th>
+        <td><b>LOOPNZ</b>b8</td>
+        <td><b>LOOPZ</b>b8</td>
+        <td><b>LOOP</b>b8</td>
+        <td><b>JCXZ</b>b8</td>
+        <td><b>IN</b>al,i8</td>
+        <td><b>IN</b>ax,i8</td>
+        <td><b>OUT</b>i8,al</td>
+        <td><b>OUT</b>i8,ax</td>
+    </tr>
+    <tr>
+        <th>E8</th>
+        <td><b>CALL</b>b16</td>
+        <td><b>JMP</b>b16</td>
+        <td><b>JMP</b>s16:o16</td>
+        <td><b>JMP</b>b8</td>
+        <td><b>IN</b>al,dx</td>
+        <td><b>IN</b>ax,dx</td>
+        <td><b>OUT</b>dx,al</td>
+        <td><b>OUT</b>dx,ax</td>
+    </tr>
+    <tr>
+        <th>F0</th>
+        <td class="pref"><b>LOCK:</b></td>
+        <td><b>INT</b>1</td>
+        <td class="pref"><b>REPNZ</b></td>
+        <td class="pref"><b>REPZ</b></td>
+        <td><b>HLT</b></td>
+        <td><b>CMC</b></td>
+        <td class="mrm"><b>Grp1</b>8*</td>
+        <td class="mrm"><b>Grp1</b>16*</td>
+    </tr>
+    <tr>
+        <th>F8</th>
+        <td><b>CLC</b></td>
+        <td><b>STC</b></td>
+        <td><b>CLI</b></td>
+        <td><b>STI</b></td>
+        <td><b>CLD</b></td>
+        <td><b>STD</b></td>
+        <td class="mrm"><b>Grp2</b>8*</td>
+        <td class="mrm"><b>Grp2</b>16*</td>
+    </tr>
+
+</table>
+</body>
+</html>
