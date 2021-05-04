@@ -29,7 +29,7 @@ end
 // Процессор
 // ---------------------------------------------------------------------
 
-wire [31:0] address;
+wire [19:0] address;
 reg  [ 7:0] bus;
 wire [ 7:0] data;
 wire        locked;
@@ -38,7 +38,8 @@ wire        wreq;
 core88 UnitCPU
 (
     .clock      (clock_25),
-    .locked     (locked),
+    .resetn     (1'b1),
+    .locked     (1'b1),
     .address    (address),
     .bus        (bus),
     .data       (data),
