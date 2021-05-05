@@ -69,9 +69,10 @@ else if (locked) case (main)
         0: begin
 
             modrm <= bus;
+            ip    <= ip + 1;
 
             // Операнд 1
-            case (idir ? bus[2:0] : bus[5:3])
+            case (idir ? bus[5:3] : bus[2:0])
 
                 0: op1 <= isize ? ax : ax[ 7:0];
                 1: op1 <= isize ? cx : cx[ 7:0];
@@ -85,7 +86,7 @@ else if (locked) case (main)
             endcase
 
             // Операнд 2
-            case (idir ? bus[5:3] : bus[2:0])
+            case (idir ? bus[2:0] : bus[5:3])
 
                 0: op2 <= isize ? ax : ax[ 7:0];
                 1: op2 <= isize ? cx : cx[ 7:0];
@@ -98,10 +99,58 @@ else if (locked) case (main)
 
             endcase
 
-            // Если выбраны оба регистра, то вернуться обратно
-            if (bus[7:6] == 2'b11) main <= MAIN;
+            // Вычисление эффективного адреса
+            case (bus[2:0])
 
-            // -- иначе начать считывание из памяти
+                0: ea <= bx + si;
+                1: ea <= bx + di;
+                2: ea <= bp + si;
+                3: ea <= bp + di;
+                4: ea <= si;
+                5: ea <= di;
+                6: ea <= bp;
+                7: ea <= bx;
+
+            endcase
+
+            // Выбор SS: по умолчанию, если возможно
+            if (!sel_seg && (bus[2:0] == 3'h6 && bus[7:6]) || (bus[2:0] == 3'h2) || (bus[2:0] == 3'h3))
+                seg_ea <= seg_ss;
+
+            casex (bus)
+
+                8'b00_xxx_110: begin estate <= 1; ea  <= 0; end
+                8'b00_xxx_xxx: begin estate <= 4; sel <= 1; end
+                8'b01_xxx_xxx: begin estate <= 2; end
+                8'b10_xxx_xxx: begin estate <= 1; end
+                8'b11_xxx_xxx: begin main <= MAIN; end
+
+            endcase
+
+        end
+
+        // Считывание 16-бит displacement
+        1: begin estate <= 2; ip <= ip + 1; ea <= ea + bus; end
+        2: begin estate <= 4; ip <= ip + 1; ea[15:8] <= ea[15:8] + bus; sel <= 1; end
+
+        // Считывание 8-бит displacement
+        3: begin estate <= 4; ip <= ip + 1; ea <= ea + {{8{bus[7]}}, bus[7:0]}; sel <= 1; end
+
+        // Чтение операнда 8bit из памяти
+        4: begin
+
+            if (idir) op2 <= bus; else op1 <= bus;
+            if (isize) begin estate <= 5; ea <= ea + 1; end else main <= MAIN;
+
+        end
+
+        // Чтение операнда 16bit из памяти
+        5: begin
+
+            if (idir) op2[15:8] <= bus; else op1[15:8] <= bus;
+
+            ea   <= ea - 1;
+            main <= MAIN;
 
         end
 
