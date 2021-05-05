@@ -47,9 +47,10 @@ reg [15:0]  op2;
 
 localparam
 
-    PREPARE = 0,
-    MAIN    = 1,
-    FETCHEA = 2;
+    PREPARE = 0,        // Эта подготовки инструкции к исполнению
+    MAIN    = 1,        // Обработка микрокода
+    FETCHEA = 2,        // Считывание ModRM/EA
+    SETEA   = 3;        // Запись в память или регистр
 
 initial data = 8'hFF;
 initial wreq = 0;

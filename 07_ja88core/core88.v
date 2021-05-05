@@ -55,7 +55,7 @@ else if (locked) case (main)
             // АЛУ modrm
             8'b00_xxx_0xx: case (tstate)
 
-                0: begin tstate <= 1; {isize, idir} <= opcode[1:0]; main <= FETCHEA; alumode <= opcode[5:3]; end
+                0: begin tstate <= 1; main <= FETCHEA; {isize, idir} <= opcode[1:0]; alumode <= opcode[5:3]; end
 
             endcase
 
@@ -119,11 +119,11 @@ else if (locked) case (main)
 
             casex (bus)
 
-                8'b00_xxx_110: begin estate <= 1; ea  <= 0; end
-                8'b00_xxx_xxx: begin estate <= 4; sel <= 1; end
-                8'b01_xxx_xxx: begin estate <= 2; end
-                8'b10_xxx_xxx: begin estate <= 1; end
-                8'b11_xxx_xxx: begin main <= MAIN; end
+                8'b00_xxx_110: begin estate <= 1; ea  <= 0; end // disp16
+                8'b00_xxx_xxx: begin estate <= 4; sel <= 1; end // без disp
+                8'b01_xxx_xxx: begin estate <= 3; end // disp8
+                8'b10_xxx_xxx: begin estate <= 1; end // disp16
+                8'b11_xxx_xxx: begin estate <= 0; main <= MAIN; end
 
             endcase
 
@@ -140,7 +140,8 @@ else if (locked) case (main)
         4: begin
 
             if (idir) op2 <= bus; else op1 <= bus;
-            if (isize) begin estate <= 5; ea <= ea + 1; end else main <= MAIN;
+            if (isize) begin estate <= 5; ea <= ea + 1; end
+            else       begin estate <= 0; main <= MAIN; end
 
         end
 
@@ -149,12 +150,16 @@ else if (locked) case (main)
 
             if (idir) op2[15:8] <= bus; else op1[15:8] <= bus;
 
-            ea   <= ea - 1;
-            main <= MAIN;
+            ea     <= ea - 1;
+            main   <= MAIN;
+            estate <= 0;
 
         end
 
     endcase
+
+    // Запись обратно в память или регистр
+    SETEA: begin end
 
 endcase
 

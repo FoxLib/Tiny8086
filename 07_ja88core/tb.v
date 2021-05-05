@@ -18,6 +18,8 @@ initial begin $dumpfile("tb.vcd"); $dumpvars(0, tb); end
 
 reg [7:0] memory[1048576];
 
+initial $readmemh("bios.hex", memory, 20'hF0000);
+
 always @(posedge clock) begin
 
     bus <= memory[address];

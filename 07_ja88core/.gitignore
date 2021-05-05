@@ -19,6 +19,8 @@ greybox_tmp
 *.qqq
 *.jic
 *.map
+/bios/bios.bin
+/bios.hex
 tb.gtkw
 .qsys_edit
 undo_redo.txt
