@@ -43,19 +43,29 @@ else if (locked) case (main)
         casex (opcode)
 
             // ПРЕФИКСЫ:
-            8'h26: begin ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_es; end
-            8'h2E: begin ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_cs; end
-            8'h36: begin ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ss; end
-            8'h3E: begin ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ds; end
-            8'hF2: begin ip <= ip + 1; sel_rep <= 1; end
-            8'hF3: begin ip <= ip + 1; sel_rep <= 2; end
+            8'h26: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_es; end
+            8'h2E: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_cs; end
+            8'h36: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ss; end
+            8'h3E: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ds; end
+            8'hF2: begin opcode <= bus; ip <= ip + 1; sel_rep <= 1; end
+            8'hF3: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2; end
             // Неиспользуемые префиксы
-            8'h0F, 8'hF0, 8'h64, 8'h65, 8'h66, 8'h67: begin ip <= ip + 1; end
+            8'h0F, 8'hF0, 8'h64, 8'h65, 8'h66, 8'h67: begin opcode <= bus; ip <= ip + 1; end
 
             // АЛУ modrm
             8'b00_xxx_0xx: case (tstate)
 
-                0: begin tstate <= 1; main <= FETCHEA; {isize, idir} <= opcode[1:0]; alumode <= opcode[5:3]; end
+                0: begin main <= FETCHEA; tstate <= 1; {idir, isize} <= opcode[1:0]; alumode <= opcode[5:3]; end
+                1: begin
+
+                    tstate <= 2;
+                    flags  <= flags_o;
+
+                    // Запись результата в память или регистр
+                    if (alumode < 7) begin main <= SETEA; wb <= result; end
+
+                end
+                2: begin main <= PREPARE; sel <= 0; end
 
             endcase
 

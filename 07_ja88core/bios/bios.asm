@@ -1,4 +1,4 @@
 
             org     0
 
-            add     ax, bx
+            add     [bx+si+$1234], dx
