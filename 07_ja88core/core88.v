@@ -52,20 +52,39 @@ else if (locked) case (main)
             // Неиспользуемые префиксы
             8'h0F, 8'hF0, 8'h64, 8'h65, 8'h66, 8'h67: begin opcode <= bus; ip <= ip + 1; end
 
-            // АЛУ modrm
+            // ALU modrm
             8'b00_xxx_0xx: case (tstate)
 
-                0: begin main <= FETCHEA; tstate <= 1; {idir, isize} <= opcode[1:0]; alumode <= opcode[5:3]; end
-                1: begin
+                0: begin tstate <= 1; main <= FETCHEA; {idir, isize} <= opcode[1:0]; alumode <= opcode[5:3]; end
+                1: begin tstate <= 2;
 
-                    tstate <= 2;
-                    flags  <= flags_o;
-
-                    // Запись результата в память или регистр
+                    flags <= flags_o;
                     if (alumode < 7) begin main <= SETEA; wb <= result; end
 
                 end
                 2: begin main <= PREPARE; sel <= 0; end
+
+            endcase
+
+            // ALU ac, #
+            8'b00_xxx_10x: case (tstate)
+
+                0: begin tstate <= opcode[0] ? 1 : 2;
+
+                    op1     <= ax;
+                    op2     <= bus;
+                    isize   <= opcode[0];
+                    alumode <= opcode[5:3];
+                    ip      <= ip + 1;
+
+                end
+                1: begin tstate <= 2; op2[15:8] <= bus; ip <= ip + 1; end
+                2: begin main <= PREPARE;
+
+                    flags <= flags_o;
+                    if (alumode < 7) if (isize) ax <= result; else ax[7:0] <= result;
+
+                end
 
             endcase
 
@@ -169,7 +188,57 @@ else if (locked) case (main)
     endcase
 
     // Запись обратно в память или регистр
-    SETEA: begin end
+    // idir=1 запись в регистр modrm[5:3], idir=0 запись в память ea
+    SETEA: case (estate)
+
+        0: begin
+
+            // Запись результата в регистр
+            if (idir || (modrm[7:6] == 2'b11)) begin
+
+                case (idir ? modrm[5:3] : modrm[2:0])
+
+                    0: if (isize) ax <= wb; else ax[ 7:0] <= wb[7:0];
+                    1: if (isize) cx <= wb; else cx[ 7:0] <= wb[7:0];
+                    2: if (isize) dx <= wb; else dx[ 7:0] <= wb[7:0];
+                    3: if (isize) bx <= wb; else bx[ 7:0] <= wb[7:0];
+                    4: if (isize) sp <= wb; else ax[15:8] <= wb[7:0];
+                    5: if (isize) bp <= wb; else cx[15:8] <= wb[7:0];
+                    6: if (isize) si <= wb; else dx[15:8] <= wb[7:0];
+                    7: if (isize) di <= wb; else bx[15:8] <= wb[7:0];
+
+                endcase
+
+                main <= MAIN;
+
+            end
+            // Запись LO-байта в память
+            else begin
+
+                estate <= 1;
+                data   <= wb[7:0];
+                wreq   <= 1;
+
+            end
+
+        end
+
+        // Запись HI-байта или завершение
+        1: begin
+
+            if (isize)
+                 begin estate <= 2; data <= wb[15:8]; ea <= ea + 1; end
+            else begin estate <= 0; wreq <= 0; main <= MAIN; end
+
+        end
+
+        // Завершение записи
+        2: begin estate <= 0; wreq <= 0; main <= MAIN; ea <= ea - 1; end
+
+    endcase
+
+    // PUSH
+    // POP
 
 endcase
 

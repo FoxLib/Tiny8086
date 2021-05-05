@@ -17,9 +17,9 @@ assign result = isize ? res[15:0] : res[7:0];
 reg [16:0] res;
 
 wire parity  = ~^res[7:0];
-wire zerof   = isize ? ~|res : ~|res[7:0];
-wire signf   = res[isize ? 15 : 7];
+wire zerof   = ~(isize ? |res[15:0] : |res[7:0]);
 wire carryf  = res[isize ? 16 : 8];
+wire signf   = res[isize ? 15 : 7];
 wire auxf    = op1[4]^op2[4]^res[4];
 
 // Самая хитрая логика из всего тут
@@ -34,7 +34,7 @@ always @* begin
 
         /* ADD */ 0: res = op1 + op2;
         /* OR  */ 1: res = op1 | op2;
-        /* ADC */ 2: res = op1 - op2 + flags[0];
+        /* ADC */ 2: res = op1 + op2 + flags[0];
         /* SBB */ 3: res = op1 - op2 - flags[0];
         /* AND */ 4: res = op1 & op2;
         /* SUB */ 5,
