@@ -1,7 +1,8 @@
 
             org     0
 
-            inc     si
+            push    si
+            pop     sp
             dec     di
             nop
             nop

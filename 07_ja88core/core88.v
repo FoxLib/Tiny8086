@@ -11,6 +11,8 @@ module core88
 
 `include "decl.v"
 
+wire __m0 = (main == PREPARE);
+
 // Выбор источника памяти
 assign address = sel ? {seg_ea, 4'h0} + ea : {seg_cs, 4'h0} + ip;
 
@@ -150,6 +152,24 @@ else if (locked) case (main)
 
             endcase
 
+            // PUSH r
+            8'b01_010_xxx: case (tstate)
+
+                0: begin tstate <= 1; regn <= opcode[2:0]; isize <= 1'b1; end
+                1: begin tstate <= 2; wb <= regv; main <= PUSH; end
+                2: main <= PREPARE;
+
+            endcase
+
+            // POP r
+            8'b01_011_xxx: case (tstate)
+
+                0: begin tstate <= 1; main <= POP;   {idir, isize} <= 2'b11; end
+                1: begin tstate <= 2; main <= SETEA; modrm[5:3] <= opcode[2:0]; end
+                2: main <= PREPARE;
+
+            endcase
+
         endcase
 
     end
@@ -249,8 +269,11 @@ else if (locked) case (main)
 
     endcase
 
-    // Запись обратно в память или регистр
-    // idir=1 запись `wb` в регистр modrm[5:3], idir=0 запись в память ea
+    // Запись обратно в память или регистр [idir, isize, wb]
+    // * idir  (1 запись `wb` в регистр modrm[5:3])
+    //         (0 запись в память ea)
+    // * isize (0/1)
+    // * wb    (8/16)
     SETEA: case (estate)
 
         0: begin
