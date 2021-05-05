@@ -40,139 +40,135 @@ else if (locked) case (main)
     end
 
     // Исполнение инструкции
-    MAIN: begin
+    MAIN: casex (opcode)
 
-        casex (opcode)
+        // ПРЕФИКСЫ:
+        8'h26: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_es; end
+        8'h2E: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_cs; end
+        8'h36: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ss; end
+        8'h3E: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ds; end
+        8'hF2: begin opcode <= bus; ip <= ip + 1; sel_rep <= 1; end
+        8'hF3: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2; end
 
-            // ПРЕФИКСЫ:
-            8'h26: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_es; end
-            8'h2E: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_cs; end
-            8'h36: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ss; end
-            8'h3E: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ds; end
-            8'hF2: begin opcode <= bus; ip <= ip + 1; sel_rep <= 1; end
-            8'hF3: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2; end
+        // Неиспользуемые префиксы
+        8'h0F, 8'hF0, 8'h64, 8'h65, 8'h66, 8'h67: begin opcode <= bus; ip <= ip + 1; end
 
-            // Неиспользуемые префиксы
-            8'h0F, 8'hF0, 8'h64, 8'h65, 8'h66, 8'h67: begin opcode <= bus; ip <= ip + 1; end
+        // ALU modrm
+        8'b00_xxx_0xx: case (tstate)
 
-            // ALU modrm
-            8'b00_xxx_0xx: case (tstate)
+            0: begin tstate <= 1; main <= FETCHEA; {idir, isize} <= opcode[1:0]; alumode <= opcode[5:3]; end
+            1: begin tstate <= 2;
 
-                0: begin tstate <= 1; main <= FETCHEA; {idir, isize} <= opcode[1:0]; alumode <= opcode[5:3]; end
-                1: begin tstate <= 2;
+                flags <= flags_o;
+                if (alumode < 7) begin main <= SETEA; wb <= result; end
 
-                    flags <= flags_o;
-                    if (alumode < 7) begin main <= SETEA; wb <= result; end
-
-                end
-                2: begin main <= PREPARE; sel <= 0; end
-
-            endcase
-
-            // ALU ac, #
-            8'b00_xxx_10x: case (tstate)
-
-                0: begin tstate <= opcode[0] ? 1 : 2;
-
-                    op1     <= ax;
-                    op2     <= bus;
-                    isize   <= opcode[0];
-                    alumode <= opcode[5:3];
-                    ip      <= ip + 1;
-
-                end
-                1: begin tstate <= 2; op2[15:8] <= bus; ip <= ip + 1; end
-                2: begin main <= PREPARE;
-
-                    flags <= flags_o;
-                    if (alumode < 7) ax <= isize ? result : {ax[15:8], result[7:0]};
-
-                end
-
-            endcase
-
-            // PUSH sr
-            8'b00_0xx_110: case (tstate)
-
-                0: begin tstate <= 1;
-
-                    main <= PUSH;
-                    case (opcode[4:3])
-                        2'b00: wb <= seg_es;
-                        2'b01: wb <= seg_cs;
-                        2'b10: wb <= seg_ss;
-                        2'b11: wb <= seg_ds;
-                    endcase
-
-                end
-
-                1: main <= PREPARE;
-
-            endcase
-
-            // POP sr
-            8'b00_0xx_111: case (tstate)
-
-                0: begin tstate <= 1; main <= POP; end
-                1: begin main <= PREPARE;
-
-                    case (opcode[4:3])
-                        2'b00: seg_es <= wb;
-                        2'b10: seg_ss <= wb;
-                        2'b11: seg_ds <= wb;
-                    endcase
-
-                end
-
-            endcase
-
-            // DAA|DAS|AAA|AAS
-            8'b00_1xx_111: case (tstate)
-
-                0: begin tstate <= 1; op1 <= ax; alumode <= opcode[4:3]; end
-                1: begin main <= PREPARE; flags <= flags_d; ax[7:0] <= daa_r; end
-
-            endcase
-
-            // INC|DEC r
-            8'b01_00x_xxx: case (tstate)
-
-                0: begin tstate <= 1; op2 <= 1;    regn <= opcode[2:0]; isize <= 1'b1; end
-                1: begin tstate <= 2; op1 <= regv; alumode <= opcode[3] ? /*SUB*/ 5 : /*ADD*/ 0; end
-                2: begin tstate <= 3;
-
-                    main    <= SETEA;
-                    wb      <= result;
-                    idir    <= 1'b1;
-                    flags   <= {flags_o[11:1], flags[0]};
-                    modrm[5:3] <= regn;
-
-                end
-                3: main <= PREPARE;
-
-            endcase
-
-            // PUSH r
-            8'b01_010_xxx: case (tstate)
-
-                0: begin tstate <= 1; regn <= opcode[2:0]; isize <= 1'b1; end
-                1: begin tstate <= 2; wb <= regv; main <= PUSH; end
-                2: main <= PREPARE;
-
-            endcase
-
-            // POP r
-            8'b01_011_xxx: case (tstate)
-
-                0: begin tstate <= 1; main <= POP;   {idir, isize} <= 2'b11; end
-                1: begin tstate <= 2; main <= SETEA; modrm[5:3] <= opcode[2:0]; end
-                2: main <= PREPARE;
-
-            endcase
+            end
+            2: begin main <= PREPARE; sel <= 0; end
 
         endcase
 
-    end
+        // ALU ac, #
+        8'b00_xxx_10x: case (tstate)
+
+            0: begin tstate <= opcode[0] ? 1 : 2;
+
+                op1     <= ax;
+                op2     <= bus;
+                isize   <= opcode[0];
+                alumode <= opcode[5:3];
+                ip      <= ip + 1;
+
+            end
+            1: begin tstate <= 2; op2[15:8] <= bus; ip <= ip + 1; end
+            2: begin main <= PREPARE;
+
+                flags <= flags_o;
+                if (alumode < 7) ax <= isize ? result : {ax[15:8], result[7:0]};
+
+            end
+
+        endcase
+
+        // PUSH sr
+        8'b00_0xx_110: case (tstate)
+
+            0: begin tstate <= 1;
+
+                main <= PUSH;
+                case (opcode[4:3])
+                    2'b00: wb <= seg_es;
+                    2'b01: wb <= seg_cs;
+                    2'b10: wb <= seg_ss;
+                    2'b11: wb <= seg_ds;
+                endcase
+
+            end
+
+            1: main <= PREPARE;
+
+        endcase
+
+        // POP sr
+        8'b00_0xx_111: case (tstate)
+
+            0: begin tstate <= 1; main <= POP; end
+            1: begin main <= PREPARE;
+
+                case (opcode[4:3])
+                    2'b00: seg_es <= wb;
+                    2'b10: seg_ss <= wb;
+                    2'b11: seg_ds <= wb;
+                endcase
+
+            end
+
+        endcase
+
+        // DAA|DAS|AAA|AAS
+        8'b00_1xx_111: case (tstate)
+
+            0: begin tstate <= 1; op1 <= ax; alumode <= opcode[4:3]; end
+            1: begin main <= PREPARE; flags <= flags_d; ax[7:0] <= daa_r; end
+
+        endcase
+
+        // INC|DEC r
+        8'b01_00x_xxx: case (tstate)
+
+            0: begin tstate <= 1; op2 <= 1;    regn <= opcode[2:0]; isize <= 1'b1; end
+            1: begin tstate <= 2; op1 <= regv; alumode <= opcode[3] ? /*SUB*/ 5 : /*ADD*/ 0; end
+            2: begin tstate <= 3;
+
+                main    <= SETEA;
+                wb      <= result;
+                idir    <= 1'b1;
+                flags   <= {flags_o[11:1], flags[0]};
+                modrm[5:3] <= regn;
+
+            end
+            3: main <= PREPARE;
+
+        endcase
+
+        // PUSH r
+        8'b01_010_xxx: case (tstate)
+
+            0: begin tstate <= 1; regn <= opcode[2:0]; isize <= 1'b1; end
+            1: begin tstate <= 2; wb <= regv; main <= PUSH; end
+            2: main <= PREPARE;
+
+        endcase
+
+        // POP r
+        8'b01_011_xxx: case (tstate)
+
+            0: begin tstate <= 1; main <= POP;   {idir, isize} <= 2'b11; end
+            1: begin tstate <= 2; main <= SETEA; modrm[5:3] <= opcode[2:0]; end
+            2: main <= PREPARE;
+
+        endcase
+
+    endcase
 
     // Считывание эффективного адреса и регистров
     FETCHEA: case (estate)
