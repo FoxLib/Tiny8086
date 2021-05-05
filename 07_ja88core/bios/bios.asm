@@ -1,7 +1,8 @@
 
             org     0
 
-            or     ax, $1123
+            inc     si
+            dec     di
             nop
             nop
             nop

@@ -49,6 +49,7 @@ else if (locked) case (main)
             8'h3E: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ds; end
             8'hF2: begin opcode <= bus; ip <= ip + 1; sel_rep <= 1; end
             8'hF3: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2; end
+
             // Неиспользуемые префиксы
             8'h0F, 8'hF0, 8'h64, 8'h65, 8'h66, 8'h67: begin opcode <= bus; ip <= ip + 1; end
 
@@ -82,9 +83,70 @@ else if (locked) case (main)
                 2: begin main <= PREPARE;
 
                     flags <= flags_o;
-                    if (alumode < 7) if (isize) ax <= result; else ax[7:0] <= result;
+                    if (alumode < 7) ax <= isize ? result : {ax[15:8], result[7:0]};
 
                 end
+
+            endcase
+
+            // PUSH sr
+            8'b00_0xx_110: case (tstate)
+
+                0: begin tstate <= 1;
+
+                    main <= PUSH;
+                    case (opcode[4:3])
+                        2'b00: wb <= seg_es;
+                        2'b01: wb <= seg_cs;
+                        2'b10: wb <= seg_ss;
+                        2'b11: wb <= seg_ds;
+                    endcase
+
+                end
+
+                1: main <= PREPARE;
+
+            endcase
+
+            // POP sr
+            8'b00_0xx_111: case (tstate)
+
+                0: begin tstate <= 1; main <= POP; end
+                1: begin main <= PREPARE;
+
+                    case (opcode[4:3])
+                        2'b00: seg_es <= wb;
+                        2'b10: seg_ss <= wb;
+                        2'b11: seg_ds <= wb;
+                    endcase
+
+                end
+
+            endcase
+
+            // DAA|DAS|AAA|AAS
+            8'b00_1xx_111: case (tstate)
+
+                0: begin tstate <= 1; op1 <= ax; alumode <= opcode[4:3]; end
+                1: begin main <= PREPARE; flags <= flags_d; ax[7:0] <= daa_r; end
+
+            endcase
+
+            // INC|DEC r
+            8'b01_00x_xxx: case (tstate)
+
+                0: begin tstate <= 1; op2 <= 1;    regn <= opcode[2:0]; isize <= 1'b1; end
+                1: begin tstate <= 2; op1 <= regv; alumode <= opcode[3] ? /*SUB*/ 5 : /*ADD*/ 0; end
+                2: begin tstate <= 3;
+
+                    main    <= SETEA;
+                    wb      <= result;
+                    idir    <= 1'b1;
+                    flags   <= {flags_o[11:1], flags[0]};
+                    modrm[5:3] <= regn;
+
+                end
+                3: main <= PREPARE;
 
             endcase
 
@@ -188,7 +250,7 @@ else if (locked) case (main)
     endcase
 
     // Запись обратно в память или регистр
-    // idir=1 запись в регистр modrm[5:3], idir=0 запись в память ea
+    // idir=1 запись `wb` в регистр modrm[5:3], idir=0 запись в память ea
     SETEA: case (estate)
 
         0: begin
@@ -237,8 +299,25 @@ else if (locked) case (main)
 
     endcase
 
-    // PUSH
-    // POP
+    // Сохранение данных в стек
+    PUSH: case (estate)
+
+        0: begin estate <= 1; sel <= 1; wreq <= 1; ea <= sp - 2; sp <= sp - 2; seg_ea <= seg_ss; data <= wb[7:0]; end
+        1: begin estate <= 2; ea  <= ea + 1; data <= wb[15:8]; end
+        2: begin estate <= 0; sel <= 0; wreq <= 0; main <= MAIN; end
+
+    endcase
+
+    // Извлечение данных из стека
+    POP: case (estate)
+
+        0: begin estate <= 1; sel <= 1; seg_ea <= seg_ss; ea <= sp; sp <= sp + 2; end
+        1: begin estate <= 2; wb <= bus; ea <= ea + 1; end
+        2: begin estate <= 0; wb[15:8] <= bus; sel <= 0; main <= MAIN; end
+
+    endcase
+
+    // INTERRUPT
 
 endcase
 

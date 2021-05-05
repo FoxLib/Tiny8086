@@ -9,7 +9,9 @@ module alu
 
     // Исходящие данные
     output  wire [15:0] result,
-    output  reg  [11:0] flags_o
+    output  reg  [11:0] flags_o,
+    output  reg  [15:0] daa_r,
+    output  reg  [11:0] flags_d
 );
 
 assign result = isize ? res[15:0] : res[7:0];
@@ -28,6 +30,13 @@ wire sub8o   = (op1[ 7] ^ op2[ 7] ^ 0) & (op1[ 7] ^ res[ 7]);
 wire add16o  = (op1[15] ^ op2[15] ^ 1) & (op1[15] ^ res[15]);
 wire sub16o  = (op1[15] ^ op2[15] ^ 0) & (op1[15] ^ res[15]);
 
+reg       daa_a;
+reg       daa_c;
+reg       daa_x;
+reg [7:0] daa_i;
+
+
+// Общие АЛУ
 always @* begin
 
     case (alumode)
@@ -98,6 +107,49 @@ always @* begin
 
     endcase
 
+
+end
+
+// Десятичная коррекция
+always @* begin
+
+    daa_r   = op1[7:0];
+    flags_d = flags;
+
+    case (alumode)
+
+        // DAA
+        0: begin
+
+            daa_c = flags[0];
+            daa_a = flags[4];
+            daa_i = op1[7:0];
+
+            // Младший ниббл
+            if (op1[3:0] > 9 || flags[4]) begin
+                daa_i = op1[7:0] + 6;
+                daa_c = 1;
+                daa_a = 1;
+            end
+
+            daa_r = daa_i;
+            daa_x = daa_c;
+
+            // Старший ниббл
+            if (daa_c || daa_i > 8'h9F) begin
+                daa_r = daa_i + 8'h60;
+                daa_x = 1'b1;
+            end
+
+            flags_d[7] =   daa_r[7];        // S
+            flags_d[6] = ~|daa_r[7:0];      // Z
+            flags_d[4] =   daa_a;           // A
+            flags_d[2] = ~^daa_r[7:0];      // P
+            flags_d[0] =   daa_x;           // C
+
+        end
+
+    endcase
 
 end
 
