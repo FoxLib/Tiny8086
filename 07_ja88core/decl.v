@@ -74,15 +74,15 @@ initial wreq = 0;
 // ---------------------------------------------------------------------
 
 // Выбор регистра
-wire [15:0] regv =
-    regn == 0 ? (isize ? eax[15:0] : eax[ 7:0]) :
-    regn == 1 ? (isize ? ecx[15:0] : ecx[ 7:0]) :
-    regn == 2 ? (isize ? edx[15:0] : edx[ 7:0]) :
-    regn == 3 ? (isize ? ebx[15:0] : ebx[ 7:0]) :
-    regn == 4 ? (isize ? esp[15:0] : eax[15:8]) :
-    regn == 5 ? (isize ? ebp[15:0] : ecx[15:8]) :
-    regn == 6 ? (isize ? esi[15:0] : edx[15:8]) :
-                (isize ? edi[15:0] : ebx[15:8]);
+wire [31:0] regv =
+    regn == 0 ? (isize ? (opsize ? eax : eax[15:0]) : eax[ 7:0]) :
+    regn == 1 ? (isize ? (opsize ? ecx : ecx[15:0]) : ecx[ 7:0]) :
+    regn == 2 ? (isize ? (opsize ? edx : edx[15:0]) : edx[ 7:0]) :
+    regn == 3 ? (isize ? (opsize ? ebx : ebx[15:0]) : ebx[ 7:0]) :
+    regn == 4 ? (isize ? (opsize ? esp : esp[15:0]) : eax[15:8]) :
+    regn == 5 ? (isize ? (opsize ? ebp : ebp[15:0]) : ecx[15:8]) :
+    regn == 6 ? (isize ? (opsize ? esi : esi[15:0]) : edx[15:8]) :
+                (isize ? (opsize ? edi : edi[15:0]) : ebx[15:8]);
 
 // Вычисление условий
 wire [7:0] branches = {

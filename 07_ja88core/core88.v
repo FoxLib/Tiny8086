@@ -209,32 +209,32 @@ else if (locked) case (main)
             // Операнд 1
             case (idir ? bus[5:3] : bus[2:0])
 
-                0: op1 <= isize ? eax[15:0] : eax[ 7:0];
-                1: op1 <= isize ? ecx[15:0] : ecx[ 7:0];
-                2: op1 <= isize ? edx[15:0] : edx[ 7:0];
-                3: op1 <= isize ? ebx[15:0] : ebx[ 7:0];
-                4: op1 <= isize ? esp[15:0] : eax[15:8];
-                5: op1 <= isize ? ebp[15:0] : ecx[15:8];
-                6: op1 <= isize ? esi[15:0] : edx[15:8];
-                7: op1 <= isize ? edi[15:0] : ebx[15:8];
+                0: op1 <= isize ? (opsize ? eax : eax[15:0]) : eax[ 7:0];
+                1: op1 <= isize ? (opsize ? ecx : ecx[15:0]) : ecx[ 7:0];
+                2: op1 <= isize ? (opsize ? edx : edx[15:0]) : edx[ 7:0];
+                3: op1 <= isize ? (opsize ? ebx : ebx[15:0]) : ebx[ 7:0];
+                4: op1 <= isize ? (opsize ? esp : esp[15:0]) : eax[15:8];
+                5: op1 <= isize ? (opsize ? ebp : ebp[15:0]) : ecx[15:8];
+                6: op1 <= isize ? (opsize ? esi : esi[15:0]) : edx[15:8];
+                7: op1 <= isize ? (opsize ? edi : edi[15:0]) : ebx[15:8];
 
             endcase
 
             // Операнд 2
             case (idir ? bus[2:0] : bus[5:3])
 
-                0: op2 <= isize ? eax[15:0] : eax[ 7:0];
-                1: op2 <= isize ? ecx[15:0] : ecx[ 7:0];
-                2: op2 <= isize ? edx[15:0] : edx[ 7:0];
-                3: op2 <= isize ? ebx[15:0] : ebx[ 7:0];
-                4: op2 <= isize ? esp[15:0] : eax[15:8];
-                5: op2 <= isize ? ebp[15:0] : ecx[15:8];
-                6: op2 <= isize ? esi[15:0] : edx[15:8];
-                7: op2 <= isize ? edi[15:0] : ebx[15:8];
+                0: op2 <= isize ? (opsize ? eax : eax[15:0]) : eax[ 7:0];
+                1: op2 <= isize ? (opsize ? ecx : ecx[15:0]) : ecx[ 7:0];
+                2: op2 <= isize ? (opsize ? edx : edx[15:0]) : edx[ 7:0];
+                3: op2 <= isize ? (opsize ? ebx : ebx[15:0]) : ebx[ 7:0];
+                4: op2 <= isize ? (opsize ? esp : esp[15:0]) : eax[15:8];
+                5: op2 <= isize ? (opsize ? ebp : ebp[15:0]) : ecx[15:8];
+                6: op2 <= isize ? (opsize ? esi : esi[15:0]) : edx[15:8];
+                7: op2 <= isize ? (opsize ? edi : edi[15:0]) : ebx[15:8];
 
             endcase
 
-            // Вычисление эффективного адреса
+            // Вычисление эффективного адреса 16 bit
             case (bus[2:0])
 
                 0: ea <= ebx[15:0] + esi[15:0];
@@ -280,16 +280,19 @@ else if (locked) case (main)
 
         end
 
-        // Чтение операнда 16bit из памяти
+        // Чтение операнда 16 бит (память)
         5: begin
 
             if (idir) op2[15:8] <= bus; else op1[15:8] <= bus;
 
-            ea     <= ea - 1;
-            main   <= MAIN;
-            estate <= 0;
+            if (opsize) begin estate <= 6; ea <= ea + 1; end
+            else        begin estate <= 0; ea <= ea - 1; main <= MAIN; end
 
         end
+
+        // Чтение операнда 32 бит (память)
+        6: begin estate <= 7; op2[23:16] <= bus; ea <= ea + 1; end
+        7: begin estate <= 0; op2[31:24] <= bus; ea <= ea - 4; main <= MAIN; end
 
     endcase
 
@@ -307,14 +310,14 @@ else if (locked) case (main)
 
                 case (idir ? modrm[5:3] : modrm[2:0])
 
-                    0: if (isize) eax[15:0] <= wb; else eax[ 7:0] <= wb[7:0];
-                    1: if (isize) ecx[15:0] <= wb; else ecx[ 7:0] <= wb[7:0];
-                    2: if (isize) edx[15:0] <= wb; else edx[ 7:0] <= wb[7:0];
-                    3: if (isize) ebx[15:0] <= wb; else ebx[ 7:0] <= wb[7:0];
-                    4: if (isize) esp[15:0] <= wb; else eax[15:8] <= wb[7:0];
-                    5: if (isize) ebp[15:0] <= wb; else ecx[15:8] <= wb[7:0];
-                    6: if (isize) esi[15:0] <= wb; else edx[15:8] <= wb[7:0];
-                    7: if (isize) edi[15:0] <= wb; else ebx[15:8] <= wb[7:0];
+                    0: if (isize && opsize) eax <= wb; else if (isize) eax[15:0] <= wb; else eax[ 7:0] <= wb[7:0];
+                    1: if (isize && opsize) ecx <= wb; else if (isize) ecx[15:0] <= wb; else ecx[ 7:0] <= wb[7:0];
+                    2: if (isize && opsize) edx <= wb; else if (isize) edx[15:0] <= wb; else edx[ 7:0] <= wb[7:0];
+                    3: if (isize && opsize) ebx <= wb; else if (isize) ebx[15:0] <= wb; else ebx[ 7:0] <= wb[7:0];
+                    4: if (isize && opsize) esp <= wb; else if (isize) esp[15:0] <= wb; else eax[15:8] <= wb[7:0];
+                    5: if (isize && opsize) ebp <= wb; else if (isize) ebp[15:0] <= wb; else ecx[15:8] <= wb[7:0];
+                    6: if (isize && opsize) esi <= wb; else if (isize) esi[15:0] <= wb; else edx[15:8] <= wb[7:0];
+                    7: if (isize && opsize) edi <= wb; else if (isize) edi[15:0] <= wb; else ebx[15:8] <= wb[7:0];
 
                 endcase
 
@@ -341,16 +344,26 @@ else if (locked) case (main)
 
         end
 
-        // Завершение записи
-        2: begin estate <= 0; wreq <= 0; main <= MAIN; ea <= ea - 1; end
+        // Завершение записи 16 bit
+        2: begin
+
+            if (opsize) begin estate <= 3; data <= wb[23:16]; ea <= ea + 1; end
+            else        begin estate <= 0; wreq <= 0; main <= MAIN; ea <= ea - 1; end
+
+        end
+
+        // Завершение записи 32 bit
+        3: begin estate <= 4; data <= wb[31:24]; ea <= ea + 1; end
+        4: begin estate <= 0; wreq <= 0; main <= MAIN; ea <= ea - 3; end
 
     endcase
 
-    // Получение imm8/16
+    // Получение imm8/16/32
     IMMEDIATE: case (estate)
 
         0: begin ip <= ip + 1; wb <= bus; if (isize == 0) main <= MAIN; else begin estate <= 1; end end
         1: begin ip <= ip + 1; wb[15:8] <= bus; estate <= 0; main <= MAIN; end
+        // 2,3
 
     endcase
 
