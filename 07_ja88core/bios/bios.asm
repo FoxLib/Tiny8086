@@ -1,7 +1,7 @@
 
             org     0
 
-            add     ax, $1223
+            push    eax
             push    si
             pop     sp
             dec     di

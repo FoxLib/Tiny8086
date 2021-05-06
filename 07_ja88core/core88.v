@@ -35,6 +35,7 @@ else if (locked) case (main)
         adsize  <= 0;
         sel_seg <= 0;
         sel_rep <= 0;
+        stack32 <= 0;
         seg_ea  <= seg_ds;
         main    <= MAIN;
         tstate  <= 0;
@@ -323,18 +324,18 @@ else if (locked) case (main)
                 main <= MAIN;
 
             end
-            // Запись LO-байта в память
+            // Запись [7:0] в память
             else begin
 
                 estate <= 1;
-                data   <= wb[7:0];
                 wreq   <= 1;
+                data   <= wb[7:0];
 
             end
 
         end
 
-        // Запись HI-байта или завершение
+        // Запись [15:8] или завершение
         1: begin
 
             if (isize)
@@ -360,37 +361,82 @@ else if (locked) case (main)
     // Получение imm8/16/32
     IMMEDIATE: case (estate)
 
-        0: begin ip <= ip + 1; wb <= bus; if (isize == 0) main <= MAIN; else begin estate <= 1; end end
-        1: begin ip <= ip + 1; wb[15:8] <= bus; if (opsize) estate <= 2; else begin estate <= 0; main <= MAIN; end end
+        0: begin ip <= ip + 1; wb        <= bus; if (isize == 0) main <= MAIN; else begin estate <= 1; end end
+        1: begin ip <= ip + 1; wb[ 15:8] <= bus; if (opsize) estate <= 2; else begin estate <= 0; main <= MAIN; end end
         2: begin ip <= ip + 1; wb[23:16] <= bus; estate <= 3; end
         3: begin ip <= ip + 1; wb[31:24] <= bus; estate <= 0; main <= MAIN; end
 
     endcase
 
     // Сохранение данных в стек
+    // Если стек 32-х разрядный, используются 4 байта
     PUSH: case (estate)
 
         0: begin estate <= 1;
 
-            sel       <= 1;
-            wreq      <= 1;
-            ea        <= esp[15:0] - 2;
-            esp[15:0] <= esp[15:0] - 2;
-            seg_ea    <= seg_ss;
-            data      <= wb[7:0];
+            sel     <= 1;
+            wreq    <= 1;
+            seg_ea  <= seg_ss;
+            data    <= wb[7:0];
+
+            if (stack32) begin
+                ea  <= esp - 4;
+                esp <= esp - 4;
+            end
+            else begin
+                ea        <= esp[15:0] - (opsize ? 4 : 2);
+                esp[15:0] <= esp[15:0] - (opsize ? 4 : 2);
+            end
 
         end
-        1: begin estate <= 2; ea  <= ea + 1; data <= wb[15:8]; end
-        2: begin estate <= 0; sel <= 0; wreq <= 0; main <= MAIN; end
+        1: begin estate <= 2; ea <= ea + 1; data <= wb[15:8]; end
+        2: begin
+
+            if (opsize) begin ea <= ea + 1; data <= wb[23:16]; estate <= 3; end
+            else begin
+
+                estate <= 0;
+                sel    <= 0;
+                wreq   <= 0;
+                main   <= MAIN;
+            end
+
+        end
+        3: begin estate <= 4; ea <= ea + 1; data <= wb[31:24];  end
+        4: begin estate <= 0; sel <= 0; wreq <= 0; main <= MAIN; end
 
     endcase
 
     // Извлечение данных из стека
     POP: case (estate)
 
-        0: begin estate <= 1; sel <= 1; seg_ea <= seg_ss; ea <= esp[15:0]; esp[15:0] <= esp[15:0] + 2; end
-        1: begin estate <= 2; wb  <= bus; ea <= ea + 1; end
-        2: begin estate <= 0; wb[15:8] <= bus; sel <= 0; main <= MAIN; end
+        0: begin
+
+            estate  <= 1;
+            sel     <= 1;
+            seg_ea  <= seg_ss;
+
+            if (stack32) begin
+                ea  <= esp - 4;
+                esp <= esp - 4;
+            end
+            else begin
+                ea        <= esp[15:0] - (opsize ? 4 : 2);
+                esp[15:0] <= esp[15:0] - (opsize ? 4 : 2);
+            end
+
+        end
+        1: begin estate <= 2; wb <= bus; ea <= ea + 1; end
+        2: begin
+
+            wb[15:8] <= bus;
+
+            if (opsize) begin estate <= 3; ea <= ea + 1; end
+            else        begin estate <= 0; sel <= 0; main <= MAIN; end
+
+        end
+        3: begin estate <= 4; wb[23:16] <= bus; ea <= ea + 1; end
+        4: begin estate <= 0; wb[31:24] <= bus; sel <= 0; main <= MAIN; end
 
     endcase
 

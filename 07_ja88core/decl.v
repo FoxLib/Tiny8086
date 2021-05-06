@@ -11,7 +11,7 @@ reg [15:0]  seg_fs = 16'h0001;
 reg [15:0]  seg_gs = 16'h1010;
 
 // Регистры
-reg [31:0]  eax = 32'h1234_1234;
+reg [31:0]  eax = 32'h4321_1234;
 reg [31:0]  ebx = 32'hefd0_2342;
 reg [31:0]  ecx = 32'ha1ac_3344;
 reg [31:0]  edx = 32'hab21_6677;
@@ -19,7 +19,7 @@ reg [31:0]  esp = 32'haaa3_5432;
 reg [31:0]  ebp = 32'ha940_5678;
 reg [31:0]  esi = 32'ha580_9ABD;
 reg [31:0]  edi = 32'ha670_EF01;
-reg [15:0]  ip = 0;
+reg [15:0]  ip  = 0;
 reg [11:0]  flags = 0;
 
 reg [15:0]  seg_ea  = 0;
@@ -39,7 +39,8 @@ reg [3:0]   tstate  = 0;
 reg [3:0]   estate  = 0;
 reg [7:0]   opcode  = 0;
 reg [7:0]   modrm   = 0;
-reg         isize   = 0;    // 8|16
+reg         stack32 = 0;    // 16/32
+reg         isize   = 0;    // 8/16
 reg         opsize  = 0;    // 16/32
 reg         adsize  = 0;    // 16/32
 reg         idir    = 0;    // rm,r | r,rm
