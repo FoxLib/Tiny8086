@@ -50,6 +50,10 @@ reg [15:0]  wb      = 0;    // Для записи в reg/rm
 // ---------------------------------------------------------------------
 
 localparam
+    CF = 0, PF = 2, AF = 4,  ZF = 6, SF = 7,
+    TF = 8, IF = 9, DF = 10, OF = 11;
+
+localparam
 
     PREPARE     = 0,        // Эта подготовки инструкции к исполнению
     MAIN        = 1,        // Обработка микрокода
@@ -57,15 +61,17 @@ localparam
     SETEA       = 3,         // Запись в память или регистр
     PUSH        = 4,
     POP         = 5,
-    INTERRUPT   = 6;
+    INTERRUPT   = 6,
+    IMMEDIATE   = 7;
 
 initial data = 8'hFF;
 initial wreq = 0;
 
 // ---------------------------------------------------------------------
-// Выбор регистра
+// Предвычисления
 // ---------------------------------------------------------------------
 
+// Выбор регистра
 wire [15:0] regv =
     regn == 0 ? (isize ? ax : ax[ 7:0]) :
     regn == 1 ? (isize ? cx : cx[ 7:0]) :
@@ -75,6 +81,16 @@ wire [15:0] regv =
     regn == 5 ? (isize ? bp : cx[15:8]) :
     regn == 6 ? (isize ? si : dx[15:8]) :
                 (isize ? di : bx[15:8]);
+
+// Вычисление условий
+wire [7:0] branches = {
+
+    (flags[SF] ^ flags[OF]) | flags[ZF], // 7: (ZF=1) OR (SF!=OF)
+    (flags[SF] ^ flags[OF]),             // 6: SF!=OF
+     flags[PF], flags[SF],               // 5: PF; 4: SF
+     flags[CF] | flags[OF],              // 3: CF != OF
+     flags[ZF], flags[CF], flags[OF]     // 2: OF; 1: CF; 0: ZF
+};
 
 // ---------------------------------------------------------------------
 // Модули

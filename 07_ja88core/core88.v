@@ -70,16 +70,16 @@ else if (locked) case (main)
         // ALU ac, #
         8'b00_xxx_10x: case (tstate)
 
-            0: begin tstate <= opcode[0] ? 1 : 2;
+            0: begin
 
-                op1     <= ax;
-                op2     <= bus;
+                tstate  <= 1;
+                main    <= IMMEDIATE;
                 isize   <= opcode[0];
                 alumode <= opcode[5:3];
-                ip      <= ip + 1;
+                op1     <= ax;
 
             end
-            1: begin tstate <= 2; op2[15:8] <= bus; ip <= ip + 1; end
+            1: begin tstate <= 2; op2 <= wb; end
             2: begin main <= PREPARE;
 
                 flags <= flags_o;
@@ -167,6 +167,19 @@ else if (locked) case (main)
             2: main <= PREPARE;
 
         endcase
+
+        // Jccc b8
+        8'b0111_xxxx: begin
+
+            // Проверка на выполнение условия в branches
+            if (branches[ opcode[3:1] ] ^ opcode[0])
+                ip <= ip + 1 + {{8{bus[7]}}, bus[7:0]};
+            else
+                ip <= ip + 1;
+
+            main <= PREPARE;
+
+        end
 
     endcase
 
@@ -315,6 +328,14 @@ else if (locked) case (main)
 
         // Завершение записи
         2: begin estate <= 0; wreq <= 0; main <= MAIN; ea <= ea - 1; end
+
+    endcase
+
+    // Получение imm8/16
+    IMMEDIATE: case (estate)
+
+        0: begin ip <= ip + 1; wb <= bus; if (isize == 0) main <= MAIN; else begin estate <= 1; end end
+        1: begin ip <= ip + 1; wb[15:8] <= bus; estate <= 0; main <= MAIN; end
 
     endcase
 
