@@ -84,7 +84,7 @@ else if (locked) case (main)
             1: begin tstate <= 2; op2 <= wb; end
             2: begin tstate <= 3; flags <= flags_o;
 
-                main <= alumode == 7 ? SETEA : PREPARE;
+                main <= alumode == 7 ? PREPARE : SETEA;
                 wb   <= result;
                 modrm[5:3] <= 0;
 
@@ -361,8 +361,9 @@ else if (locked) case (main)
     IMMEDIATE: case (estate)
 
         0: begin ip <= ip + 1; wb <= bus; if (isize == 0) main <= MAIN; else begin estate <= 1; end end
-        1: begin ip <= ip + 1; wb[15:8] <= bus; estate <= 0; main <= MAIN; end
-        // 2,3
+        1: begin ip <= ip + 1; wb[15:8] <= bus; if (opsize) estate <= 2; else begin estate <= 0; main <= MAIN; end end
+        2: begin ip <= ip + 1; wb[23:16] <= bus; estate <= 3; end
+        3: begin ip <= ip + 1; wb[31:24] <= bus; estate <= 0; main <= MAIN; end
 
     endcase
 

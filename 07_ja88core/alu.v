@@ -15,22 +15,22 @@ module alu
     output  reg  [11:0] flags_d
 );
 
-// Пока что только 16 битное
-assign result[15:0] = isize ? res[15:0] : res[7:0];
+assign result = isize ? (opsize ? res : res[15:0]) : res[7:0];
 
-reg [16:0] res;
+reg [32:0] res;
+
+// Верхний бит 7, 15 или 31
+wire [3:0] signx = isize ? (opsize ? 31 : 15) : 7;
 
 wire parity  = ~^res[7:0];
-wire zerof   = ~(isize ? |res[15:0] : |res[7:0]);
-wire carryf  = res[isize ? 16 : 8];
-wire signf   = res[isize ? 15 : 7];
+wire zerof   = isize ? (opsize ? ~|res : ~|res[15:0]) : ~|res[7:0];
+wire carryf  = res[signx + 1];
+wire signf   = res[signx];
 wire auxf    = op1[4]^op2[4]^res[4];
 
 // Самая хитрая логика из всего тут
-wire add8o   = (op1[ 7] ^ op2[ 7] ^ 1) & (op1[ 7] ^ res[ 7]);
-wire sub8o   = (op1[ 7] ^ op2[ 7] ^ 0) & (op1[ 7] ^ res[ 7]);
-wire add16o  = (op1[15] ^ op2[15] ^ 1) & (op1[15] ^ res[15]);
-wire sub16o  = (op1[15] ^ op2[15] ^ 0) & (op1[15] ^ res[15]);
+wire add_o   = (op1[isize] ^ op2[isize] ^ 1) & (op1[isize] ^ res[isize]);
+wire sub_o   = (op1[isize] ^ op2[isize] ^ 0) & (op1[isize] ^ res[isize]);
 
 reg       daa_a;
 reg       daa_c;
@@ -59,7 +59,7 @@ always @* begin
         // ADD | ADC
         0, 2: flags_o = {
 
-            /* O */ (isize ? add16o : add8o),
+            /* O */ add_o,
             /* D */ flags[10],
             /* I */ flags[9],
             /* T */ flags[8],
@@ -76,7 +76,7 @@ always @* begin
         // SBB | SUB | CMP
         3, 5, 7: flags_o = {
 
-            /* O */ (isize ? sub16o : sub8o),
+            /* O */ sub_o,
             /* D */ flags[10],
             /* I */ flags[9],
             /* T */ flags[8],
