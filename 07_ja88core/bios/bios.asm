@@ -1,7 +1,7 @@
 
             org     0
 
-            push    eax
+            add     [bx], dword $aabb3312
             push    si
             pop     sp
             dec     di

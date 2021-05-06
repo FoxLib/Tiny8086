@@ -186,6 +186,41 @@ else if (locked) case (main)
 
         end
 
+        // Arithmetic grp
+        8'b1000_00xx: case (tstate)
+
+            // Прочесть байт modrm, найти ссылку на память
+            0: begin tstate <= 1; main <= FETCHEA; isize <= opcode[0]; idir <= 0; end
+
+            // Запрос на получение второго операнда
+            1: begin tstate <= 2; main <= IMMEDIATE;
+
+                alumode <= modrm[5:3];
+                sel     <= 0;
+                if (opcode[1:0] == 2'b11) isize <= 0;
+
+            end
+            // Распознание второго операнда
+            2: begin
+
+                tstate <= 3;
+                op2    <= opcode[1:0] == 2'b11 ? (opsize ? {{24{wb[7]}},wb[7:0]} : {{8{wb[7]}},wb[7:0]}) : wb;
+                isize  <= opcode[0];
+
+            end
+            // Запись результата
+            3: begin
+
+                main  <= alumode == 7 ? PREPARE : SETEA;
+                wb    <= result;
+                flags <= flags_o;
+                tstate <= 4;
+
+            end
+            4: main <= PREPARE;
+
+        endcase
+
         // XCHG ax, r
         8'b1001_0000: main <= PREPARE;
         8'b1001_0xxx: case (tstate)

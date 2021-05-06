@@ -6,13 +6,13 @@
 reg [15:0]  seg_cs = 16'hF000;
 reg [15:0]  seg_ss = 16'h0000;
 reg [15:0]  seg_es = 16'hAFBA;
-reg [15:0]  seg_ds = 16'h2377;
+reg [15:0]  seg_ds = 16'h0000;
 reg [15:0]  seg_fs = 16'h0001;
 reg [15:0]  seg_gs = 16'h1010;
 
 // Регистры
 reg [31:0]  eax = 32'h4321_1234;
-reg [31:0]  ebx = 32'hefd0_2342;
+reg [31:0]  ebx = 32'hefd0_0000;
 reg [31:0]  ecx = 32'ha1ac_3344;
 reg [31:0]  edx = 32'hab21_6677;
 reg [31:0]  esp = 32'haaa3_5432;
@@ -34,7 +34,7 @@ reg [ 1:0]  sel_rep = 0;
 // Состояние процессора
 // ---------------------------------------------------------------------
 
-reg [2:0]   main    = 0;
+reg [3:0]   main    = 0;
 reg [3:0]   tstate  = 0;
 reg [3:0]   estate  = 0;
 reg [7:0]   opcode  = 0;
