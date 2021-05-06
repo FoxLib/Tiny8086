@@ -2,19 +2,21 @@ module alu
 (
     // Входящие данные
     input   wire        isize,
+    input   wire        opsize,
     input   wire [ 3:0] alumode,
-    input   wire [15:0] op1,
-    input   wire [15:0] op2,
+    input   wire [31:0] op1,
+    input   wire [31:0] op2,
     input   wire [11:0] flags,
 
     // Исходящие данные
-    output  wire [15:0] result,
+    output  wire [31:0] result,
     output  reg  [11:0] flags_o,
     output  reg  [15:0] daa_r,
     output  reg  [11:0] flags_d
 );
 
-assign result = isize ? res[15:0] : res[7:0];
+// Пока что только 16 битное
+assign result[15:0] = isize ? res[15:0] : res[7:0];
 
 reg [16:0] res;
 

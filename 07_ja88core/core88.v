@@ -31,6 +31,8 @@ else if (locked) case (main)
 
         opcode  <= bus;
         ip      <= ip + 1;
+        opsize  <= 0;
+        adsize  <= 0;
         sel_seg <= 0;
         sel_rep <= 0;
         seg_ea  <= seg_ds;
@@ -77,15 +79,18 @@ else if (locked) case (main)
                 isize   <= opcode[0];
                 alumode <= opcode[5:3];
                 op1     <= eax[15:0];
+                idir    <= 1;
 
             end
             1: begin tstate <= 2; op2 <= wb; end
-            2: begin main <= PREPARE;
+            2: begin tstate <= 3; flags <= flags_o;
 
-                flags <= flags_o;
-                if (alumode < 7) eax[15:0] <= isize ? result : {eax[15:8], result[7:0]};
+                main <= alumode == 7 ? SETEA : PREPARE;
+                wb   <= result;
+                modrm[5:3] <= 0;
 
             end
+            3: main <= PREPARE;
 
         endcase
 

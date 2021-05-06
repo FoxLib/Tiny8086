@@ -38,12 +38,14 @@ reg [3:0]   estate  = 0;
 reg [7:0]   opcode  = 0;
 reg [7:0]   modrm   = 0;
 reg         isize   = 0;    // 8|16
+reg         opsize  = 0;    // 16/32
+reg         adsize  = 0;    // 16/32
 reg         idir    = 0;    // rm,r | r,rm
 reg [ 2:0]  regn    = 0;    // regv = register[regn]
 reg [ 3:0]  alumode = 0;
-reg [15:0]  op1     = 0;
-reg [15:0]  op2     = 0;
-reg [15:0]  wb      = 0;    // Для записи в reg/rm
+reg [31:0]  op1     = 0;
+reg [31:0]  op2     = 0;
+reg [31:0]  wb      = 0;    // Для записи в reg/rm
 
 // ---------------------------------------------------------------------
 // Константы и initial
@@ -96,7 +98,7 @@ wire [7:0] branches = {
 // Модули
 // ---------------------------------------------------------------------
 
-wire [15:0] result;
+wire [31:0] result;
 wire [15:0] daa_r;
 wire [11:0] flags_o;
 wire [11:0] flags_d;
@@ -105,6 +107,7 @@ alu UnitALU
 (
     // Входящие данные
     .isize      (isize),
+    .opsize     (opsize),
     .alumode    (alumode),
     .op1        (op1),
     .op2        (op2),
