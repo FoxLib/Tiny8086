@@ -49,22 +49,21 @@ else if (locked) case (main)
         8'h2E: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_cs; end
         8'h36: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ss; end
         8'h3E: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_ds; end
+        8'h64: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_fs; end
+        8'h65: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_gs; end
+        8'h66: begin opcode <= bus; ip <= ip + 1; opsize  <= ~opsize; end
+        8'h67: begin opcode <= bus; ip <= ip + 1; adsize  <= ~adsize; end
         8'hF2: begin opcode <= bus; ip <= ip + 1; sel_rep <= 1; end
         8'hF3: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2; end
 
-        // Неиспользуемые префиксы
-        8'h0F, 8'hF0, 8'h64, 8'h65, 8'h66, 8'h67: begin opcode <= bus; ip <= ip + 1; end
+        // Пока что неиспользуемые префиксы
+        8'h0F, 8'hF0: begin opcode <= bus; ip <= ip + 1; end
 
         // ALU modrm
         8'b00_xxx_0xx: case (tstate)
 
-            0: begin tstate <= 1; main <= FETCHEA; {idir, isize} <= opcode[1:0]; alumode <= opcode[5:3]; end
-            1: begin tstate <= 2;
-
-                flags <= flags_o;
-                if (alumode < 7) begin main <= SETEA; wb <= result; end
-
-            end
+            0: begin tstate <= 1; main  <= FETCHEA; {idir, isize} <= opcode[1:0]; alumode <= opcode[5:3]; end
+            1: begin tstate <= 2; flags <= flags_o; if (alumode < 7) begin main <= SETEA; wb <= result; end end
             2: begin main <= PREPARE; sel <= 0; end
 
         endcase
@@ -159,7 +158,7 @@ else if (locked) case (main)
         8'b01_010_xxx: case (tstate)
 
             0: begin tstate <= 1; regn <= opcode[2:0]; isize <= 1'b1; end
-            1: begin tstate <= 2; wb <= regv; main <= PUSH; end
+            1: begin tstate <= 2; wb   <= regv; main <= PUSH; end
             2: main <= PREPARE;
 
         endcase
@@ -191,7 +190,7 @@ else if (locked) case (main)
         8'b1001_0xxx: case (tstate)
 
             0: begin tstate <= 1; regn <= opcode[2:0]; modrm[5:3] <= opcode[2:0]; {isize, idir} <= 2'b11; end
-            1: begin tstate <= 2; wb <= eax[15:0]; eax[15:0] <= regv; main <= SETEA; end
+            1: begin tstate <= 2; main <= SETEA; wb <= eax; if (opsize) eax <= regv; else eax[15:0] <= regv; end
             2: main <= PREPARE;
 
         endcase

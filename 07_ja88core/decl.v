@@ -7,6 +7,8 @@ reg [15:0]  seg_cs = 16'hF000;
 reg [15:0]  seg_ss = 16'h0000;
 reg [15:0]  seg_es = 16'hAFBA;
 reg [15:0]  seg_ds = 16'h2377;
+reg [15:0]  seg_fs = 16'h0001;
+reg [15:0]  seg_gs = 16'h1010;
 
 // Регистры
 reg [31:0]  eax = 16'h1234;
