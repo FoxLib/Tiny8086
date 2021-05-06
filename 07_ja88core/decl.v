@@ -9,14 +9,14 @@ reg [15:0]  seg_es = 16'hAFBA;
 reg [15:0]  seg_ds = 16'h2377;
 
 // Регистры
-reg [15:0]  ax = 16'h1234;
-reg [15:0]  bx = 16'h2342;
-reg [15:0]  cx = 16'h3344;
-reg [15:0]  dx = 16'h6677;
-reg [15:0]  sp = 16'h5432;
-reg [15:0]  bp = 16'h5678;
-reg [15:0]  si = 16'h9ABD;
-reg [15:0]  di = 16'hEF01;
+reg [31:0]  eax = 16'h1234;
+reg [31:0]  ebx = 16'h2342;
+reg [31:0]  ecx = 16'h3344;
+reg [31:0]  edx = 16'h6677;
+reg [31:0]  esp = 16'h5432;
+reg [31:0]  ebp = 16'h5678;
+reg [31:0]  esi = 16'h9ABD;
+reg [31:0]  edi = 16'hEF01;
 reg [15:0]  ip = 0;
 reg [11:0]  flags = 0;
 
@@ -58,7 +58,7 @@ localparam
     PREPARE     = 0,        // Эта подготовки инструкции к исполнению
     MAIN        = 1,        // Обработка микрокода
     FETCHEA     = 2,        // Считывание ModRM/EA
-    SETEA       = 3,         // Запись в память или регистр
+    SETEA       = 3,        // Запись в память или регистр
     PUSH        = 4,
     POP         = 5,
     INTERRUPT   = 6,
@@ -73,14 +73,14 @@ initial wreq = 0;
 
 // Выбор регистра
 wire [15:0] regv =
-    regn == 0 ? (isize ? ax : ax[ 7:0]) :
-    regn == 1 ? (isize ? cx : cx[ 7:0]) :
-    regn == 2 ? (isize ? dx : dx[ 7:0]) :
-    regn == 3 ? (isize ? bx : bx[ 7:0]) :
-    regn == 4 ? (isize ? sp : ax[15:8]) :
-    regn == 5 ? (isize ? bp : cx[15:8]) :
-    regn == 6 ? (isize ? si : dx[15:8]) :
-                (isize ? di : bx[15:8]);
+    regn == 0 ? (isize ? eax[15:0] : eax[ 7:0]) :
+    regn == 1 ? (isize ? ecx[15:0] : ecx[ 7:0]) :
+    regn == 2 ? (isize ? edx[15:0] : edx[ 7:0]) :
+    regn == 3 ? (isize ? ebx[15:0] : ebx[ 7:0]) :
+    regn == 4 ? (isize ? esp[15:0] : eax[15:8]) :
+    regn == 5 ? (isize ? ebp[15:0] : ecx[15:8]) :
+    regn == 6 ? (isize ? esi[15:0] : edx[15:8]) :
+                (isize ? edi[15:0] : ebx[15:8]);
 
 // Вычисление условий
 wire [7:0] branches = {

@@ -76,14 +76,14 @@ else if (locked) case (main)
                 main    <= IMMEDIATE;
                 isize   <= opcode[0];
                 alumode <= opcode[5:3];
-                op1     <= ax;
+                op1     <= eax[15:0];
 
             end
             1: begin tstate <= 2; op2 <= wb; end
             2: begin main <= PREPARE;
 
                 flags <= flags_o;
-                if (alumode < 7) ax <= isize ? result : {ax[15:8], result[7:0]};
+                if (alumode < 7) eax[15:0] <= isize ? result : {eax[15:8], result[7:0]};
 
             end
 
@@ -127,8 +127,8 @@ else if (locked) case (main)
         // DAA|DAS|AAA|AAS
         8'b00_1xx_111: case (tstate)
 
-            0: begin tstate <= 1; op1 <= ax; alumode <= opcode[4:3]; end
-            1: begin main <= PREPARE; flags <= flags_d; ax[7:0] <= daa_r; end
+            0: begin tstate <= 1; op1 <= eax[15:0]; alumode <= opcode[4:3]; end
+            1: begin main <= PREPARE; flags <= flags_d; eax[7:0] <= daa_r; end
 
         endcase
 
@@ -181,6 +181,16 @@ else if (locked) case (main)
 
         end
 
+        // XCHG ax, r
+        8'b1001_0000: main <= PREPARE;
+        8'b1001_0xxx: case (tstate)
+
+            0: begin tstate <= 1; regn <= opcode[2:0]; modrm[5:3] <= opcode[2:0]; {isize, idir} <= 2'b11; end
+            1: begin tstate <= 2; wb <= eax[15:0]; eax[15:0] <= regv; main <= SETEA; end
+            2: main <= PREPARE;
+
+        endcase
+
     endcase
 
     // Считывание эффективного адреса и регистров
@@ -194,42 +204,42 @@ else if (locked) case (main)
             // Операнд 1
             case (idir ? bus[5:3] : bus[2:0])
 
-                0: op1 <= isize ? ax : ax[ 7:0];
-                1: op1 <= isize ? cx : cx[ 7:0];
-                2: op1 <= isize ? dx : dx[ 7:0];
-                3: op1 <= isize ? bx : bx[ 7:0];
-                4: op1 <= isize ? sp : ax[15:8];
-                5: op1 <= isize ? bp : cx[15:8];
-                6: op1 <= isize ? si : dx[15:8];
-                7: op1 <= isize ? di : bx[15:8];
+                0: op1 <= isize ? eax[15:0] : eax[ 7:0];
+                1: op1 <= isize ? ecx[15:0] : ecx[ 7:0];
+                2: op1 <= isize ? edx[15:0] : edx[ 7:0];
+                3: op1 <= isize ? ebx[15:0] : ebx[ 7:0];
+                4: op1 <= isize ? esp[15:0] : eax[15:8];
+                5: op1 <= isize ? ebp[15:0] : ecx[15:8];
+                6: op1 <= isize ? esi[15:0] : edx[15:8];
+                7: op1 <= isize ? edi[15:0] : ebx[15:8];
 
             endcase
 
             // Операнд 2
             case (idir ? bus[2:0] : bus[5:3])
 
-                0: op2 <= isize ? ax : ax[ 7:0];
-                1: op2 <= isize ? cx : cx[ 7:0];
-                2: op2 <= isize ? dx : dx[ 7:0];
-                3: op2 <= isize ? bx : bx[ 7:0];
-                4: op2 <= isize ? sp : ax[15:8];
-                5: op2 <= isize ? bp : cx[15:8];
-                6: op2 <= isize ? si : dx[15:8];
-                7: op2 <= isize ? di : bx[15:8];
+                0: op2 <= isize ? eax[15:0] : eax[ 7:0];
+                1: op2 <= isize ? ecx[15:0] : ecx[ 7:0];
+                2: op2 <= isize ? edx[15:0] : edx[ 7:0];
+                3: op2 <= isize ? ebx[15:0] : ebx[ 7:0];
+                4: op2 <= isize ? esp[15:0] : eax[15:8];
+                5: op2 <= isize ? ebp[15:0] : ecx[15:8];
+                6: op2 <= isize ? esi[15:0] : edx[15:8];
+                7: op2 <= isize ? edi[15:0] : ebx[15:8];
 
             endcase
 
             // Вычисление эффективного адреса
             case (bus[2:0])
 
-                0: ea <= bx + si;
-                1: ea <= bx + di;
-                2: ea <= bp + si;
-                3: ea <= bp + di;
-                4: ea <= si;
-                5: ea <= di;
-                6: ea <= bp;
-                7: ea <= bx;
+                0: ea <= ebx[15:0] + esi[15:0];
+                1: ea <= ebx[15:0] + edi[15:0];
+                2: ea <= ebp[15:0] + esi[15:0];
+                3: ea <= ebp[15:0] + edi[15:0];
+                4: ea <= esi[15:0];
+                5: ea <= edi[15:0];
+                6: ea <= ebp[15:0];
+                7: ea <= ebx[15:0];
 
             endcase
 
@@ -292,14 +302,14 @@ else if (locked) case (main)
 
                 case (idir ? modrm[5:3] : modrm[2:0])
 
-                    0: if (isize) ax <= wb; else ax[ 7:0] <= wb[7:0];
-                    1: if (isize) cx <= wb; else cx[ 7:0] <= wb[7:0];
-                    2: if (isize) dx <= wb; else dx[ 7:0] <= wb[7:0];
-                    3: if (isize) bx <= wb; else bx[ 7:0] <= wb[7:0];
-                    4: if (isize) sp <= wb; else ax[15:8] <= wb[7:0];
-                    5: if (isize) bp <= wb; else cx[15:8] <= wb[7:0];
-                    6: if (isize) si <= wb; else dx[15:8] <= wb[7:0];
-                    7: if (isize) di <= wb; else bx[15:8] <= wb[7:0];
+                    0: if (isize) eax[15:0] <= wb; else eax[ 7:0] <= wb[7:0];
+                    1: if (isize) ecx[15:0] <= wb; else ecx[ 7:0] <= wb[7:0];
+                    2: if (isize) edx[15:0] <= wb; else edx[ 7:0] <= wb[7:0];
+                    3: if (isize) ebx[15:0] <= wb; else ebx[ 7:0] <= wb[7:0];
+                    4: if (isize) esp[15:0] <= wb; else eax[15:8] <= wb[7:0];
+                    5: if (isize) ebp[15:0] <= wb; else ecx[15:8] <= wb[7:0];
+                    6: if (isize) esi[15:0] <= wb; else edx[15:8] <= wb[7:0];
+                    7: if (isize) edi[15:0] <= wb; else ebx[15:8] <= wb[7:0];
 
                 endcase
 
@@ -342,7 +352,16 @@ else if (locked) case (main)
     // Сохранение данных в стек
     PUSH: case (estate)
 
-        0: begin estate <= 1; sel <= 1; wreq <= 1; ea <= sp - 2; sp <= sp - 2; seg_ea <= seg_ss; data <= wb[7:0]; end
+        0: begin estate <= 1;
+
+            sel       <= 1;
+            wreq      <= 1;
+            ea        <= esp[15:0] - 2;
+            esp[15:0] <= esp[15:0] - 2;
+            seg_ea    <= seg_ss;
+            data      <= wb[7:0];
+
+        end
         1: begin estate <= 2; ea  <= ea + 1; data <= wb[15:8]; end
         2: begin estate <= 0; sel <= 0; wreq <= 0; main <= MAIN; end
 
@@ -351,8 +370,8 @@ else if (locked) case (main)
     // Извлечение данных из стека
     POP: case (estate)
 
-        0: begin estate <= 1; sel <= 1; seg_ea <= seg_ss; ea <= sp; sp <= sp + 2; end
-        1: begin estate <= 2; wb <= bus; ea <= ea + 1; end
+        0: begin estate <= 1; sel <= 1; seg_ea <= seg_ss; ea <= esp[15:0]; esp[15:0] <= esp[15:0] + 2; end
+        1: begin estate <= 2; wb  <= bus; ea <= ea + 1; end
         2: begin estate <= 0; wb[15:8] <= bus; sel <= 0; main <= MAIN; end
 
     endcase
