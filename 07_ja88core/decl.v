@@ -67,7 +67,8 @@ localparam
     PUSH        = 4,
     POP         = 5,
     INTERRUPT   = 6,
-    IMMEDIATE   = 7;
+    LOADSEG     = 7,
+    IMMEDIATE   = 8;
 
 initial data = 8'hFF;
 initial wreq = 0;
