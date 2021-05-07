@@ -123,4 +123,3 @@ alu UnitALU
     .daa_r      (daa_r),
     .flags_d    (flags_d)
 );
-

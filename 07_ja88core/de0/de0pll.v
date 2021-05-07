@@ -1,27 +1,35 @@
 module de0pll(
+
     input wire clkin,
     input wire rst,
+
     output wire m25,
+    output wire m50,
+    output wire m75,
+    output wire m100,
+    output wire m106,
+
     output wire locked
 );
+
 altera_pll #(
     .fractional_vco_multiplier("false"),
     .reference_clock_frequency("50.0 MHz"),
     .operation_mode("normal"),
-    .number_of_clocks(1),
+    .number_of_clocks(5),
     .output_clock_frequency0("25.0 MHz"),
     .phase_shift0("0 ps"),
     .duty_cycle0(50),
-    .output_clock_frequency1("0 MHz"),
+    .output_clock_frequency1("100.0 MHz"),
     .phase_shift1("0 ps"),
     .duty_cycle1(50),
-    .output_clock_frequency2("0 MHz"),
+    .output_clock_frequency2("50 MHz"),
     .phase_shift2("0 ps"),
     .duty_cycle2(50),
-    .output_clock_frequency3("0 MHz"),
+    .output_clock_frequency3("106 MHz"),
     .phase_shift3("0 ps"),
     .duty_cycle3(50),
-    .output_clock_frequency4("0 MHz"),
+    .output_clock_frequency4("75 MHz"),
     .phase_shift4("0 ps"),
     .duty_cycle4(50),
     .output_clock_frequency5("0 MHz"),
@@ -66,12 +74,13 @@ altera_pll #(
     .pll_type("General"),
     .pll_subtype("General")
 )
-altera_pll_i(
+altera_pll_i (
     .rst (rst),
-    .outclk ({m25}),
+    .outclk ({m75, m106, m50, m100, m25}),
     .locked (locked),
-    .fboutclk (),
+    .fboutclk ( ),
     .fbclk (1'b0),
     .refclk (clkin)
 );
+
 endmodule
