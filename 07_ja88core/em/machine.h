@@ -10,6 +10,7 @@ void writememb(uint32_t address, uint8_t data);
 unsigned char readmemb(unsigned int address);
 
 #include "portable86.cc"
+#include "spi.h"
 
 SDL_Surface *   sdl_screen;
 SDL_Event       sdl_event;

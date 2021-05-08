@@ -1,0 +1,3 @@
+portable86.cc
+portable86.h -> avr/apps/12_x8086
+spi.cc -> avr/av/spi.cc

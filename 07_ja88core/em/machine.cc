@@ -52,8 +52,8 @@ int main(int argc, char* argv[]) {
 
             ms_prevtime = time_curr;
 
-            // 40k x 60 ~ 2.4 MIPS
-            x86run(40000);
+            // 25k x 60 ~ 1.5 MIPS
+            x86run(25000);
 
             SDL_Flip(sdl_screen);
         }
