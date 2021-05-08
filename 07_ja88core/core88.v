@@ -22,7 +22,7 @@ assign address = sel ? {seg_ea, 4'h0} + ea : {seg_cs, 4'h0} + ip;
 
 always @(posedge clock)
 // Сброс
-if (resetn == 0) begin seg_cs <= 16'hF000; ip <= 0; end
+if (resetn == 0) begin seg_cs <= 16'hF000; ip <= 0; main <= PREPARE; end
 // Исполнение
 else if (locked) case (main)
 
@@ -39,8 +39,8 @@ else if (locked) case (main)
         sel_rep <= 0;
         stack32 <= 0;
         seg_ea  <= seg_ds;
-        main    <= MAIN;
         tstate  <= 0;
+        main    <= MAIN;
 
     end
 
@@ -397,9 +397,12 @@ else if (locked) case (main)
         3: begin estate <= 4;
 
             ip  <= ip + 1;
-            ea  <= ea + adsize ? {{24{bus[7]}}, bus[7:0]} : {{8{bus[7]}}, bus[7:0]};
             sel <= 1;
-
+            
+            if (adsize)
+                 ea <= ea + {{24{bus[7]}}, bus[7:0]};
+            else ea <= ea[15:0] + {{8{bus[7]}}, bus[7:0]};
+            
         end
 
         // Чтение операнда 8bit из памяти
@@ -415,7 +418,6 @@ else if (locked) case (main)
         5: begin
 
             if (idir) op2[15:8] <= bus; else op1[15:8] <= bus;
-
             if (opsize) begin estate <= 6; ea <= ea + 1; end
             else        begin estate <= 0; ea <= ea - 1; main <= MAIN; end
 
@@ -564,8 +566,9 @@ else if (locked) case (main)
     // Если стек 32-х разрядный, используются 4 байта
     PUSH: case (estate)
 
-        0: begin estate <= 1;
-
+        0: begin 
+        
+            estate  <= 1;
             sel     <= 1;
             wreq    <= 1;
             seg_ea  <= seg_ss;
@@ -591,6 +594,7 @@ else if (locked) case (main)
                 sel    <= 0;
                 wreq   <= 0;
                 main   <= MAIN;
+                
             end
 
         end

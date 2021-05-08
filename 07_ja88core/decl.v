@@ -19,9 +19,10 @@ reg [31:0]  esp = 32'haaa3_5432;
 reg [31:0]  ebp = 32'ha940_5678;
 reg [31:0]  esi = 32'ha580_9ABD;
 reg [31:0]  edi = 32'ha670_EF01;
-reg [15:0]  ip  = 0;
-reg [11:0]  flags = 0;
 
+// Системные
+reg [15:0]  ip      = 0;
+reg [11:0]  flags   = 0;
 reg [15:0]  seg_ea  = 0;
 reg [31:0]  ea      = 0;
 

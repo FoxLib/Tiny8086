@@ -1,0 +1,16 @@
+FreeDOS123FreeDOS kernel - SVN (build 2040 OEM:0xfd) [compiled Apr  7 2012]
+Kernel compatibility 7.10 - WATCOMC - FAT32 support
+
+(C) Copyright 1995-2011 Pasquale J. Villani and The FreeDOS Project.
+All Rights Reserved. This is free software and comes with ABSOLUTELY NO
+WARRANTY; you can redistribute it and/or modify it under the terms of the
+GNU General Public License as published by the Free Software Foundation;
+either version 2, or (at your option) any later version.
+ - InitDiskno hard disks detected
+Press F8 to trace or F5 to skip CONFIG.SYS/AUTOEXEC.BAT                                                                               
+FreeCom version 0.82 pl 3 XMS_Swap [Dec 10 2003 06:49:21]
+
+
+ type HELP to get support on commands and navigation
+
+A:\>[?25h[16;5H[?25h[16;5H[?25h
