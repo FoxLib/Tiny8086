@@ -1,6 +1,7 @@
 
             org     0
 
+            hlt
             mov     ax, $b800
             mov     ds, ax
             mov     ax, $1721

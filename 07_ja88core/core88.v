@@ -217,6 +217,24 @@ else if (locked) case (main)
 
         endcase
 
+        // TEST rm, r
+        8'b1000_010x: case (tstate)
+
+            0: begin tstate <= 1; {idir, isize} <= opcode[1:0]; main <= FETCHEA; alumode <= 4; end
+            1: begin flags <= flags_o; sel <= 0; main <= PREPARE; end
+
+        endcase
+
+        // XCHG rm, r
+        8'b1000_011x: case (tstate)
+
+            0: begin tstate <= 1; {idir, isize} <= opcode[1:0]; main <= FETCHEA; alumode <= 4; end
+            1: begin tstate <= 2; wb <= op2; main <= SETEA; end
+            2: begin tstate <= 3; wb <= op1; main <= SETEA; idir <= 0; end
+            3: begin sel <= 0; main <= PREPARE; end
+
+        endcase
+
         // MOV rmr
         8'b1000_10xx: case (tstate)
 
@@ -288,6 +306,18 @@ else if (locked) case (main)
             2: main <= PREPARE;
 
         endcase
+
+        // TEST eax,#
+        8'b1010_100x: case (tstate)
+
+            0: begin tstate <= 1; isize <= opcode[0]; main <= IMMEDIATE; end
+            1: begin tstate <= 2; alumode <= 4; op1 <= eax; op2 = wb; end
+            2: begin flags <= flags_o; sel <= 0; main <= PREPARE; end
+
+        endcase
+
+        // HLT
+        8'b1111_0100: begin ip <= ip - 1; main <= PREPARE; end
 
     endcase
 
@@ -398,11 +428,11 @@ else if (locked) case (main)
 
             ip  <= ip + 1;
             sel <= 1;
-            
+
             if (adsize)
                  ea <= ea + {{24{bus[7]}}, bus[7:0]};
             else ea <= ea[15:0] + {{8{bus[7]}}, bus[7:0]};
-            
+
         end
 
         // Чтение операнда 8bit из памяти
@@ -566,8 +596,8 @@ else if (locked) case (main)
     // Если стек 32-х разрядный, используются 4 байта
     PUSH: case (estate)
 
-        0: begin 
-        
+        0: begin
+
             estate  <= 1;
             sel     <= 1;
             wreq    <= 1;
@@ -594,7 +624,7 @@ else if (locked) case (main)
                 sel    <= 0;
                 wreq   <= 0;
                 main   <= MAIN;
-                
+
             end
 
         end
