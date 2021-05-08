@@ -319,6 +319,12 @@ else if (locked) case (main)
         // HLT
         8'b1111_0100: begin ip <= ip - 1; main <= PREPARE; end
 
+        // CMC, CLC, STC, CLI, STI, CLD, STD
+        8'b1111_0101: begin flags[CF] <= ~flags[CF]; main <= PREPARE; end
+        8'b1111_100x: begin flags[CF] <= opcode[0];  main <= PREPARE; end
+        8'b1111_101x: begin flags[IF] <= opcode[0];  main <= PREPARE; end
+        8'b1111_110x: begin flags[DF] <= opcode[0];  main <= PREPARE; end
+
     endcase
 
     // Считывание эффективного адреса и регистров
