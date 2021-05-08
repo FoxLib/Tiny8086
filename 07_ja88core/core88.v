@@ -482,7 +482,7 @@ else if (locked) case (main)
             // +disp8/32
             if (modrm[7:6] == 2'b00 && bus[2:0] == 5) begin sel <= 0; estate <= 8; end
             else if (modrm[7:6] == 2'b01) begin sel <= 0; estate <= 3; end
-            else if (modrm[7:6] == 2'b10) begin sel <= 0; estate <= 1; end
+            else if (modrm[7:6] == 2'b10) begin sel <= 0; estate <= 8; end
 
         end
 
