@@ -1,6 +1,6 @@
 #include "SDL.h"
 
-#define RAMTOP 1024*1024
+#define RAMTOP (1024*1024)
 
 // Декларации функции
 void print_char(int col, int row, unsigned char pchar, uint8_t attr);

@@ -33,7 +33,9 @@ void iowrite(uint16_t port, uint8_t data) {
 
 // Сброс процессора
 void reset() {
+
     ms_prevtime = 0;
+    initcpu();
 }
 
 // =====================================================================

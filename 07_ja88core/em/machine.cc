@@ -51,15 +51,16 @@ int main(int argc, char* argv[]) {
         if (time_diff >= 20) {
 
             ms_prevtime = time_curr;
-            x86run(2000);
+
+            // 40k x 60 ~ 2.4 MIPS
+            x86run(40000);
+
             SDL_Flip(sdl_screen);
         }
 
         // Задержка исполнения
         SDL_Delay(1);
     }
-
-    // memdump(0); memdump(0xF0100); regdump();
 
     SDL_Quit();
     return 0;
