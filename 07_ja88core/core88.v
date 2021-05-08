@@ -327,6 +327,19 @@ else if (locked) case (main)
 
             endcase
 
+            // Вычисление эффективного адреса 32 bit
+            if (adsize)
+            case (bus[2:0])
+                0: ea <= eax;
+                1: ea <= ecx;
+                2: ea <= edx;
+                3: ea <= ebx;
+                // 4: SIB
+                5: ea <= ebp;
+                6: ea <= esi;
+                7: ea <= edi;
+            endcase
+            else
             // Вычисление эффективного адреса 16 bit
             case (bus[2:0])
 
@@ -341,16 +354,35 @@ else if (locked) case (main)
 
             endcase
 
-            // Выбор SS: по умолчанию, если возможно
-            if (!sel_seg && (bus[2:0] == 3'h6 && bus[7:6]) || (bus[2:0] == 3'h2) || (bus[2:0] == 3'h3))
-                seg_ea <= seg_ss;
+            // Выбор SS: по умолчанию
+            if (!sel_seg) begin
 
+                // 32 bit
+                if (adsize) begin if (bus[2:0] == 5 && ^bus[7:6]) seg_ea <= seg_ss; end
+                // 16 bit
+                else if ((bus[2:0] == 3'h6 && ^bus[7:6]) || (bus[2:1] == 2'b01))
+                    seg_ea <= seg_ss;
+            end
+
+            // 32 bit
+            if (adsize)
             casex (bus)
+
+                8'b11_xxx_xxx: begin estate <= 0; main <= MAIN; end // reg
+                8'b00_xxx_101: begin estate <= 8; ea <= 0; end      // disp32
+                8'bxx_xxx_100: begin estate <= 12; end              // sib
+                8'b00_xxx_xxx: begin estate <= 4; sel <= 1; end     // без disp
+                8'b01_xxx_xxx: begin estate <= 3; end               // disp8
+                8'b10_xxx_xxx: begin estate <= 8; end               // disp32
+
+            endcase
+            // 16 bit
+            else casex (bus)
 
                 8'b00_xxx_110: begin estate <= 1; ea  <= 0; end // disp16
                 8'b00_xxx_xxx: begin estate <= 4; sel <= 1; end // без disp
-                8'b01_xxx_xxx: begin estate <= 3; end // disp8
-                8'b10_xxx_xxx: begin estate <= 1; end // disp16
+                8'b01_xxx_xxx: begin estate <= 3; end           // disp8
+                8'b10_xxx_xxx: begin estate <= 1; end           // disp16
                 8'b11_xxx_xxx: begin estate <= 0; main <= MAIN; end
 
             endcase
@@ -362,7 +394,13 @@ else if (locked) case (main)
         2: begin estate <= 4; ip <= ip + 1; ea[15:8] <= ea[15:8] + bus; sel <= 1; end
 
         // Считывание 8-бит displacement
-        3: begin estate <= 4; ip <= ip + 1; ea <= ea + {{8{bus[7]}}, bus[7:0]}; sel <= 1; end
+        3: begin estate <= 4;
+
+            ip  <= ip + 1;
+            ea  <= ea + adsize ? {{24{bus[7]}}, bus[7:0]} : {{8{bus[7]}}, bus[7:0]};
+            sel <= 1;
+
+        end
 
         // Чтение операнда 8bit из памяти
         4: begin
@@ -386,6 +424,67 @@ else if (locked) case (main)
         // Чтение операнда 32 бит (память)
         6: begin estate <= 7; if (idir) op2[23:16] <= bus; else op1[23:16] <= bus; ea <= ea + 1; end
         7: begin estate <= 0; if (idir) op2[31:24] <= bus; else op1[31:24] <= bus; ea <= ea - 3; main <= MAIN; end
+
+        // Чтение +disp32 и переход к чтение операнда из памяти
+        8:  begin tstate <= 9;  ip <= ip + 1; ea        <= ea        + bus; end
+        9:  begin tstate <= 10; ip <= ip + 1; ea[31:8]  <= ea[31:8]  + bus; end
+        10: begin tstate <= 11; ip <= ip + 1; ea[31:16] <= ea[31:16] + bus; end
+        11: begin tstate <= 4;  ip <= ip + 1; ea[31:24] <= ea[31:24] + bus; sel <= 1; end
+
+        // Разбор байта SIB: Считывание SS*INDEX
+        12: begin
+
+            estate <= 13;
+
+            casex (bus)
+
+                8'bxx_000_xxx: ea <= eax << bus[7:6];
+                8'bxx_001_xxx: ea <= ecx << bus[7:6];
+                8'bxx_010_xxx: ea <= edx << bus[7:6];
+                8'bxx_011_xxx: ea <= ebx << bus[7:6];
+                8'bxx_100_xxx: ea <= 0;
+                8'bxx_101_xxx: ea <= ebp << bus[7:6];
+                8'bxx_110_xxx: ea <= esi << bus[7:6];
+                8'bxx_111_xxx: ea <= edi << bus[7:6];
+
+            endcase
+
+            // Выбор сегмента SS: по умолчанию
+            if (!sel_seg && bus[5:3] == 5) seg_ea <= seg_ss;
+
+        end
+
+        // Считывание BASE
+        13: begin
+
+            estate <= 4;
+            sel    <= 1;
+            ip     <= ip + 1;
+
+            case (bus)
+
+                // disp32
+                8'bxx_xxx_000: ea <= ea + eax;
+                8'bxx_xxx_001: ea <= ea + ecx;
+                8'bxx_xxx_010: ea <= ea + edx;
+                8'bxx_xxx_011: ea <= ea + ebx;
+                8'bxx_xxx_100: ea <= ea + esp;
+                8'bxx_xxx_101:
+                if (^modrm[7:6]) begin
+                    ea <= ea + ebp;
+                    if (!sel_seg) seg_ea <= seg_ss;
+                end
+                8'bxx_xxx_110: ea <= ea + esi;
+                8'bxx_xxx_111: ea <= ea + edi;
+
+            endcase
+
+            // +disp8/32
+            if (modrm[7:6] == 2'b00 && bus[2:0] == 5) begin sel <= 0; estate <= 8; end
+            else if (modrm[7:6] == 2'b01) begin sel <= 0; estate <= 3; end
+            else if (modrm[7:6] == 2'b10) begin sel <= 0; estate <= 1; end
+
+        end
 
     endcase
 

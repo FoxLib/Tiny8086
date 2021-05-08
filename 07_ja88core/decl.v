@@ -23,7 +23,7 @@ reg [15:0]  ip  = 0;
 reg [11:0]  flags = 0;
 
 reg [15:0]  seg_ea  = 0;
-reg [15:0]  ea      = 0;
+reg [31:0]  ea      = 0;
 
 // Выбранная шина адреса (sel=1) seg:ea (sel=0) cs:ip
 reg         sel     = 0;
