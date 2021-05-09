@@ -92,14 +92,12 @@ cgamem CGAMEM
 );
 
 // 8kb
-/*
 bios BIOS
 (
     .clock      (clock_100),
     .address_a  (address[12:0]),
     .q_a        (q_bios)
 );
-*/
 
 // Маршрутизация
 always @* begin
@@ -123,6 +121,24 @@ always @* begin
 
 end
 
+// ---------------------------------------------------------------------
+// Ядро процессора
+// ---------------------------------------------------------------------
+
+core88 UnitCore88
+(
+    .clock      (clock_25),
+    .resetn     (locked),
+    .locked     (locked),
+    .address    (address),
+    .bus        (i_data),
+    .data       (o_data),
+    .wreq       (we)
+);
+
+
 endmodule
 
 `include "../cga.v"
+`include "../alu.v"
+`include "../core88.v"
