@@ -9,9 +9,6 @@ void iowrite(unsigned short, unsigned char);
 void writememb(uint32_t address, uint8_t data);
 unsigned char readmemb(unsigned int address);
 
-#include "portable86.cc"
-#include "spi.h"
-
 SDL_Surface *   sdl_screen;
 SDL_Event       sdl_event;
 struct timeb    ms_clock;
@@ -21,6 +18,9 @@ int             height;
 
 unsigned char RAM[RAMTOP];
 unsigned char io_ports[65536];
+
+#include "portable86.cc"
+#include "spi.h"
 
 APP SpiModule;
 

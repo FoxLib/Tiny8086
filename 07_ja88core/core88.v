@@ -291,6 +291,34 @@ else if (locked) case (mode)
 
         endcase
 
+        // CBW, CWDE
+        8'b1001_1000: begin
+
+            if (opsize) eax[31:16] <= {16{eax[15]}};
+            else        eax[15:7]  <= {8{eax[7]}};
+
+            mode <= PREPARE;
+
+        end
+
+        // CWD,CDQ
+        8'b1001_1001: begin
+
+            if (opsize) edx       <= {32{eax[31]}};
+            else        edx[15:0] <= {16{eax[15]}};
+
+            mode <= PREPARE;
+
+        end
+
+        // PUSHF
+        8'b1001_1100: case (tstate)
+
+            0: begin tstate <= 1; mode <= PUSH; wb <= {4'b1111, flags};  end
+            1: begin sel <= 0; mode <= PREPARE; end
+
+        endcase
+
         // MOV r,#
         8'b1011_xxxx: case (tstate)
 
@@ -670,7 +698,7 @@ else if (locked) case (mode)
 
     endcase
 
-    // Сохранение данных в стек
+    // Сохранение данных в стек [wb]
     // Если стек 32-х разрядный, используются 4 байта
     PUSH: case (estate)
 
