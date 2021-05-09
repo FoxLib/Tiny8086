@@ -319,6 +319,14 @@ else if (locked) case (mode)
 
         endcase
 
+        // POPF
+        8'b1001_1101: case (tstate)
+
+            0: begin tstate <= 1; mode <= POP; end
+            1: begin flags <= wb[11:0]; sel <= 0; mode <= PREPARE; end
+
+        endcase
+
         // MOV r,#
         8'b1011_xxxx: case (tstate)
 
@@ -739,7 +747,7 @@ else if (locked) case (mode)
 
     endcase
 
-    // Извлечение данных из стека
+    // Извлечение данных из стека -> wb
     POP: case (estate)
 
         0: begin
