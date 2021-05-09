@@ -980,7 +980,7 @@ int10:
 @@: cmp     ah, 0x02 ; Set cursor position
     jne     @f
     jmp     near int10_set_cursor
-@@: cmp     ah, 0x03 ; Get cursur position
+@@: cmp     ah, 0x03 ; Get cursor position
     jne     @f
     jmp     near int10_get_cursor
 @@: cmp     ah, 0x06 ; Scroll up window
