@@ -1,6 +1,7 @@
 
             org     0
 
+            mov     [bx+2], byte $44
             hlt
             mov     ax, $b800
             mov     ds, ax

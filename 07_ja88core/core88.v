@@ -11,7 +11,7 @@ module core88
 
 `include "decl.v"
 
-wire __m0 = (main == PREPARE);
+wire __m0 = (mode == PREPARE);
 
 // Выбор источника памяти
 assign address = sel ? {seg_ea, 4'h0} + ea : {seg_cs, 4'h0} + ip;
@@ -22,9 +22,9 @@ assign address = sel ? {seg_ea, 4'h0} + ea : {seg_cs, 4'h0} + ip;
 
 always @(posedge clock)
 // Сброс
-if (resetn == 0) begin seg_cs <= 16'hF000; ip <= 0; main <= PREPARE; end
+if (resetn == 0) begin seg_cs <= 16'hF000; ip <= 0; mode <= PREPARE; end
 // Исполнение
-else if (locked) case (main)
+else if (locked) case (mode)
 
     // Считывание опкода, сброс, прерывания
     PREPARE: begin
@@ -38,9 +38,10 @@ else if (locked) case (main)
         sel_seg <= 0;
         sel_rep <= 0;
         stack32 <= 0;
+        skip_op <= 0;
         seg_ea  <= seg_ds;
         tstate  <= 0;
-        main    <= MAIN;
+        mode    <= MAIN;
 
     end
 
@@ -65,9 +66,9 @@ else if (locked) case (main)
         // ALU modrm
         8'b00_xxx_0xx: case (tstate)
 
-            0: begin tstate <= 1; main  <= FETCHEA; {idir, isize} <= opcode[1:0]; alumode <= opcode[5:3]; end
-            1: begin tstate <= 2; flags <= flags_o; if (alumode < 7) begin main <= SETEA; wb <= result; end end
-            2: begin main <= PREPARE; sel <= 0; end
+            0: begin tstate <= 1; mode  <= FETCHEA; {idir, isize} <= opcode[1:0]; alumode <= opcode[5:3]; end
+            1: begin tstate <= 2; flags <= flags_o; if (alumode < 7) begin mode <= SETEA; wb <= result; end end
+            2: begin mode <= PREPARE; sel <= 0; end
 
         endcase
 
@@ -77,7 +78,7 @@ else if (locked) case (main)
             0: begin
 
                 tstate  <= 1;
-                main    <= IMMEDIATE;
+                mode    <= IMMEDIATE;
                 isize   <= opcode[0];
                 alumode <= opcode[5:3];
                 op1     <= opsize ? eax : eax[15:0];
@@ -87,12 +88,12 @@ else if (locked) case (main)
             2: begin tstate <= 3; flags <= flags_o;
 
                 idir <= 1;
-                main <= alumode == 7 ? PREPARE : SETEA;
+                mode <= alumode == 7 ? PREPARE : SETEA;
                 wb   <= result;
                 modrm[5:3] <= 0;
 
             end
-            3: main <= PREPARE;
+            3: mode <= PREPARE;
 
         endcase
 
@@ -101,7 +102,7 @@ else if (locked) case (main)
 
             0: begin tstate <= 1;
 
-                main <= PUSH;
+                mode <= PUSH;
                 case (opcode[4:3])
                     2'b00: wb <= seg_es;
                     2'b01: wb <= seg_cs;
@@ -111,16 +112,16 @@ else if (locked) case (main)
 
             end
 
-            1: main <= PREPARE;
+            1: mode <= PREPARE;
 
         endcase
 
         // POP sr
         8'b00_0xx_111: case (tstate)
 
-            0: begin tstate <= 1; main <= POP; end
-            1: begin tstate <= 2; main <= LOADSEG; regn <= opcode[4:3]; end
-            2: main <= PREPARE;
+            0: begin tstate <= 1; mode <= POP; end
+            1: begin tstate <= 2; mode <= LOADSEG; regn <= opcode[4:3]; end
+            2: mode <= PREPARE;
 
         endcase
 
@@ -128,7 +129,7 @@ else if (locked) case (main)
         8'b00_1xx_111: case (tstate)
 
             0: begin tstate <= 1; op1 <= eax[15:0]; alumode <= opcode[4:3]; end
-            1: begin main <= PREPARE; flags <= flags_d; eax[7:0] <= daa_r; end
+            1: begin mode <= PREPARE; flags <= flags_d; eax[7:0] <= daa_r; end
 
         endcase
 
@@ -139,14 +140,14 @@ else if (locked) case (main)
             1: begin tstate <= 2; op1 <= regv; alumode <= opcode[3] ? /*SUB*/ 5 : /*ADD*/ 0; end
             2: begin tstate <= 3;
 
-                main    <= SETEA;
+                mode    <= SETEA;
                 idir    <= 1'b1;
                 wb      <= result;
                 flags   <= {flags_o[11:1], flags[0]};
                 modrm[5:3] <= regn;
 
             end
-            3: main <= PREPARE;
+            3: mode <= PREPARE;
 
         endcase
 
@@ -154,17 +155,17 @@ else if (locked) case (main)
         8'b01_010_xxx: case (tstate)
 
             0: begin tstate <= 1; regn <= opcode[2:0]; isize <= 1'b1; end
-            1: begin tstate <= 2; wb   <= regv; main <= PUSH; end
-            2: main <= PREPARE;
+            1: begin tstate <= 2; wb   <= regv; mode <= PUSH; end
+            2: mode <= PREPARE;
 
         endcase
 
         // POP r
         8'b01_011_xxx: case (tstate)
 
-            0: begin tstate <= 1; main <= POP;   {idir, isize} <= 2'b11; end
-            1: begin tstate <= 2; main <= SETEA; modrm[5:3] <= opcode[2:0]; end
-            2: begin main <= PREPARE; end
+            0: begin tstate <= 1; mode <= POP;   {idir, isize} <= 2'b11; end
+            1: begin tstate <= 2; mode <= SETEA; modrm[5:3] <= opcode[2:0]; end
+            2: begin mode <= PREPARE; end
 
         endcase
 
@@ -177,7 +178,7 @@ else if (locked) case (main)
             else
                 ip <= ip + 1;
 
-            main <= PREPARE;
+            mode <= PREPARE;
 
         end
 
@@ -185,10 +186,10 @@ else if (locked) case (main)
         8'b1000_00xx: case (tstate)
 
             // Прочесть байт modrm, найти ссылку на память
-            0: begin tstate <= 1; main <= FETCHEA; isize <= opcode[0]; idir <= 0; end
+            0: begin tstate <= 1; mode <= FETCHEA; isize <= opcode[0]; idir <= 0; end
 
             // Запрос на получение второго операнда
-            1: begin tstate <= 2; main <= IMMEDIATE;
+            1: begin tstate <= 2; mode <= IMMEDIATE;
 
                 alumode <= modrm[5:3];
                 sel     <= 0;
@@ -206,48 +207,48 @@ else if (locked) case (main)
             // Запись результата
             3: begin
 
-                main  <= alumode == 7 ? PREPARE : SETEA;
+                mode  <= alumode == 7 ? PREPARE : SETEA;
                 wb    <= result;
                 flags <= flags_o;
                 tstate <= 4;
                 if (alumode == 7) sel <= 0;
 
             end
-            4: begin sel <= 0; main <= PREPARE; end
+            4: begin sel <= 0; mode <= PREPARE; end
 
         endcase
 
         // TEST rm, r
         8'b1000_010x: case (tstate)
 
-            0: begin tstate <= 1; {idir, isize} <= opcode[1:0]; main <= FETCHEA; alumode <= 4; end
-            1: begin flags <= flags_o; sel <= 0; main <= PREPARE; end
+            0: begin tstate <= 1; {idir, isize} <= opcode[1:0]; mode <= FETCHEA; alumode <= 4; end
+            1: begin flags <= flags_o; sel <= 0; mode <= PREPARE; end
 
         endcase
 
         // XCHG rm, r
         8'b1000_011x: case (tstate)
 
-            0: begin tstate <= 1; {idir, isize} <= opcode[1:0]; main <= FETCHEA; alumode <= 4; end
-            1: begin tstate <= 2; wb <= op2; main <= SETEA; end
-            2: begin tstate <= 3; wb <= op1; main <= SETEA; idir <= 0; end
-            3: begin sel <= 0; main <= PREPARE; end
+            0: begin tstate <= 1; {idir, isize} <= opcode[1:0]; mode <= FETCHEA; alumode <= 4; end
+            1: begin tstate <= 2; wb <= op2; mode <= SETEA; end
+            2: begin tstate <= 3; wb <= op1; mode <= SETEA; idir <= 0; end
+            3: begin sel <= 0; mode <= PREPARE; end
 
         endcase
 
         // MOV rmr
         8'b1000_10xx: case (tstate)
 
-            0: begin tstate <= 1; {idir, isize} <= opcode[1:0]; main <= FETCHEA; end
-            1: begin tstate <= 2; wb <= op2; main <= SETEA; end
-            2: begin sel <= 0; main <= PREPARE; end
+            0: begin tstate <= 1; {idir, isize} <= opcode[1:0]; mode <= FETCHEA; end
+            1: begin tstate <= 2; wb <= op2; mode <= SETEA; end
+            2: begin sel <= 0; mode <= PREPARE; end
 
         endcase
 
         // MOV sreg|rm
         8'b1000_11x0: case (tstate)
 
-            0: begin tstate <= 1; idir <= opcode[1]; isize <= 1; main <= FETCHEA; end
+            0: begin tstate <= 1; idir <= opcode[1]; isize <= 1; mode <= FETCHEA; end
             1: begin
 
                 tstate <= 2;
@@ -255,7 +256,7 @@ else if (locked) case (main)
                 // MOV sr, r16
                 if (opcode[1]) begin
 
-                    main <= LOADSEG;
+                    mode <= LOADSEG;
                     regn <= modrm[5:3];
                     wb   <= op2;
 
@@ -263,7 +264,7 @@ else if (locked) case (main)
                 // MOV rm, sr
                 else begin
 
-                    main <= SETEA;
+                    mode <= SETEA;
                     case (modrm[5:3])
                         0: wb <= seg_es;
                         1: wb <= seg_cs;
@@ -276,17 +277,17 @@ else if (locked) case (main)
                 end
 
             end
-            2: begin sel <= 0; main <= PREPARE; end
+            2: begin sel <= 0; mode <= PREPARE; end
 
         endcase
 
         // XCHG ax, r
-        8'b1001_0000: main <= PREPARE;
+        8'b1001_0000: mode <= PREPARE;
         8'b1001_0xxx: case (tstate)
 
             0: begin tstate <= 1; regn <= opcode[2:0]; modrm[5:3] <= opcode[2:0]; {isize, idir} <= 2'b11; end
-            1: begin tstate <= 2; main <= SETEA; wb <= eax; if (opsize) eax <= regv; else eax[15:0] <= regv; end
-            2: begin sel <= 0; main <= PREPARE; end
+            1: begin tstate <= 2; mode <= SETEA; wb <= eax; if (opsize) eax <= regv; else eax[15:0] <= regv; end
+            2: begin sel <= 0; mode <= PREPARE; end
 
         endcase
 
@@ -299,31 +300,87 @@ else if (locked) case (main)
                 idir   <= 1;
                 isize  <= opcode[3];
                 modrm[5:3] <= opcode[2:0];
-                main   <= IMMEDIATE;
+                mode   <= IMMEDIATE;
 
             end
-            1: begin tstate <= 2; main <= SETEA; end
-            2: main <= PREPARE;
+            1: begin tstate <= 2; mode <= SETEA; end
+            2: mode <= PREPARE;
 
         endcase
 
-        // TEST eax,#
+        // MOV ac, [m16]
+        8'b1010_00xx: case (tstate)
+
+            0: begin // Чтение imm8/16/32
+
+                tstate  <= 1;
+                opsizet <= opsize;
+                opsize  <= adsize;
+                isize   <= 1;
+                mode    <= IMMEDIATE;
+
+            end
+            1: begin // Запрос на чтение из памяти или запись в память
+
+                tstate <= 2;
+                sel    <= 1;
+                modrm  <= 0;
+                idir   <= 0;
+                isize  <= opcode[0];
+                opsize <= opsizet;
+                ea     <= wb;
+
+                // acc -> mem
+                if (opcode[1]) begin mode <= SETEA; wb <= eax; end else
+                // mem -> acc
+                begin mode <= FETCHEA; sel <= 1; estate <= 4; end
+
+            end
+            2: begin // Запись в регистр ACC или выход
+
+                sel  <= 0;
+                mode <= PREPARE;
+
+                // Запись в регистр AL, AX, EAX
+                if (opcode[1] == 0) begin
+
+                    if (isize && opsize) eax <= op1;
+                    else if (isize)      eax[15:0] <= op1[15:0];
+                    else eax[7:0] <= op1[7:0];
+
+                end
+
+            end
+
+        endcase
+
+        // TEST eax, #
         8'b1010_100x: case (tstate)
 
-            0: begin tstate <= 1; isize <= opcode[0]; main <= IMMEDIATE; end
+            0: begin tstate <= 1; isize <= opcode[0]; mode <= IMMEDIATE; end
             1: begin tstate <= 2; alumode <= 4; op1 <= eax; op2 = wb; end
-            2: begin flags <= flags_o; sel <= 0; main <= PREPARE; end
+            2: begin flags <= flags_o; sel <= 0; mode <= PREPARE; end
+
+        endcase
+
+        // MOV rm, #
+        8'b1100_011x: case (tstate)
+
+            0: begin tstate <= 1; {idir, isize} <= {1'b0, opcode[0]}; skip_op <= 1; mode <= FETCHEA; end
+            1: begin tstate <= 2; sel <= 0; mode <= IMMEDIATE; end
+            2: begin tstate <= 3; sel <= 1; mode <= SETEA; end
+            3: begin sel <= 0; mode <= PREPARE; end
 
         endcase
 
         // HLT
-        8'b1111_0100: begin ip <= ip - 1; main <= PREPARE; end
+        8'b1111_0100: begin ip <= ip - 1; mode <= PREPARE; end
 
         // CMC, CLC, STC, CLI, STI, CLD, STD
-        8'b1111_0101: begin flags[CF] <= ~flags[CF]; main <= PREPARE; end
-        8'b1111_100x: begin flags[CF] <= opcode[0];  main <= PREPARE; end
-        8'b1111_101x: begin flags[IF] <= opcode[0];  main <= PREPARE; end
-        8'b1111_110x: begin flags[DF] <= opcode[0];  main <= PREPARE; end
+        8'b1111_0101: begin flags[CF] <= ~flags[CF]; mode <= PREPARE; end
+        8'b1111_100x: begin flags[CF] <= opcode[0];  mode <= PREPARE; end
+        8'b1111_101x: begin flags[IF] <= opcode[0];  mode <= PREPARE; end
+        8'b1111_110x: begin flags[DF] <= opcode[0];  mode <= PREPARE; end
 
     endcase
 
@@ -404,7 +461,7 @@ else if (locked) case (main)
             if (adsize)
             casex (bus)
 
-                8'b11_xxx_xxx: begin estate <= 0; main <= MAIN; end // reg
+                8'b11_xxx_xxx: begin estate <= 0; mode <= MAIN; end // reg
                 8'b00_xxx_101: begin estate <= 8; ea <= 0; end      // disp32
                 8'bxx_xxx_100: begin estate <= 12; end              // sib
                 8'b00_xxx_xxx: begin estate <= 4; sel <= 1; end     // без disp
@@ -419,7 +476,7 @@ else if (locked) case (main)
                 8'b00_xxx_xxx: begin estate <= 4; sel <= 1; end // без disp
                 8'b01_xxx_xxx: begin estate <= 3; end           // disp8
                 8'b10_xxx_xxx: begin estate <= 1; end           // disp16
-                8'b11_xxx_xxx: begin estate <= 0; main <= MAIN; end
+                8'b11_xxx_xxx: begin estate <= 0; mode <= MAIN; end
 
             endcase
 
@@ -444,9 +501,13 @@ else if (locked) case (main)
         // Чтение операнда 8bit из памяти
         4: begin
 
-            if (idir) op2 <= bus; else op1 <= bus;
-            if (isize) begin estate <= 5; ea <= ea + 1; end
-            else       begin estate <= 0; main <= MAIN; end
+            if (skip_op) begin estate <= 0; mode <= MAIN; end
+            else begin
+
+                if (idir) op2 <= bus; else op1 <= bus;
+                if (isize) begin estate <= 5; ea <= ea + 1; end
+                else       begin estate <= 0; mode <= MAIN; end
+            end
 
         end
 
@@ -455,13 +516,13 @@ else if (locked) case (main)
 
             if (idir) op2[15:8] <= bus; else op1[15:8] <= bus;
             if (opsize) begin estate <= 6; ea <= ea + 1; end
-            else        begin estate <= 0; ea <= ea - 1; main <= MAIN; end
+            else        begin estate <= 0; ea <= ea - 1; mode <= MAIN; end
 
         end
 
         // Чтение операнда 32 бит (память)
         6: begin estate <= 7; if (idir) op2[23:16] <= bus; else op1[23:16] <= bus; ea <= ea + 1; end
-        7: begin estate <= 0; if (idir) op2[31:24] <= bus; else op1[31:24] <= bus; ea <= ea - 3; main <= MAIN; end
+        7: begin estate <= 0; if (idir) op2[31:24] <= bus; else op1[31:24] <= bus; ea <= ea - 3; mode <= MAIN; end
 
         // Чтение +disp32 и переход к чтение операнда из памяти
         8:  begin tstate <= 9;  ip <= ip + 1; ea        <= ea        + bus; end
@@ -551,7 +612,7 @@ else if (locked) case (main)
 
                 endcase
 
-                main <= MAIN;
+                mode <= MAIN;
 
             end
             // Запись [7:0] в память
@@ -570,7 +631,7 @@ else if (locked) case (main)
 
             if (isize)
                  begin estate <= 2; data <= wb[15:8]; ea <= ea + 1; end
-            else begin estate <= 0; wreq <= 0; main <= MAIN; end
+            else begin estate <= 0; wreq <= 0; mode <= MAIN; end
 
         end
 
@@ -578,23 +639,23 @@ else if (locked) case (main)
         2: begin
 
             if (opsize) begin estate <= 3; data <= wb[23:16]; ea <= ea + 1; end
-            else        begin estate <= 0; wreq <= 0; main <= MAIN; ea <= ea - 1; end
+            else        begin estate <= 0; wreq <= 0; mode <= MAIN; ea <= ea - 1; end
 
         end
 
         // Завершение записи 32 bit
         3: begin estate <= 4; data <= wb[31:24]; ea <= ea + 1; end
-        4: begin estate <= 0; wreq <= 0; main <= MAIN; ea <= ea - 3; end
+        4: begin estate <= 0; wreq <= 0; mode <= MAIN; ea <= ea - 3; end
 
     endcase
 
     // Получение imm8/16/32
     IMMEDIATE: case (estate)
 
-        0: begin ip <= ip + 1; wb        <= bus; if (isize == 0) main <= MAIN; else begin estate <= 1; end end
-        1: begin ip <= ip + 1; wb[ 15:8] <= bus; if (opsize) estate <= 2; else begin estate <= 0; main <= MAIN; end end
+        0: begin ip <= ip + 1; wb        <= bus; if (isize == 0) mode <= MAIN; else begin estate <= 1; end end
+        1: begin ip <= ip + 1; wb[ 15:8] <= bus; if (opsize) estate <= 2; else begin estate <= 0; mode <= MAIN; end end
         2: begin ip <= ip + 1; wb[23:16] <= bus; estate <= 3; end
-        3: begin ip <= ip + 1; wb[31:24] <= bus; estate <= 0; main <= MAIN; end
+        3: begin ip <= ip + 1; wb[31:24] <= bus; estate <= 0; mode <= MAIN; end
 
     endcase
 
@@ -629,13 +690,13 @@ else if (locked) case (main)
                 estate <= 0;
                 sel    <= 0;
                 wreq   <= 0;
-                main   <= MAIN;
+                mode   <= MAIN;
 
             end
 
         end
         3: begin estate <= 4; ea <= ea + 1; data <= wb[31:24];  end
-        4: begin estate <= 0; sel <= 0; wreq <= 0; main <= MAIN; end
+        4: begin estate <= 0; sel <= 0; wreq <= 0; mode <= MAIN; end
 
     endcase
 
@@ -664,20 +725,20 @@ else if (locked) case (main)
             wb[15:8] <= bus;
 
             if (opsize) begin estate <= 3; ea <= ea + 1; end
-            else        begin estate <= 0; sel <= 0; main <= MAIN; end
+            else        begin estate <= 0; sel <= 0; mode <= MAIN; end
 
         end
         3: begin estate <= 4; wb[23:16] <= bus; ea <= ea + 1; end
-        4: begin estate <= 0; wb[31:24] <= bus; sel <= 0; main <= MAIN; end
+        4: begin estate <= 0; wb[31:24] <= bus; sel <= 0; mode <= MAIN; end
 
     endcase
 
-    // Загрузка и проверка нового сегментного регистра
+    // Загрузка и проверка нового сегментного регистра [regn, wb]
     LOADSEG: case (estate)
 
         0: begin
 
-            main <= MAIN;
+            mode <= MAIN;
             case (regn)
 
                 3'b000: seg_es <= wb;
@@ -690,6 +751,7 @@ else if (locked) case (main)
             endcase
 
         end
+
     endcase
 
     // INTERRUPT

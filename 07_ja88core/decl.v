@@ -35,14 +35,16 @@ reg [ 1:0]  sel_rep = 0;
 // Состояние процессора
 // ---------------------------------------------------------------------
 
-reg [3:0]   main    = 0;
+reg [3:0]   mode    = 0;
 reg [3:0]   tstate  = 0;
 reg [3:0]   estate  = 0;
 reg [7:0]   opcode  = 0;
 reg [7:0]   modrm   = 0;
+reg         skip_op = 0;    // Не считывать операнды
 reg         stack32 = 0;    // 16/32
 reg         isize   = 0;    // 8/16
 reg         opsize  = 0;    // 16/32
+reg         opsizet = 0;
 reg         adsize  = 0;    // 16/32
 reg         idir    = 0;    // rm,r | r,rm
 reg [ 2:0]  regn    = 0;    // regv = register[regn]
