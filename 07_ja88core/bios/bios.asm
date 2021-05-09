@@ -1,7 +1,7 @@
 
             org     0
 
-            mov     [bx+2], byte $44
+            jmp     near m1
             hlt
             mov     ax, $b800
             mov     ds, ax

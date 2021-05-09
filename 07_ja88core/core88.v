@@ -373,6 +373,17 @@ else if (locked) case (mode)
 
         endcase
 
+        // JMP b16
+        8'b1110_1001: case (tstate)
+
+            0: begin tstate <= 1; isize <= 1; mode <= IMMEDIATE; end
+            1: begin mode <= PREPARE; ip <= ip + wb; end
+
+        endcase
+
+        // JMP b8
+        8'b1110_1011: begin ip <= ip + 1 + {{8{bus[7]}}, bus[7:0]}; mode <= PREPARE; end
+
         // HLT
         8'b1111_0100: begin ip <= ip - 1; mode <= PREPARE; end
 
