@@ -245,6 +245,15 @@ else if (locked) case (mode)
 
         endcase
 
+        // LEA r16, ea
+        8'b1000_1101: case (tstate)
+
+            0: begin tstate <= 1; {idir, isize} <= 2'b11; mode <= FETCHEA; skip_op <= 1; end
+            1: begin tstate <= 2; wb <= ea; mode <= SETEA; end
+            2: begin sel <= 0; mode <= PREPARE; end
+
+        endcase
+
         // MOV sreg|rm
         8'b1000_11x0: case (tstate)
 
@@ -281,6 +290,16 @@ else if (locked) case (mode)
 
         endcase
 
+        // POP rm
+        8'b1000_1111: case (tstate)
+
+            0: begin tstate <= 1; mode <= POP; {idir, isize} <= 2'b01; op1 <= seg_ea; end
+            1: begin tstate <= 2; mode <= FETCHEA; skip_op <= 1;       seg_ea <= op1; end
+            2: begin tstate <= 3; mode <= SETEA; end
+            3: begin sel    <= 0; mode <= PREPARE; end
+
+        endcase
+
         // XCHG ax, r
         8'b1001_0000: mode <= PREPARE;
         8'b1001_0xxx: case (tstate)
@@ -295,7 +314,7 @@ else if (locked) case (mode)
         8'b1001_1000: begin
 
             if (opsize) eax[31:16] <= {16{eax[15]}};
-            else        eax[15:7]  <= {8{eax[7]}};
+            else        eax[15:8]  <= {8{eax[7]}};
 
             mode <= PREPARE;
 
@@ -314,7 +333,7 @@ else if (locked) case (mode)
         // PUSHF
         8'b1001_1100: case (tstate)
 
-            0: begin tstate <= 1; mode <= PUSH; wb <= {4'b1111, flags};  end
+            0: begin tstate <= 1; mode <= PUSH; wb <= {{20{1'b1}}, flags};  end
             1: begin sel <= 0; mode <= PREPARE; end
 
         endcase
@@ -326,6 +345,10 @@ else if (locked) case (mode)
             1: begin flags <= wb[11:0]; sel <= 0; mode <= PREPARE; end
 
         endcase
+
+        // SAHF, LAHF
+        8'b1001_1110: begin flags[7:0] <= eax[15:8]; mode <= PREPARE; end
+        8'b1001_1111: begin eax[15:8] <= flags[7:0]; mode <= PREPARE; end
 
         // MOV r,#
         8'b1011_xxxx: case (tstate)
@@ -409,11 +432,53 @@ else if (locked) case (mode)
 
         endcase
 
+        // INT 1/3
+        8'b1111_0001,
+        8'b1100_1100: case (tstate)
+
+            0: begin tstate <= 1; wb <= opcode[0] ? 1 : 3; mode <= INTERRUPT; end
+            1: begin mode <= PREPARE; end
+
+        endcase
+
+        // INT i8
+        8'b1100_1101: case (tstate)
+
+            0: begin tstate <= 1; isize <= 0; mode <= IMMEDIATE; end
+            1: begin tstate <= 2; mode <= INTERRUPT; end
+            2: begin mode <= PREPARE; end
+
+        endcase
+
+        // INTO: Вызов INT4 если OF=1
+        8'b1100_1110: case (tstate)
+
+            0: begin
+
+                tstate <= 1;
+                wb     <= 4;
+                mode   <= flags[OF] ? INTERRUPT : PREPARE;
+
+            end
+            1: mode <= PREPARE;
+
+        endcase
+
         // JMP b16
         8'b1110_1001: case (tstate)
 
             0: begin tstate <= 1; isize <= 1; mode <= IMMEDIATE; end
             1: begin mode <= PREPARE; ip <= ip + wb; end
+
+        endcase
+
+        // JMP b16:c16
+        8'b1110_1010: case (tstate)
+
+            0: begin tstate <= 1; isize <= 1; mode <= IMMEDIATE; end
+            1: begin tstate <= 2; op1 <= wb; opsize <= 0; mode <= IMMEDIATE; end
+            2: begin tstate <= 3; mode <= LOADSEG; regn <= 1; ip <= op1; end
+            3: begin mode <= PREPARE; end
 
         endcase
 
@@ -696,7 +761,7 @@ else if (locked) case (mode)
 
     endcase
 
-    // Получение imm8/16/32
+    // Получение imm8/16/32 [isize]
     IMMEDIATE: case (estate)
 
         0: begin ip <= ip + 1; wb        <= bus; if (isize == 0) mode <= MAIN; else begin estate <= 1; end end
@@ -801,7 +866,42 @@ else if (locked) case (mode)
 
     endcase
 
-    // INTERRUPT
+    // Вызов прерывания [wb]
+    INTERRUPT: case (estate)
+
+        // Запись в стек CS:IP:FLAGS
+        0: begin
+
+            estate      <= 1;
+            sel         <= 1;
+            wreq        <= 1;
+            seg_ea      <= seg_ss;
+            ea          <= esp[15:0] - 2*3; // 16 bit
+            esp[15:0]   <= esp[15:0] - 2*3;
+            data        <= ip[7:0];
+
+        end
+        1: begin estate <= 2; ea <= ea + 1; data <= ip[15:8]; end
+        2: begin estate <= 3; ea <= ea + 1; data <= seg_cs[7:0]; end
+        3: begin estate <= 4; ea <= ea + 1; data <= seg_cs[15:8]; end
+        4: begin estate <= 5; ea <= ea + 1; data <= flags[7:0]; end
+        5: begin estate <= 6; ea <= ea + 1; data <= {4'b1111, flags[11:8]}; end
+        6: begin estate <= 7;
+
+            wreq      <= 0;
+            flags[IF] <= 1'b0;
+            flags[TF] <= 1'b0;
+            seg_ea    <= 0;
+            ea        <= {wb, 2'b00};
+
+        end
+        // Загрузка нового CS:IP из IVT
+        7:  begin estate <= 8;  ip[7:0]  <= bus; ea <= ea + 1; end
+        8:  begin estate <= 9;  ip[15:8] <= bus; ea <= ea + 1; end
+        9:  begin estate <= 10; wb[7:0]  <= bus; ea <= ea + 1; end
+        10: begin estate <= 0;  wb[15:8] <= bus; sel <= 0; regn <= 1; mode <= LOADSEG; end
+
+    endcase
 
 endcase
 

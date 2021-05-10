@@ -23,22 +23,14 @@ int9:
         mov     bx, 0x40
         mov     es, bx
         mov     bh, al
-
-        ; -- конверсия к ASCII
         push    bx
         mov     bx, a2scan_tbl
         xlatb
         pop     bx
-
-        ; Хвост в BIOS буфера клавиатуры идет в BP, там где добавляются новые нажатия
         mov     bp, [es: kbbuf_tail - bios_data]
         mov     byte [es: bp],   al     ; ASCII code
         mov     byte [es: bp+1], bh     ; Scan code
-
-        ; ESC keystroke is in the buffer now
         add     word [es: kbbuf_tail - bios_data], 2
-
-        ; Wrap the tail around the head if the buffer gets too large
         call    kb_adjust_buf
 
 no_add_buf:
