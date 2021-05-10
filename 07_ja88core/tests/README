@@ -1,0 +1,10 @@
+Источник кода
+
+    https://opencores.org/websvn/listing?repname=zet86&path=%2Fzet86%2Ftrunk%2Ftests%2F&rev=0
+
+Результаты должны быть
+
+    http://web.archive.org/web/20120403224429/http://zet.aluzina.org/index.php/Category:Test_benches
+
+    14 http://web.archive.org/web/20120625024726/http://zet.aluzina.org/index.php/Addition_instructions_test_bench
+    01 http://web.archive.org/web/20120625024922/http://zet.aluzina.org/index.php/Jmp/mov_test_bench
