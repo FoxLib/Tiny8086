@@ -3,10 +3,10 @@
             org     0
 
 bios_entry:
-into
+
             ; Обнуляем сегменты ds=es=ss=0, sp=300h
             ; Находится в Interrupt Vector Table (256b)
-
+int1
             cli
             cld
             xor     ax, ax

@@ -872,21 +872,31 @@ else if (locked) case (mode)
         // Запись в стек CS:IP:FLAGS
         0: begin
 
-            estate      <= 1;
-            sel         <= 1;
-            wreq        <= 1;
-            seg_ea      <= seg_ss;
-            ea          <= esp[15:0] - 2*3; // 16 bit
-            esp[15:0]   <= esp[15:0] - 2*3;
-            data        <= ip[7:0];
+            estate  <= 1;
+            sel     <= 1;
+            wreq    <= 1;
+            seg_ea  <= seg_ss;
+            data    <= ip[7:0];
+
+            if (stack32) begin
+                ea  <= esp - 4*3;
+                esp <= esp - 4*3;
+            end
+            else begin
+                ea        <= esp[15:0] - 2*3;
+                esp[15:0] <= esp[15:0] - 2*3;
+            end
 
         end
-        1: begin estate <= 2; ea <= ea + 1; data <= ip[15:8]; end
-        2: begin estate <= 3; ea <= ea + 1; data <= seg_cs[7:0]; end
-        3: begin estate <= 4; ea <= ea + 1; data <= seg_cs[15:8]; end
-        4: begin estate <= 5; ea <= ea + 1; data <= flags[7:0]; end
-        5: begin estate <= 6; ea <= ea + 1; data <= {4'b1111, flags[11:8]}; end
-        6: begin estate <= 7;
+        1: begin data <= ip[15:8]; estate <= stack32 ? 2 : 4; ea <= ea + 1; end
+        // 2, 3
+        4: begin data <= seg_cs[ 7:0]; estate <= 5; ea <= ea + 1; end
+        5: begin data <= seg_cs[15:8]; estate <= stack32 ? 6 : 8; ea <= ea + 1; end
+        // 6, 7
+        8: begin data <= flags[7:0]; estate <= 9; ea <= ea + 1; end
+        9: begin data <= {4'b1111, flags[11:8]}; estate <= stack32 ? 10 : 12; ea <= ea + 1; end
+        // 10, 11
+        12: begin estate <= 13;
 
             wreq      <= 0;
             flags[IF] <= 1'b0;
@@ -896,10 +906,13 @@ else if (locked) case (mode)
 
         end
         // Загрузка нового CS:IP из IVT
-        7:  begin estate <= 8;  ip[7:0]  <= bus; ea <= ea + 1; end
-        8:  begin estate <= 9;  ip[15:8] <= bus; ea <= ea + 1; end
-        9:  begin estate <= 10; wb[7:0]  <= bus; ea <= ea + 1; end
-        10: begin estate <= 0;  wb[15:8] <= bus; sel <= 0; regn <= 1; mode <= LOADSEG; end
+        13: begin estate <= 14; ip[7:0]  <= bus; ea <= ea + 1; end
+        14: begin estate <= 15; ip[15:8] <= bus; ea <= ea + 1; end
+        15: begin estate <= 16; wb[7:0]  <= bus; ea <= ea + 1; end
+        16: begin estate <= 0;  wb[15:8] <= bus; sel <= 0; regn <= 1; mode <= LOADSEG; end
+
+        // 32-х битный
+        default: begin estate <= estate + 1; data <= 0; ea <= ea + 1; end
 
     endcase
 

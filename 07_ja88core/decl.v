@@ -39,7 +39,7 @@ reg [ 1:0]  sel_rep = 0;
 
 reg [3:0]   mode    = 0;
 reg [3:0]   tstate  = 0;
-reg [3:0]   estate  = 0;
+reg [4:0]   estate  = 0;
 reg [7:0]   opcode  = 0;
 reg [7:0]   modrm   = 0;
 reg         skip_op = 0;    // Не считывать операнды
