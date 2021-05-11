@@ -1,7 +1,7 @@
 all: 01_jmpmov.o 14_add.o
-	rm *.o
+	php ../bios/bin2hex.php 01_jmpmov.s.bin > ../bios.hex
 %.o: %.s
 	as $< -o $@
 	objcopy -O binary --only-section=.text $@ $<.bin
-test:
-	php ../bios/bin2hex.php 01_jmpmov.s.bin > ../bios.hex
+clean:
+	rm *.o
