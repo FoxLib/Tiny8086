@@ -1,8 +1,7 @@
-# mov: 1 (word), 2 (word), 3 (off, base+index+off), 4, 5 (off),
-#      7 (byte,word), 8 (byte off), 9 (word base), 10 (byte,word),
+# mov: 1 (word), 2 (word), 3 (off, base+index+off), 4, 5 (off), 
+#      7 (byte,word), 8 (byte off), 9 (word base), 10 (byte,word), 
 #      11 (word off, byte base+index), 12 (imm,special)
 # jmp: 1, 2, 3 (reg), 3 (mem base+index+off), 4, 5 (mem base+index+off)
-
 .code16
 start:
 jmp b                   # (2)  jmp
@@ -70,3 +69,4 @@ jmp start               # (1)  jmp
 
 .org 65534
 .word 0xffff
+
