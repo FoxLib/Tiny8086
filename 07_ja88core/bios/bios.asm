@@ -6,7 +6,7 @@ bios_entry:
 
             ; Обнуляем сегменты ds=es=ss=0, sp=300h
             ; Находится в Interrupt Vector Table (256b)
-int1
+call t
             cli
             cld
             xor     ax, ax
@@ -63,8 +63,8 @@ hlt
             ; Jump to boot sector
 
             jmp     $
-
-
+t:
+ret $1234
             include "biosconfig.asm"
             include "ivt.asm"
             include "keyboard.asm"

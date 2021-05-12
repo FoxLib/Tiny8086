@@ -422,6 +422,23 @@ else if (locked) case (mode)
 
         endcase
 
+        // RET [i16]
+        8'b1100_001x: case (tstate)
+
+            // Если opcode[0]=0, imm16
+            0: begin tstate <= 1; isize <= 1; mode <= POP; end
+            1: begin tstate <= 2; op1 <= wb; if (opcode[0] == 0) mode <= IMMEDIATE; end
+            2: begin
+
+                ip   <= op1;
+                sel  <= 0;
+                mode <= PREPARE;
+                if (stack32) esp <= esp + wb; else esp[15:0] <= esp[15:0] + wb;
+
+            end
+
+        endcase
+
         // MOV rm, #
         8'b1100_011x: case (tstate)
 
@@ -461,6 +478,18 @@ else if (locked) case (mode)
 
             end
             1: mode <= PREPARE;
+
+        endcase
+
+        // SALC
+        8'b1101_0110: begin eax[7:0] <= {8{flags[CF]}}; mode <= PREPARE; end
+
+        // CALL b16
+        8'b1110_1000: case (tstate)
+
+            0: begin tstate <= 1; isize <= 1; mode <= IMMEDIATE; end
+            1: begin tstate <= 2; wb <= ip; ip <= ip + wb; mode <= PUSH; end
+            2: begin mode <= PREPARE; end
 
         endcase
 
