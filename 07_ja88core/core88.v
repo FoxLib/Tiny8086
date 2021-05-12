@@ -320,7 +320,7 @@ else if (locked) case (mode)
 
         end
 
-        // CWD,CDQ
+        // CWD, CDQ
         8'b1001_1001: begin
 
             if (opsize) edx       <= {32{eax[31]}};
@@ -329,6 +329,18 @@ else if (locked) case (mode)
             mode <= PREPARE;
 
         end
+
+        // CALL far
+        8'b1001_1010: case (tstate)
+
+            0: begin tstate <= 1; isize  <= 1; mode <= IMMEDIATE; end
+            1: begin tstate <= 2; opsize <= 0; mode <= IMMEDIATE; op1 <= wb; end
+            2: begin tstate <= 3; mode <= PUSH; wb <= seg_cs;     op2 <= wb;  end
+            3: begin tstate <= 4; mode <= PUSH; wb <= ip; end
+            4: begin tstate <= 5; mode <= LOADSEG; wb <= op2; regn <= 1; ip <= op1; end
+            5: begin mode <= PREPARE; end
+
+        endcase
 
         // PUSHF
         8'b1001_1100: case (tstate)
