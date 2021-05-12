@@ -451,6 +451,18 @@ else if (locked) case (mode)
 
         endcase
 
+        // LES|LDS r16, [m]
+        8'b1100_010x: case (tstate)
+
+            0: begin tstate <= 1; {idir, isize} <= 2'b11; mode <= FETCHEA; end
+            1: begin tstate <= 2; mode <= SETEA; wb <= op2; end
+            2: begin tstate <= 3; ea   <= ea + opsize ? 4 : 2; end
+            3: begin tstate <= 4; wb[7:0]  <= bus; ea   <= ea + 1; end
+            4: begin tstate <= 5; wb[15:8] <= bus; regn <= opcode[0] ? 3 : 0; mode <= LOADSEG; sel <= 0; end
+            5: begin mode <= PREPARE; end
+
+        endcase
+
         // MOV rm, #
         8'b1100_011x: case (tstate)
 
@@ -458,6 +470,26 @@ else if (locked) case (mode)
             1: begin tstate <= 2; sel <= 0; mode <= IMMEDIATE; end
             2: begin tstate <= 3; sel <= 1; mode <= SETEA; end
             3: begin sel <= 0; mode <= PREPARE; end
+
+        endcase
+
+        // RETF
+        8'b1100_101x: case (tstate)
+
+            0: begin tstate <= 1; isize <= 1; mode <= POP; end
+            1: begin tstate <= 2; op1 <= wb;  mode <= POP; end
+            2: begin tstate <= 3; op2 <= wb;  if (opcode[0] == 0) mode <= IMMEDIATE; end
+            3: begin tstate <= 4;
+
+                ip   <= op1;
+                wb   <= op2;
+                regn <= 1;
+                sel  <= 0;
+                mode <= LOADSEG;
+                if (stack32) esp <= esp + wb; else esp[15:0] <= esp[15:0] + wb;
+
+            end
+            4: mode <= PREPARE;
 
         endcase
 
@@ -493,14 +525,33 @@ else if (locked) case (mode)
 
         endcase
 
+        // IRET
+        8'b1100_1111: case (tstate)
+
+            0: begin tstate <= 1; mode <= POP; end
+            1: begin tstate <= 2; mode <= POP; op1 <= wb; end
+            2: begin tstate <= 3; mode <= POP; op2 <= wb; end
+            3: begin tstate <= 4; mode <= LOADSEG; regn <= 1; ip <= op1; wb <= op2; flags <= wb; end
+            4: mode <= PREPARE;
+
+        endcase
+
         // SALC
         8'b1101_0110: begin eax[7:0] <= {8{flags[CF]}}; mode <= PREPARE; end
+
+        // XLATB
+        8'b1101_0111: case (tstate)
+
+            0: begin sel <= 1; tstate <= 1; ea <= ebx[15:0] + eax[7:0]; end
+            1: begin sel <= 0; eax[7:0] <= bus; mode <= PREPARE; end
+
+        endcase
 
         // JCXZ
         8'b1110_0011: begin
 
             mode <= PREPARE;
-            if (opsize && ecx == 0 || !adsize && ecx[15:0] == 0)
+            if ((opsize && ecx == 0) || (!adsize && ecx[15:0] == 0))
                 ip <= ip + 1 + {{24{bus[7]}}, bus[7:0]};
             else
                 ip <= ip + 1;
@@ -510,8 +561,8 @@ else if (locked) case (mode)
         // LOOPNZ, LOOPZ, LOOP
         8'b1110_00xx: begin
 
-            if (adsize) ecx <= ecx - 1;
-            else  ecx[15:0] <= ecx[15:0] - 1;
+            if (adsize) ecx       <= ecx - 1;
+            else        ecx[15:0] <= ecx[15:0] - 1;
 
             // ZF=0/1 и CX != 0 (после декремента)
             if (((flags[ZF] == opcode[0]) || opcode[1]) && (adsize ? ecx : ecx[15:0]) != 1)
