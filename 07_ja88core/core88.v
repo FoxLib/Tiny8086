@@ -496,6 +496,33 @@ else if (locked) case (mode)
         // SALC
         8'b1101_0110: begin eax[7:0] <= {8{flags[CF]}}; mode <= PREPARE; end
 
+        // JCXZ
+        8'b1110_0011: begin
+
+            mode <= PREPARE;
+            if (opsize && ecx == 0 || !adsize && ecx[15:0] == 0)
+                ip <= ip + 1 + {{24{bus[7]}}, bus[7:0]};
+            else
+                ip <= ip + 1;
+
+        end
+
+        // LOOPNZ, LOOPZ, LOOP
+        8'b1110_00xx: begin
+
+            if (adsize) ecx <= ecx - 1;
+            else  ecx[15:0] <= ecx[15:0] - 1;
+
+            // ZF=0/1 и CX != 0 (после декремента)
+            if (((flags[ZF] == opcode[0]) || opcode[1]) && (adsize ? ecx : ecx[15:0]) != 1)
+                ip <= ip + 1 + {{24{bus[7]}}, bus[7:0]};
+            else
+                ip <= ip + 1;
+
+            mode <= PREPARE;
+
+        end
+
         // CALL b16
         8'b1110_1000: case (tstate)
 
