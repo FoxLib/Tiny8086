@@ -4,6 +4,8 @@
 
 bios_entry:
 
+shl al, 1
+
             ; Обнуляем сегменты ds=es=ss=0, sp=300h
             ; Находится в Interrupt Vector Table (256b)
 

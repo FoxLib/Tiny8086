@@ -536,6 +536,16 @@ else if (locked) case (mode)
 
         endcase
 
+        // Сдвиговые инструкции (1,CL)
+        8'b1101_00xx: case (tstate)
+
+            0: begin tstate <= 1; mode <= FETCHEA; idir <= 0; isize <= opcode[0]; alumode <= opcode[5:3]; end
+            1: begin tstate <= 2; mode <= SHIFT; alumode <= modrm[5:3]; op2 <= opcode[1] ? ecx[4:0] : 1; end
+            2: begin tstate <= 3; mode <= SETEA; wb <= op1; end
+            3: begin sel <= 0; mode <= PREPARE;  end
+
+        endcase
+
         // SALC
         8'b1101_0110: begin eax[7:0] <= {8{flags[CF]}}; mode <= PREPARE; end
 
@@ -1073,14 +1083,18 @@ else if (locked) case (mode)
 
                     /* RCL */ 2:
                     begin
+
                         op1 <= isize ? (opsize ? {op1[30:0],flags[CF]} : {op1[14:0],flags[CF]}) : {op1[6:0],flags[CF]};
                         flags[CF] <= op1[wb];
+
                     end
 
                     /* RCR */ 3:
                     begin
+
                         op1 <= isize ? (opsize ? {flags[CF],op1[31:1]} : {flags[CF],op1[15:1]}) : {flags[CF],op1[7:1]};
                         flags[CF] <= op1[0];
+
                     end
 
                     /* SHL */ 4, 6:
@@ -1093,9 +1107,11 @@ else if (locked) case (mode)
                     end
                     /* SHR */ 5:
                     begin
+
                         flags[CF] <= op1[op2-1];
                         op1 <= op1 >> op2;
                         op2 <= 0;
+
                     end
 
                     /* SAR */ 7:
