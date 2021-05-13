@@ -1035,6 +1035,89 @@ else if (locked) case (mode)
 
     endcase
 
+    // Сдвиги:
+    // * alumode=операция
+    // * isize, opsize
+    // * op1
+    // * op2
+    SHIFT: case (estate)
+
+        // Вычисление ограничения количества сдвигов
+        0: begin
+
+            estate <= 1;
+            if (opsize && isize) begin wb <= 31; op2 <= op2[4:0]; end
+            else if (isize) begin wb <= 15; op2 <= op2[3:0]; end
+            else begin wb <= 7; op2 <= op2[2:0]; end
+
+        end
+
+        // Вычисление
+        1: begin
+
+            // Сдвиги
+            if (op2) begin
+
+                op2 <= op2 - 1;
+                case (alumode)
+
+                    /* ROL */ 0:
+                    begin op1 <= isize ? (opsize ? {op1[30:0],op1[31]} : {op1[14:0],op2[15]}) : {op1[6:0],op2[7]}; end
+
+                    /* ROR */ 1:
+                    begin op1 <= isize ? (opsize ? {op1[0],op1[31:1]} : {op1[0],op1[15:1]}) : {op1[0],op1[7:1]}; end
+
+                    /* RCL */ 2:
+                    begin
+                        op1 <= isize ? (opsize ? {op1[30:0],flags[CF]} : {op1[14:0],flags[CF]}) : {op1[6:0],flags[CF]};
+                        flags[CF] <= op1[wb];
+                    end
+
+                    /* RCR */ 3:
+                    begin
+                        op1 <= isize ? (opsize ? {flags[CF],op1[31:1]} : {flags[CF],op1[15:1]}) : {flags[CF],op1[7:1]};
+                        flags[CF] <= op1[0];
+                    end
+
+                    /* SHL */ 4, 6:
+                    begin
+
+                        flags[CF] <= op1[wb-op2+1];
+                        op1 <= op1 << op2;
+                        op2 <= 0;
+
+                    end
+
+                endcase
+
+            end
+            // Расчет флагов
+            else begin
+
+                estate <= 0;
+                mode   <= MAIN;
+
+                case (alumode)
+
+                    0: begin flags[CF] <= op1[0];  flags[OF] <= op1[0]  ^ op1[wb];   end
+                    1: begin flags[CF] <= op1[wb]; flags[OF] <= op1[wb] ^ op1[wb-1]; end
+                    2: begin flags[OF] <= flags[CF] ^ op1[wb]; end
+                    3: begin flags[OF] <= op1[wb] ^ op1[wb-1]; end
+                    4,6: begin
+
+                        flags[ZF] <= !op1;
+                        flags[SF] <= op1[wb];
+                        flags[PF] <= ~^op1[7:0];
+
+                    end
+
+                endcase
+
+            end
+        end
+
+    endcase
+
 endcase
 
 endmodule
