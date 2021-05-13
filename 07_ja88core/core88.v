@@ -1046,9 +1046,13 @@ else if (locked) case (mode)
         0: begin
 
             estate <= 1;
-            if (opsize && isize) begin wb <= 31; op2 <= op2[4:0]; end
-            else if (isize) begin wb <= 15; op2 <= op2[3:0]; end
-            else begin wb <= 7; op2 <= op2[2:0]; end
+
+            if (opsize && isize)
+                begin wb <= 31; op2 <= op2[4:0]; end
+            else if (isize)
+                begin wb <= 15; op2 <= op2[3:0]; end
+            else
+                begin wb <= 7;  op2 <= op2[2:0]; end
 
         end
 
@@ -1087,6 +1091,18 @@ else if (locked) case (mode)
                         op2 <= 0;
 
                     end
+                    /* SHR */ 5:
+                    begin
+                        flags[CF] <= op1[op2-1];
+                        op1 <= op1 >> op2;
+                        op2 <= 0;
+                    end
+
+                    /* SAR */ 7:
+                    begin
+                        op1 <= isize ? (opsize ? {op1[31],op1[31:1]} : {op1[15],op1[15:1]}) : {op1[7],op1[7:1]};
+                        flags[CF] <= op1[0];
+                    end
 
                 endcase
 
@@ -1103,11 +1119,12 @@ else if (locked) case (mode)
                     1: begin flags[CF] <= op1[wb]; flags[OF] <= op1[wb] ^ op1[wb-1]; end
                     2: begin flags[OF] <= flags[CF] ^ op1[wb]; end
                     3: begin flags[OF] <= op1[wb] ^ op1[wb-1]; end
-                    4,6: begin
+                    default: begin
 
                         flags[ZF] <= !op1;
                         flags[SF] <= op1[wb];
                         flags[PF] <= ~^op1[7:0];
+                        flags[AF] <= 1;
 
                     end
 

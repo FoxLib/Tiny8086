@@ -50,7 +50,7 @@ reg         opsizet = 0;
 reg         adsize  = 0;    // 16/32
 reg         idir    = 0;    // rm,r | r,rm
 reg [ 2:0]  regn    = 0;    // regv = register[regn]
-reg [ 3:0]  alumode = 0;
+reg [ 2:0]  alumode = 0;
 reg [31:0]  op1     = 0;
 reg [31:0]  op2     = 0;
 reg [31:0]  wb      = 0;    // Для записи в reg/rm

@@ -3,7 +3,7 @@ module alu
     // Входящие данные
     input   wire        isize,
     input   wire        opsize,
-    input   wire [ 3:0] alumode,
+    input   wire [ 2:0] alumode,
     input   wire [31:0] op1,
     input   wire [31:0] op2,
     input   wire [11:0] flags,
