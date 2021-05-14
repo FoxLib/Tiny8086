@@ -183,7 +183,7 @@ else if (locked) case (mode)
 
         end
 
-        // Arithmetic grp
+        // Arithmetic Grp
         8'b1000_00xx: case (tstate)
 
             // Прочесть байт modrm, найти ссылку на память
@@ -639,30 +639,41 @@ else if (locked) case (mode)
         8'b1111_011x: case (tstate)
 
             0: begin tstate <= 1; {idir, isize} <= opcode[0]; mode <= FETCHEA; end
-            1: case (modrm[5:3])
+            1: begin tstate <= 2; case (modrm[5:3])
 
                 // TEST
-                0, 1: begin tstate <= 2; sel <= 0; mode <= IMMEDIATE; end
+                0, 1: begin sel <= 0; mode <= IMMEDIATE; end
                 // NOT
-                2:    begin tstate <= 2; wb  <= ~op1; mode <= SETEA; end
+                2:    begin wb  <= ~op1; mode <= SETEA; end
                 // NEG
-                3:    begin tstate <= 2; op1 <= 0; op2 <= op1; alumode <= 5; end
+                3:    begin op1 <= 0; op2 <= op1; alumode <= 5; end
                 // MUL
-                4:    begin tstate <= 2; op2 <= isize ? (opsize ? eax : eax[15:0]) : eax[7:0]; end
+                4:    begin op2 <= isize ? (opsize ? eax : eax[15:0]) : eax[7:0]; end
                 // IMUL
-                5:    begin tstate <= 2;
+                5:    begin
 
                     op1 <= isize ? (opsize ? op1 : {{16{op1[15]}},op1[15:0]}) : {{24{op1[7]}},op1[7:0]};
                     op2 <= isize ? (opsize ? eax : {{16{eax[15]}},eax[15:0]}) : {{24{eax[7]}},eax[7:0]};
 
                 end
+                // DIV
+                6:    begin
 
-            endcase
-            2: case (modrm[5:3])
+                    diva   <= isize ? (opsize ? {edx, eax} : {edx[15:0],eax[15:0],32'h0}) : {edx[7:0], eax[7:0],48'h0};
+                    divb   <= isize ? (opsize ? op1 : op1[15:0]) : op1[7:0];
+                    divcnt <= isize ? (opsize ? 64 : 32) : 16;
+                    divrem <= 0;
+                    divres <= 0;
+                    mode   <= DIVIDE;
 
-                0, 1: begin tstate <= 3; op2 <= wb; alumode <= 4; end
+                end
+
+            endcase end
+            2: begin tstate <= 3; case (modrm[5:3])
+
+                0, 1: begin op2 <= wb; alumode <= 4; end
                 2:    begin sel <= 0; mode <= PREPARE; end
-                3:    begin tstate <= 3; wb <= result; flags <= flags_o; mode <= SETEA; end
+                3:    begin wb <= result; flags <= flags_o; mode <= SETEA; end
                 4, 5: begin
 
                     sel  <= 0;
@@ -696,12 +707,39 @@ else if (locked) case (mode)
                     end
 
                 end
+                6:    begin
 
-            endcase
+                    sel  <= 0;
+                    wb   <= 0;
+                    mode <= PREPARE;
+
+                    if (isize && opsize) begin
+
+                        eax <= divres[31:0];
+                        edx <= divrem[31:0];
+                        if (|divres[63:32] || divb[31:0] == 0) mode <= INTERRUPT;
+
+                    end else if (isize) begin
+
+                        eax[15:0] <= divres[15:0];
+                        edx[15:0] <= divrem[15:0];
+                        if (|divres[31:16] || divb[15:0] == 0) mode <= INTERRUPT;
+
+                    end else begin
+
+                        eax[7:0] <= divres[7:0];
+                        edx[7:0] <= divrem[7:0];
+                        if (|divres[15:8] || divb[7:0] == 0) mode <= INTERRUPT;
+
+                    end
+
+                end
+
+            endcase end
             3: case (modrm[5:3])
 
-                0, 1: begin tstate <= 0; flags <= flags_o; mode <= PREPARE; end
-                3:    begin sel <= 0; mode <= PREPARE; end
+                0, 1: begin flags <= flags_o; mode <= PREPARE; end
+                3, 6: begin sel <= 0; mode <= PREPARE; end
 
             endcase
 
@@ -781,15 +819,13 @@ else if (locked) case (mode)
 
     // Расширенный опкод
     // -----------------------------------------------------------------
-    EXTENDED0: begin mode <= EXTENDED; opcode <= bus; ip <= ip + 1; end
-
-    // Выполнение
     EXTENDED: casex (opcode)
 
         // Jccc i16/32
         8'b1000_xxxx: begin end
 
     endcase
+    EXTENDED0: begin mode <= EXTENDED; opcode <= bus; ip <= ip + 1; end
 
     // Считывание эффективного адреса и регистров
     FETCHEA: case (estate)
@@ -1316,6 +1352,21 @@ else if (locked) case (mode)
         end
 
     endcase
+
+    // Процедура деления
+    DIVIDE: begin
+
+        if (divcnt) begin
+
+            divrem <= {divrem,diva[63]} >= divb ? {divrem,diva[63]} - divb : {divrem,diva[63]};
+            divres <= {divres[62:0], {divrem,diva[63]} >= divb};
+            diva   <= {diva[62:0], 1'b0};
+            divcnt <= divcnt - 1;
+
+        end
+        else mode <= MAIN;
+
+    end
 
 endcase
 
