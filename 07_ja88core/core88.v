@@ -640,9 +640,21 @@ else if (locked) case (mode)
             0: begin tstate <= 1; {idir, isize} <= opcode[0]; mode <= FETCHEA; end
             1: case (modrm[5:3])
 
+                // TEST
                 0, 1: begin tstate <= 2; sel <= 0; mode <= IMMEDIATE; end
-                2:    begin tstate <= 2; wb <= ~op1; mode <= SETEA; end
+                // NOT
+                2:    begin tstate <= 2; wb  <= ~op1; mode <= SETEA; end
+                // NEG
                 3:    begin tstate <= 2; op1 <= 0; op2 <= op1; alumode <= 5; end
+                // MUL
+                4:    begin tstate <= 2; op2 <= isize ? (opsize ? eax : eax[15:0]) : eax[7:0]; end
+                // IMUL
+                5:    begin tstate <= 2;
+
+                    op1 <= isize ? (opsize ? op1 : {{16{op1[15]}},op1[15:0]}) : {{24{op1[7]}},op1[7:0]};
+                    op2 <= isize ? (opsize ? eax : {{16{eax[15]}},eax[15:0]}) : {{24{eax[7]}},eax[7:0]};
+
+                end
 
             endcase
             2: case (modrm[5:3])
@@ -650,6 +662,39 @@ else if (locked) case (mode)
                 0, 1: begin tstate <= 3; op2 <= wb; alumode <= 4; end
                 2:    begin sel <= 0; mode <= PREPARE; end
                 3:    begin tstate <= 3; wb <= result; flags <= flags_o; mode <= SETEA; end
+                4, 5: begin
+
+                    sel  <= 0;
+                    mode <= PREPARE;
+
+                    // CF,OF устанавливаются при переполнении
+                    // ZF при нулевом результате
+                    if (opsize && isize) begin // 32 bit
+
+                        eax <= mult[31:0];
+                        edx <= mult[63:32];
+                        flags[ZF] <= mult[63:0] == 0;
+                        flags[CF] <= edx != 0;
+                        flags[OF] <= edx != 0;
+
+                    end else if (isize) begin // 16 bit
+
+                        eax[15:0] <= mult[15:0];
+                        edx[15:0] <= mult[31:16];
+                        flags[ZF] <= mult[31:0] == 0;
+                        flags[CF] <= edx[15:0]  != 0;
+                        flags[OF] <= edx[15:0]  != 0;
+
+                    end else begin // 8 bit
+
+                        eax[15:0] <= mult[15:0];
+                        flags[ZF] <= mult[15:0] == 0;
+                        flags[CF] <= eax[15:8]  != 0;
+                        flags[OF] <= eax[15:8]  != 0;
+
+                    end
+
+                end
 
             endcase
             3: case (modrm[5:3])
