@@ -17,6 +17,7 @@ bios_entry:
             ; -- Чистая отладка лишь --
             call    cls
             mov     ax, $f1fa
+            imul    ah
             mov     di, 0
             call    print_hex_ax
             hlt

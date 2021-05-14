@@ -10,6 +10,7 @@
 int main(int argc, char* argv[]) {
 
     char in_start = 1;
+    int counter = 0;
 
     // Инициализация окна
     SDL_Init(SDL_INIT_VIDEO);
@@ -54,6 +55,12 @@ int main(int argc, char* argv[]) {
 
             // 25k x 60 ~ 1.5 MIPS
             x86run(25000);
+
+            if (counter++ >= 25) {
+                flash_cursor = !flash_cursor;
+                screen_redraw();
+                counter = 0;
+            }
 
             SDL_Flip(sdl_screen);
         }

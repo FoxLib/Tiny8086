@@ -56,6 +56,11 @@ void reset() {
     ms_prevtime = 0;
     initcpu();
 
+    cursor_x = 0;
+    cursor_y = 0;
+    cursor_l = 14;
+    cursor_h = 15;
+
     SpiModule.start();
 }
 
@@ -119,9 +124,24 @@ void print_char(int col, int row, unsigned char pchar, uint8_t attr) {
         unsigned char ch = font16[pchar][i];
 
         // Перебрать 8 бит в 1 байте
-        for (int j = 0; j < 8; j++)
-            for (int k = 0; k < 4; k++)
-                pset(2*(x + j) + (k&1), 2*(y + i) + (k>>1), colors[ ch & (1 << (7 - j)) ? fore : back ]);
+        for (int j = 0; j < 8; j++) {
+
+            int bitn = !!(ch & (1 << (7 - j)));
+
+            // Мигающий курсор
+            if (flash_cursor && i >= cursor_l && i <= cursor_h && cursor_x == col && cursor_y == row)
+                bitn ^= 1;
+
+            for (int k = 0; k < 4; k++) {
+                pset(2*(x + j) + (k&1), 2*(y + i) + (k>>1), colors[ bitn ? fore : back ]);
+            }
+        }
     }
 }
 
+// Полное обновление экрана
+void screen_redraw() {
+
+    for (int a = 0xb8000; a <= 0xb9000; a += 2)
+        writememb(a, RAM[a]);
+}
