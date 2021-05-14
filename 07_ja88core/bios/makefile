@@ -3,4 +3,4 @@ all:
 	php bin2hex.php bios.bin > ../bios.hex
 	php bin2mif.php bios.bin > ../de0/bios.mif
 	cd .. && make
-	# cd ../em/ && ./machine88
+	cd ../em/ && ./machine88

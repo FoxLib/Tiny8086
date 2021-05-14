@@ -14,6 +14,14 @@ bios_entry:
             mov     es, ax
             mov     ss, ax
             mov     sp, 0x0400
+            call    cls
+
+
+            mov     ax, $f1fa
+            mov     di, 0
+            call    print_hex_ax
+            hlt
+
 
             ; Установка IVT (2kb)
             xor     di, di
@@ -68,3 +76,4 @@ ret $1234
             include "biosconfig.asm"
             include "ivt.asm"
             include "keyboard.asm"
+            include "debug.asm"
