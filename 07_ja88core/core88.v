@@ -721,32 +721,57 @@ else if (locked) case (mode)
         8'b1111_1111: case (tstate)
 
             0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= {1'b0, opcode[0]}; end
-            1: case (modrm[5:3])
+            1: begin tstate <= 2; case (modrm[5:3])
 
                 // INC|DEC
-                0, 1: begin tstate <= 2; op2 <= 1; alumode <= modrm[3] ? 5 : 0; end
-
+                0, 1: begin op2 <= 1; alumode <= modrm[3] ? 5 : 0; end
                 // CALL rm16
-                2: begin tstate <= 2; wb <= ip; ip <= op1; mode <= PUSH; end
-
+                2: begin wb <= ip; ip <= op1; mode <= PUSH; end
+                // CALL far: Запись CS
+                3: begin wb <= seg_cs; mode <= PUSH; op2 <= ea; tmp16 <= seg_ea; end
                 // JMP rm16
                 4: begin ip <= op1; sel <= 0; mode <= PREPARE; end
-
+                // JMP far
+                5: begin ip <= op1; ea <= ea + (opsize ? 4 : 2); sel <= 1; end
                 // PUSH rm16
-                6: begin tstate <= 2; wb <= op1; mode <= PUSH; end
+                6: begin wb <= op1; mode <= PUSH; end
 
-            endcase
-            2: case (modrm[5:3])
+            endcase end
+            2: begin tstate <= 3; case (modrm[5:3])
 
                 // INC|DEC
-                0, 1: begin tstate <= 3; wb <= result; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
+                0, 1: begin wb <= result; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
+                // CALL far: запись IP
+                3: begin wb <= ip; ip <= op1; mode <= PUSH; end
+                // JMP far
+                5: begin wb <= bus; ea <= ea + 1; end
                 2, 6: mode <= PREPARE;
 
-            endcase
-            3: case (modrm[5:3])
+            endcase end
+            3: begin tstate <= 4; case (modrm[5:3])
 
                 // INC|DEC
                 0, 1: begin sel <= 0; mode <= PREPARE; end
+                // CALL far
+                3: begin sel <= 1; seg_ea <= op2; ea <= tmp16 + (opsize ? 4 : 2); end
+                // JMP far
+                5: begin wb[15:8] <= bus; mode <= LOADSEG; regn <= 1; end
+
+            endcase end
+            4: begin tstate <= 5; case (modrm[5:3])
+
+                3: begin wb <= bus; ea <= ea + 1; end
+                5: begin sel <= 0; mode <= PREPARE; end
+
+            endcase end
+            5: begin tstate <= 6; case (modrm[5:3])
+
+                3: begin wb[15:8] <= bus; mode <= LOADSEG; regn <= 1; end
+
+            endcase end
+            5: case (modrm[5:3])
+
+                3: begin sel <= 0; mode <= PREPARE; end
 
             endcase
 
