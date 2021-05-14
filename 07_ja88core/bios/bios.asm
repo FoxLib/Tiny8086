@@ -5,7 +5,7 @@
 bios_entry:
 
 
-sar dword [bx], cl
+neg word [bx]
 
             ; Обнуляем сегменты ds=es=ss=0, sp=300h
             ; Находится в Interrupt Vector Table (256b)

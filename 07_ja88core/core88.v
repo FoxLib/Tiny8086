@@ -634,6 +634,33 @@ else if (locked) case (mode)
         8'b1111_101x: begin flags[IF] <= opcode[0];  mode <= PREPARE; end
         8'b1111_110x: begin flags[DF] <= opcode[0];  mode <= PREPARE; end
 
+        // Групповые инструкции F6/F7
+        8'b1111_011x: case (tstate)
+
+            0: begin tstate <= 1; {idir, isize} <= opcode[0]; mode <= FETCHEA; end
+            1: case (modrm[5:3])
+
+                0, 1: begin tstate <= 2; sel <= 0; mode <= IMMEDIATE; end
+                2:    begin tstate <= 2; wb <= ~op1; mode <= SETEA; end
+                3:    begin tstate <= 2; op1 <= 0; op2 <= op1; alumode <= 5; end
+
+            endcase
+            2: case (modrm[5:3])
+
+                0, 1: begin tstate <= 3; op2 <= wb; alumode <= 4; end
+                2:    begin sel <= 0; mode <= PREPARE; end
+                3:    begin tstate <= 3; wb <= result; flags <= flags_o; mode <= SETEA; end
+
+            endcase
+            3: case (modrm[5:3])
+
+                0, 1: begin tstate <= 0; flags <= flags_o; mode <= PREPARE; end
+                3:    begin sel <= 0; mode <= PREPARE; end
+
+            endcase
+
+        endcase
+
     endcase
 
     // Считывание эффективного адреса и регистров
