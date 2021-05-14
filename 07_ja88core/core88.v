@@ -719,21 +719,21 @@ else if (locked) case (mode)
 
                     if (isize && opsize) begin
 
-                        eax <= signa^signb ? -divres[31:0] : divres[31:0];
+                        eax <= signd ? -divres[31:0] : divres[31:0];
                         edx <= divrem[31:0];
 
                         if (|divres[63:32] || divb[31:0] == 0) mode <= INTERRUPT;
 
                     end else if (isize) begin
 
-                        eax[15:0] <= signa^signb ? -divres[15:0] : divres[15:0];
+                        eax[15:0] <= signd ? -divres[15:0] : divres[15:0];
                         edx[15:0] <= divrem[15:0];
 
                         if (|divres[31:16] || divb[15:0] == 0) mode <= INTERRUPT;
 
                     end else begin
 
-                        eax[7:0] <= signa^signb ? -divres[7:0] : divres[7:0];
+                        eax[7:0] <= signd ? -divres[7:0] : divres[7:0];
                         edx[7:0] <= divrem[7:0];
 
                         if (|divres[15:8] || divb[7:0] == 0) mode <= INTERRUPT;
