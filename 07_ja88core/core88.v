@@ -657,14 +657,18 @@ else if (locked) case (mode)
 
                 end
                 // DIV
-                6:    begin
+                6, 7: begin
 
-                    diva   <= isize ? (opsize ? {edx, eax} : {edx[15:0],eax[15:0],32'h0}) : {edx[7:0], eax[7:0],48'h0};
-                    divb   <= isize ? (opsize ? op1 : op1[15:0]) : op1[7:0];
                     divcnt <= isize ? (opsize ? 64 : 32) : 16;
+                    diva   <= isize ? (opsize ? {edx, eax} : {edx[15:0],eax[15:0],32'h0}) : {eax[15:0],48'h0};
+                    divb   <= isize ? (opsize ? op1 : op1[15:0]) : op1[7:0];
                     divrem <= 0;
                     divres <= 0;
-                    mode   <= DIVIDE;
+                    signa  <= 0;
+                    signb  <= 0;
+
+                    // Переход к IDIV вместо DIV
+                    if (modrm[3]) tstate <= 4; else mode <= DIVIDE;
 
                 end
 
@@ -707,7 +711,7 @@ else if (locked) case (mode)
                     end
 
                 end
-                6:    begin
+                6, 7: begin
 
                     sel  <= 0;
                     wb   <= 0;
@@ -715,20 +719,23 @@ else if (locked) case (mode)
 
                     if (isize && opsize) begin
 
-                        eax <= divres[31:0];
+                        eax <= signa^signb ? -divres[31:0] : divres[31:0];
                         edx <= divrem[31:0];
+
                         if (|divres[63:32] || divb[31:0] == 0) mode <= INTERRUPT;
 
                     end else if (isize) begin
 
-                        eax[15:0] <= divres[15:0];
+                        eax[15:0] <= signa^signb ? -divres[15:0] : divres[15:0];
                         edx[15:0] <= divrem[15:0];
+
                         if (|divres[31:16] || divb[15:0] == 0) mode <= INTERRUPT;
 
                     end else begin
 
-                        eax[7:0] <= divres[7:0];
+                        eax[7:0] <= signa^signb ? -divres[7:0] : divres[7:0];
                         edx[7:0] <= divrem[7:0];
+
                         if (|divres[15:8] || divb[7:0] == 0) mode <= INTERRUPT;
 
                     end
@@ -742,6 +749,30 @@ else if (locked) case (mode)
                 3, 6: begin sel <= 0; mode <= PREPARE; end
 
             endcase
+
+            // Коррекция IDIV
+            4: begin
+
+                signa <= diva[63];
+
+                // Определение знака A
+                if (diva[63]) begin
+
+                    if (isize && opsize) diva <= -diva;
+                    else if (isize) diva[63:32] <= -diva[63:32];
+                    else diva[63:48] <= -diva[63:48];
+
+                end
+
+                // Определение знака A
+                if (isize && opsize && divb[31]) begin signb <= 1; divb[63:0] <= -divb[63:0]; end
+                else if (isize && divb[15])      begin signb <= 1; divb[31:0] <= -divb[31:0]; end
+                else if (divb[7])                begin signb <= 1; divb[15:0] <= -divb[15:0]; end
+
+                tstate <= 2;
+                mode   <= DIVIDE;
+
+            end
 
         endcase
 

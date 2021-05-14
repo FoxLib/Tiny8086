@@ -4,7 +4,10 @@
 
 bios_entry:
 
-div ecx
+mov ax, -6
+mov bx, 2
+cbw
+idiv bl
 
             ; Обнуляем сегменты ds=es=ss=0, sp=300h
             ; Находится в Interrupt Vector Table (256b)
@@ -18,8 +21,13 @@ div ecx
 
             ; -- Чистая отладка лишь --
             call    cls
-            mov     ax, $f1fa
-            imul    ah
+
+            mov     ax, $71fa
+            cwd
+            mov     bx, $0123
+            div     bx
+            mov     ax, dx
+
             mov     di, 0
             call    print_hex_ax
             hlt
