@@ -59,9 +59,10 @@ else if (locked) case (mode)
         8'h67: begin opcode <= bus; ip <= ip + 1; adsize  <= ~adsize; end
         8'hF2: begin opcode <= bus; ip <= ip + 1; sel_rep <= 1; end
         8'hF3: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2; end
+        8'h0F: begin opcode <= bus; ip <= ip + 1; mode    <= EXTENDED0; end
 
         // Неиспользуемые коды операции
-        8'h0F, 8'hF0, 8'h9B: begin opcode <= bus; ip <= ip + 1; end
+        8'hF0, 8'h9B: begin opcode <= bus; ip <= ip + 1; end
 
         // ALU modrm
         8'b00_xxx_0xx: case (tstate)
@@ -705,6 +706,63 @@ else if (locked) case (mode)
             endcase
 
         endcase
+
+        // Групповые инструкции #2 INC/DEC r8
+        8'b1111_1110: case (tstate)
+
+            0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= 2'b00; end
+            1: begin tstate <= 2; op2 <= 1; alumode <= modrm[3] ? 5 : 0; end
+            2: begin tstate <= 3; wb <= result; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
+            3: begin sel <= 0; mode <= PREPARE; end
+
+        endcase
+
+        // Групповые инструкции #3 Word/DWord
+        8'b1111_1111: case (tstate)
+
+            0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= {1'b0, opcode[0]}; end
+            1: case (modrm[5:3])
+
+                // INC|DEC
+                0, 1: begin tstate <= 2; op2 <= 1; alumode <= modrm[3] ? 5 : 0; end
+
+                // CALL rm16
+                2: begin tstate <= 2; wb <= ip; ip <= op1; mode <= PUSH; end
+
+                // JMP rm16
+                4: begin ip <= op1; sel <= 0; mode <= PREPARE; end
+
+                // PUSH rm16
+                6: begin tstate <= 2; wb <= op1; mode <= PUSH; end
+
+            endcase
+            2: case (modrm[5:3])
+
+                // INC|DEC
+                0, 1: begin tstate <= 3; wb <= result; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
+                2, 6: mode <= PREPARE;
+
+            endcase
+            3: case (modrm[5:3])
+
+                // INC|DEC
+                0, 1: begin sel <= 0; mode <= PREPARE; end
+
+            endcase
+
+        endcase
+
+    endcase
+
+    // Расширенный опкод
+    // -----------------------------------------------------------------
+    EXTENDED0: begin mode <= EXTENDED; opcode <= bus; ip <= ip + 1; end
+
+    // Выполнение
+    EXTENDED: casex (opcode)
+
+        // Jccc i16/32
+        8'b1000_xxxx: begin end
 
     endcase
 

@@ -3,7 +3,7 @@
             org     0
 
 bios_entry:
-
+;call word [bx]
             ; Обнуляем сегменты ds=es=ss=0, sp=300h
             ; Находится в Interrupt Vector Table (256b)
             cli

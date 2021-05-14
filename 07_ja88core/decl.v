@@ -65,16 +65,18 @@ localparam
 
 localparam
 
-    PREPARE     = 0,        // Эта подготовки инструкции к исполнению
-    MAIN        = 1,        // Обработка микрокода
-    FETCHEA     = 2,        // Считывание ModRM/EA
-    SETEA       = 3,        // Запись в память или регистр
-    PUSH        = 4,
-    POP         = 5,
-    INTERRUPT   = 6,
-    LOADSEG     = 7,
-    IMMEDIATE   = 8,
-    SHIFT       = 9;
+    PREPARE     = 0,    // Эта подготовки инструкции к исполнению
+    MAIN        = 1,    // Обработка микрокода
+    FETCHEA     = 2,    // Считывание ModRM/EA
+    SETEA       = 3,    // Запись в память или регистр
+    PUSH        = 4,    // Запись в стек
+    POP         = 5,    // Извлечь из стека
+    INTERRUPT   = 6,    // Вызов прерывания
+    LOADSEG     = 7,    // Загрузка сегмента
+    IMMEDIATE   = 8,    // Непосредственное значение
+    SHIFT       = 9,    // Сдвиги
+    EXTENDED0   = 10,
+    EXTENDED    = 11;   // Расширенный опкод
 
 initial data = 8'hFF;
 initial wreq = 0;
