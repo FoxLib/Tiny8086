@@ -758,16 +758,16 @@ else if (locked) case (mode)
                 // Определение знака A
                 if (diva[63]) begin
 
-                    if (isize && opsize) diva <= -diva;
-                    else if (isize) diva[63:32] <= -diva[63:32];
-                    else diva[63:48] <= -diva[63:48];
+                    if (isize && opsize) diva        <= -diva;
+                    else if (isize)      diva[63:32] <= -diva[63:32];
+                    else                 diva[63:48] <= -diva[63:48];
 
                 end
 
                 // Определение знака A
-                if (isize && opsize && divb[31]) begin signb <= 1; divb[63:0] <= -divb[63:0]; end
-                else if (isize && divb[15])      begin signb <= 1; divb[31:0] <= -divb[31:0]; end
-                else if (divb[7])                begin signb <= 1; divb[15:0] <= -divb[15:0]; end
+                if (isize && opsize && divb[31]) begin signb <= 1; divb[31:0] <= -divb[31:0]; end
+                else if (isize && divb[15])      begin signb <= 1; divb[15:0] <= -divb[15:0]; end
+                else if (divb[7])                begin signb <= 1; divb[ 7:0] <= -divb[ 7:0]; end
 
                 tstate <= 2;
                 mode   <= DIVIDE;
