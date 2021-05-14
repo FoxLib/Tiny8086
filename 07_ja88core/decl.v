@@ -13,7 +13,7 @@ reg [15:0]  seg_gs = 16'h0000;
 // Регистры
 reg [31:0]  eax = 32'h4321_1234;
 reg [31:0]  ebx = 32'hefd0_0000;
-reg [31:0]  ecx = 32'ha1ac_3344;
+reg [31:0]  ecx = 32'ha1ac_3342;
 reg [31:0]  edx = 32'hab21_6677;
 reg [31:0]  esp = 32'haaa3_5432;
 reg [31:0]  ebp = 32'ha940_5678;

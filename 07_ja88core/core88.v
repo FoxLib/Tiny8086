@@ -345,7 +345,7 @@ else if (locked) case (mode)
         // PUSHF
         8'b1001_1100: case (tstate)
 
-            0: begin tstate <= 1; mode <= PUSH; wb <= {{20{1'b1}}, flags};  end
+            0: begin tstate <= 1; mode <= PUSH; wb <= flags;  end
             1: begin sel <= 0; mode <= PREPARE; end
 
         endcase
@@ -536,13 +536,24 @@ else if (locked) case (mode)
 
         endcase
 
-        // Сдвиговые инструкции (1,CL)
+        // Сдвиговые инструкции (IMM)
+        8'b1100_000x: case (tstate)
+
+            0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= opcode[1:0]; end
+            1: begin tstate <= 2; mode <= IMMEDIATE; sel <= 0; isize <= 0; opsizet <= isize; end
+            2: begin tstate <= 3; mode <= SHIFT; alumode <= modrm[5:3]; op2 <= wb; isize <= opsizet; end
+            3: begin tstate <= 4; mode <= SETEA; sel <= 1; wb <= op1; end
+            4: begin sel    <= 0; mode <= PREPARE;  end
+
+        endcase
+
+        // Сдвиговые инструкции (CL,N)
         8'b1101_00xx: case (tstate)
 
-            0: begin tstate <= 1; mode <= FETCHEA; idir <= 0; isize <= opcode[0]; alumode <= opcode[5:3]; end
+            0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= opcode[0]; end
             1: begin tstate <= 2; mode <= SHIFT; alumode <= modrm[5:3]; op2 <= opcode[1] ? ecx[4:0] : 1; end
             2: begin tstate <= 3; mode <= SETEA; wb <= op1; end
-            3: begin sel <= 0; mode <= PREPARE;  end
+            3: begin sel    <= 0; mode <= PREPARE;  end
 
         endcase
 
@@ -1023,7 +1034,7 @@ else if (locked) case (mode)
         5: begin data <= seg_cs[15:8]; estate <= stack32 ? 6 : 8; ea <= ea + 1; end
         // 6, 7
         8: begin data <= flags[7:0]; estate <= 9; ea <= ea + 1; end
-        9: begin data <= {4'b1111, flags[11:8]}; estate <= stack32 ? 10 : 12; ea <= ea + 1; end
+        9: begin data <= flags[11:8]; estate <= stack32 ? 10 : 12; ea <= ea + 1; end
         // 10, 11
         12: begin estate <= 13;
 
