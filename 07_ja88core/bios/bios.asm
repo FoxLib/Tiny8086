@@ -6,7 +6,6 @@ bios_entry:
 
             ; Обнуляем сегменты ds=es=ss=0, sp=300h
             ; Находится в Interrupt Vector Table (256b)
-
             cli
             cld
             xor     ax, ax
@@ -14,9 +13,9 @@ bios_entry:
             mov     es, ax
             mov     ss, ax
             mov     sp, 0x0400
+
+            ; -- Чистая отладка лишь --
             call    cls
-
-
             mov     ax, $f1fa
             mov     di, 0
             call    print_hex_ax

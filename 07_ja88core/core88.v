@@ -81,7 +81,7 @@ else if (locked) case (mode)
                 mode    <= IMMEDIATE;
                 isize   <= opcode[0];
                 alumode <= opcode[5:3];
-                op1     <= opsize ? eax : eax[15:0];
+                op1     <= isize ? (opsize ? eax : eax[15:0]) : eax[7:0];
 
             end
             1: begin tstate <= 2; op2 <= wb; end
@@ -1159,7 +1159,7 @@ else if (locked) case (mode)
                 case (alumode)
 
                     /* ROL */ 0:
-                    begin op1 <= isize ? (opsize ? {op1[30:0],op1[31]} : {op1[14:0],op2[15]}) : {op1[6:0],op2[7]}; end
+                    begin op1 <= isize ? (opsize ? {op1[30:0],op1[31]} : {op1[14:0],op1[15]}) : {op1[6:0],op1[7]}; end
 
                     /* ROR */ 1:
                     begin op1 <= isize ? (opsize ? {op1[0],op1[31:1]} : {op1[0],op1[15:1]}) : {op1[0],op1[7:1]}; end
