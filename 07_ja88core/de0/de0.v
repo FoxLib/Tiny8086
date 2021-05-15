@@ -126,6 +126,14 @@ wire [ 7:0] q_memory;
 wire [ 7:0] q_bios;
 reg  [ 7:0] i_data;
 
+wire        port_clk;
+wire [15:0] port;
+wire [ 7:0] port_i;
+wire [ 7:0] port_o;
+wire        port_w;
+
+wire [10:0] cga_cursor;
+
 reg we_cgamem = 0;
 reg we_memory = 0;
 
@@ -190,15 +198,41 @@ core88 UnitCore88
     .clock      (clock_25),
     .resetn     (locked),
     .locked     (locked),
+
+    // Данные
     .address    (address),
     .bus        (i_data),
     .data       (o_data),
-    .wreq       (we)
+    .wreq       (we),
+
+    // Порты
+    .port_clk   (port_clk),
+    .port       (port),
+    .port_i     (port_i),
+    .port_o     (port_o),
+    .port_w     (port_w)
 );
 
+// ---------------------------------------------------------------------
+// Управление портами
+// ---------------------------------------------------------------------
+
+portctl PortCtlUnit
+(
+    .clock      (clock_25),
+    .port_clk   (port_clk),
+    .port       (port),
+    .port_i     (port_i),
+    .port_o     (port_o),
+    .port_w     (port_w),
+
+    // Устройства
+    .vga_cursor (cga_cursor)
+);
 
 endmodule
 
 `include "../cga.v"
 `include "../core88.v"
 `include "../alu.v"
+`include "../portctl.v"

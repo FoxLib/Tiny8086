@@ -3,18 +3,25 @@
             org     0
 
 bios_entry:
-aas
-            ; Обнуляем сегменты ds=es=ss=0, sp=300h
-            ; Находится в Interrupt Vector Table (256b)
+
             cli
             cld
+
+            mov     dx, 0x3d4
+            mov     ax, 0x560f
+            out     dx, ax
+            mov     ax, 0x020e
+            out     dx, ax
+
+            ; Обнуляем сегменты ds=es=ss=0, sp=300h
+            ; Находится в Interrupt Vector Table (256b)
             xor     ax, ax
             mov     ds, ax
             mov     es, ax
             mov     ss, ax
             mov     sp, 0x0400
 
-            ; -- Чистая отладка лишь --
+            ; -- Чисто сладкая мышь --
             call    cls
 
             mov     ax, -24

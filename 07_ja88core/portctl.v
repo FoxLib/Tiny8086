@@ -19,6 +19,7 @@ reg [ 7:0] cga_reg;
 
 /*
  * Обработка ввода-вывода
+ * 3D5h https://wiki.osdev.org/Text_Mode_Cursor
  */
 
 always @(posedge clock) begin

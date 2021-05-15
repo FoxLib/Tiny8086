@@ -40,9 +40,11 @@ wire        wreq;
 
 wire        port_clk;
 wire [15:0] port;
-reg  [ 7:0] port_i = 8'hFF;
+wire [ 7:0] port_i;
 wire [ 7:0] port_o;
 wire        port_w;
+
+wire [10:0] vga_cursor;
 
 core88 UnitCPU
 (
@@ -62,6 +64,19 @@ core88 UnitCPU
     .port_i     (port_i),
     .port_o     (port_o),
     .port_w     (port_w)
+);
+
+portctl PortCtlUnit
+(
+    .clock      (clock_25),
+    .port_clk   (port_clk),
+    .port       (port),
+    .port_i     (port_i),
+    .port_o     (port_o),
+    .port_w     (port_w),
+
+    // Устройства
+    .vga_cursor (vga_cursor)
 );
 
 endmodule

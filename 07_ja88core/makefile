@@ -1,5 +1,5 @@
 all:
-	iverilog -g2005-sv -DICARUS=1 -o tb.qqq tb.v core88.v alu.v
+	iverilog -g2005-sv -DICARUS=1 -o tb.qqq tb.v core88.v alu.v portctl.v
 	vvp tb.qqq >> /dev/null
 vcd:
 	gtkwave tb.vcd
