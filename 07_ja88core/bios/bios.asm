@@ -22,6 +22,9 @@ bios_entry:
             mov     sp, 0x0400
 
             ; -- Чисто сладкая мышь --
+            mov     bx, $b800
+            mov     es, bx
+
             call    cls
 
             mov     ax, -24
@@ -31,6 +34,17 @@ bios_entry:
 
             mov     di, 0
             call    print_hex_ax
+
+            ; Ожидание клавиатуры
+            mov     di, 0
+            mov     ah, $17
+@@:         in      al, $64
+            test    al, 1
+            je      @b
+            in      al, $60
+            stosw
+            jmp     @b
+
             hlt
 
             ; Установка IVT (2kb)
