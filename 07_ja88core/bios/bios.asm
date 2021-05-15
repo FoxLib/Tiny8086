@@ -4,9 +4,6 @@
 
 bios_entry:
 
-rep movsd
-
-
             cli
             cld
 

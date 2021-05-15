@@ -187,6 +187,22 @@ always @* begin
 
 end
 
+// Клавиатура
+// ---------------------------------------------------------------------
+
+wire [7:0] ps2_data;
+wire       ps2_hit;
+
+// Контроллер клавиатуры
+keyboard KEYBOARD
+(
+    .CLOCK_50           (CLOCK_50),    // Тактовый генератор на 50 Мгц
+    .PS2_CLK            (PS2_CLK),     // Таймингс PS/2
+    .PS2_DAT            (PS2_DAT),     // Данные с PS/2
+    .received_data      (ps2_data),    // Принятые данные
+    .received_data_en   (ps2_hit),     // Нажата клавиша
+);
+
 // ---------------------------------------------------------------------
 // Ядро процессора
 // ---------------------------------------------------------------------
@@ -218,14 +234,19 @@ core88 UnitCore88
 portctl PortCtlUnit
 (
     .clock      (clock_25),
+    .clock50    (CLOCK_50),
     .port_clk   (port_clk),
     .port       (port),
     .port_i     (port_i),
     .port_o     (port_o),
     .port_w     (port_w),
 
-    // Устройства
-    .vga_cursor (cga_cursor)
+    // Видео
+    .vga_cursor (cga_cursor),
+
+    // Клавиатура
+    .ps2_data   (ps2_data),
+    .ps2_hit    (ps2_hit),
 );
 
 endmodule

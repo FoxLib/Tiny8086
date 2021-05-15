@@ -11,9 +11,8 @@ print_hex_ax:
             jb      @f
             add     al, 7
 @@:         add     al, '0'
-            mov     [es:di], al
-            inc     di
-            inc     di
+            mov     ah, $07
+            stosw
             mov     ax, bx
             loop    .m1
             pop     es
@@ -25,9 +24,7 @@ cls:        ; ----- pont --------
             mov     es, ax
             mov     cx, 2000
             xor     di, di
-@@:         mov     [es:di], word $0720
-            inc     di
-            inc     di
-            loop    @b
+            mov     ax, $0122
+@@:         rep     stosw
             pop     es
             ret
