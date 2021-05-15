@@ -3,8 +3,9 @@
             org     0
 
 bios_entry:
-mov al, 99
-aam
+
+rep movsd
+
 
             cli
             cld
@@ -34,7 +35,6 @@ aam
             mov     di, 0
             call    print_hex_ax
             hlt
-
 
             ; Установка IVT (2kb)
             xor     di, di

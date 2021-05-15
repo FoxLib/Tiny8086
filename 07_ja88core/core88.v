@@ -42,6 +42,7 @@ else if (locked) case (mode)
         ip      <= ip + 1;
         idir    <= 0;
         isize   <= 0;
+        modrm   <= 0;
         opsize  <= 0;
         adsize  <= 0;
         sel_seg <= 0;
@@ -51,6 +52,7 @@ else if (locked) case (mode)
         seg_ea  <= seg_ds;
         tstate  <= 0;
         mode    <= MAIN;
+        ipstart <= ip;
 
     end
 
@@ -448,6 +450,112 @@ else if (locked) case (mode)
             0: begin tstate <= 1; isize <= opcode[0]; mode <= IMMEDIATE; end
             1: begin tstate <= 2; alumode <= 4; op1 <= eax; op2 = wb; end
             2: begin flags <= flags_o; sel <= 0; mode <= PREPARE; end
+
+        endcase
+
+        // MOVSx
+        8'b1010_010x: case (tstate)
+
+            0: begin // Читать
+
+                tstate  <= 1;
+                estate  <= 4;
+                isize   <= opcode[0];
+                ea      <= esi[15:0];
+                op1     <= 0;
+                op2     <= opcode[0] ? (opsize ? 4 : 2) : 1;
+
+                // Если REP и CX=0, то пропуск инструкции
+                if (sel_rep && ecx[15:0] == 0) mode <= PREPARE;
+                else begin sel <= 1; mode <= FETCHEA; end
+
+            end
+            1: begin // Писать
+
+                tstate  <= 2;
+                seg_ea  <= seg_es;
+                ea      <= edi[15:0];
+                wb      <= op1;
+                mode    <= SETEA;
+
+            end
+            2: begin // Инкременты
+
+                sel  <= 0;
+                mode <= PREPARE;
+
+                esi[15:0] <= flags[DF] ? esi[15:0] - op2 : esi[15:0] + op2;
+                edi[15:0] <= flags[DF] ? edi[15:0] - op2 : edi[15:0] + op2;
+
+                if (sel_rep) begin ecx[15:0] <= ecx[15:0] - 1; ip <= ipstart; end
+
+            end
+
+        endcase
+
+        // STOSx
+        8'b1010_101x: case (tstate)
+
+            0: begin
+
+                tstate  <= 1;
+                isize   <= opcode[0];
+                seg_ea  <= seg_es;
+                ea      <= edi[15:0];
+                wb      <= eax;
+                op2     <= opcode[0] ? (opsize ? 4 : 2) : 1;
+
+                // Если REP и CX=0, то пропуск инструкции
+                if (sel_rep && ecx[15:0] == 0) mode <= PREPARE;
+                else begin sel <= 1; mode <= SETEA; end
+
+            end
+            1: begin
+
+                sel  <= 0;
+                mode <= PREPARE;
+
+                // Увеличить/Уменьшить DI
+                edi[15:0] <= flags[DF] ? edi[15:0] - op2 : edi[15:0] + op2;
+
+                // Если есть префикс REP: то повторить инструкцию
+                if (sel_rep) begin ecx[15:0] <= ecx[15:0] - 1; ip <= ipstart; end
+
+            end
+
+        endcase
+
+        // LODSx
+        8'b1010_110x: case (tstate)
+
+            0: begin
+
+                tstate  <= 1;
+                estate  <= 4;
+                isize   <= opcode[0];
+                ea      <= esi[15:0];
+                op1     <= 0;
+                op2     <= opcode[0] ? (opsize ? 4 : 2) : 1;
+
+                // Если REP и CX=0, то пропуск инструкции
+                if (sel_rep && ecx[15:0] == 0) mode <= PREPARE;
+                else begin sel <= 1; mode <= FETCHEA; end
+
+            end
+            1: begin
+
+                sel  <= 0;
+                mode <= PREPARE;
+
+                // Загрузка в Acc
+                if (isize && opsize) eax <= op1;
+                else if (isize) eax[15:0] <= op1[15:0];
+                else eax[7:0] <= op1[7:0];
+
+                esi[15:0] <= flags[DF] ? esi[15:0] - op2 : esi[15:0] + op2;
+                if (sel_rep) begin ecx[15:0] <= ecx[15:0] - 1; ip <= ipstart; end
+
+            end
 
         endcase
 
@@ -1203,7 +1311,7 @@ else if (locked) case (mode)
 
     endcase
 
-    // Запись обратно в память или регистр [idir, isize, wb, modrm]
+    // Запись обратно в память или регистр [idir, isize, modrm, wb]
     // * idir  (1 запись `wb` в регистр modrm[5:3])
     //         (0 запись в память ea)
     // * isize (0/1)

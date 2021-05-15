@@ -11,17 +11,18 @@ reg [15:0]  seg_fs = 16'h0000;
 reg [15:0]  seg_gs = 16'h0000;
 
 // Регистры
-reg [31:0]  eax = 32'h4321_120B;
+reg [31:0]  eax = 32'h4321_121B;
 reg [31:0]  ebx = 32'hefd0_0000;
-reg [31:0]  ecx = 32'ha1ac_0103;
+reg [31:0]  ecx = 32'ha1ac_0003;
 reg [31:0]  edx = 32'h0b21_0000;
 reg [31:0]  esp = 32'haaa3_5432;
 reg [31:0]  ebp = 32'ha940_5678;
-reg [31:0]  esi = 32'ha580_9ABD;
-reg [31:0]  edi = 32'ha670_EF01;
+reg [31:0]  esi = 32'ha580_0002;
+reg [31:0]  edi = 32'ha670_0004;
 
 // Системные
 reg [15:0]  ip      = 0;
+reg [15:0]  ipstart = 0;
 reg [15:0]  seg_ea  = 0;
 reg [31:0]  ea      = 0;
 
