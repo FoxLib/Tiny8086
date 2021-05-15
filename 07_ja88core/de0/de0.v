@@ -97,7 +97,7 @@ de0pll UnitPLL
 
 wire [12:0] cga_address;
 wire [ 7:0] cga_data;
-reg  [10:0] cga_cursor;
+wire [10:0] cga_cursor;
 
 cga CGA
 (
@@ -131,8 +131,6 @@ wire [15:0] port;
 wire [ 7:0] port_i;
 wire [ 7:0] port_o;
 wire        port_w;
-
-wire [10:0] cga_cursor;
 
 reg we_cgamem = 0;
 reg we_memory = 0;
