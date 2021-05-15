@@ -26,8 +26,8 @@ reg [ 7:0] cga_reg;
 // Клавиатура
 reg [ 7:0] keyb_data    = 8'h0;      // Выходные данные для порта
 reg [ 7:0] keyb_xt      = 8'h0;      // Сконвертированное AT -> XT
-reg [ 7:0] keyb_counter      = 0;
-reg [ 7:0] keyb_counter_last = 0;
+reg        keyb_counter       = 0;
+reg        keyb_counter_latch = 0;
 reg        keyb_unpressed = 1'b0;    // Признак "отжатой" клаваши
 
 /*
@@ -65,8 +65,8 @@ always @(posedge clock) begin
             // Бит 0 - признак новых принятых данных с клавиатуры
             16'h64: begin
 
-                port_i <= {7'h0, keyb_counter_last != keyb_counter};
-                keyb_counter_last <= keyb_counter;
+                port_i <= {7'h0, keyb_counter_latch ^ keyb_counter};
+                keyb_counter_latch <= keyb_counter;
 
             end
             16'h3D4: port_i <= cga_reg;
@@ -203,9 +203,9 @@ always @(posedge clock50) begin
         // Если предыдущий скан-код - это признак "отжатия" клавиши, то записать 1 в 7-й бит */
         else begin
 
-            keyb_data      <= keyb_unpressed ? {1'b1, keyb_xt[6:0] } : keyb_xt;
-            keyb_counter   <= keyb_counter + 1;
             keyb_unpressed <= 1'b0;
+            keyb_data      <= keyb_unpressed ? {1'b1, keyb_xt[6:0] } : keyb_xt;
+            keyb_counter   <= ~keyb_counter_latch;
 
         end
 
