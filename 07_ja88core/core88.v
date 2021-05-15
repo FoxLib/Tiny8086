@@ -3,10 +3,19 @@ module core88
     input   wire        clock,
     input   wire        resetn,
     input   wire        locked,
+
+    // Данные
     output  wire [19:0] address,
     input   wire [ 7:0] bus,
     output  reg  [ 7:0] data,
-    output  reg         wreq
+    output  reg         wreq,
+
+    // Порты
+    output  reg         port_clk,
+    output  reg  [15:0] port,
+    input   wire [ 7:0] port_i,
+    output  reg  [ 7:0] port_o,
+    output  reg         port_w
 );
 
 `include "decl.v"
@@ -59,7 +68,7 @@ else if (locked) case (mode)
         8'h67: begin opcode <= bus; ip <= ip + 1; adsize  <= ~adsize; end
         8'hF2: begin opcode <= bus; ip <= ip + 1; sel_rep <= 1; end
         8'hF3: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2; end
-        8'h0F: begin opcode <= bus; ip <= ip + 1; mode    <= EXTENDED0; end
+        8'h0F: begin opcode <= {1'b1, bus}; ip <= ip + 1; end
 
         // Неиспользуемые коды операции
         8'hF0, 8'h9B: begin opcode <= bus; ip <= ip + 1; end
@@ -596,6 +605,77 @@ else if (locked) case (mode)
 
         end
 
+        // IN eAX, dx/i8
+        8'b1110_x10x: case (tstate)
+
+            0: begin tstate <= 1;
+
+                if (opcode[3] == 0) ip <= ip + 1;
+                port <= opcode[3] ? edx[15:0] : bus;
+                op1  <= opcode[0] ? (opsize ? 3 : 1) : 0;
+                op2  <= 0;
+
+            end
+            1: begin tstate <= 2; port_clk <= 1; end
+            2: begin tstate <= 3; port_clk <= 0; end
+            3: begin tstate <= 1;
+
+                case (op2[1:0])
+
+                    0: eax[7:0]   <= port_i;
+                    1: eax[15:8]  <= port_i;
+                    2: eax[23:16] <= port_i;
+                    3: eax[31:24] <= port_i;
+
+                endcase
+
+                port     <= port + 1;
+                op2[1:0] <= op2[1:0] + 1;
+
+                if (op1[1:0] == op2[1:0]) mode <= PREPARE;
+
+            end
+
+        endcase
+
+        // OUT dx/i8, eAX
+        8'b1110_x11x: case (tstate)
+
+            0: begin tstate <= 1;
+
+                if (opcode[3] == 0) ip <= ip + 1;
+                port <= opcode[3] ? edx[15:0] : bus;
+                op1  <= opcode[0] ? (opsize ? 3 : 1) : 0;
+                op2  <= 0;
+
+            end
+            1: begin tstate <= 2;
+
+                case (op2[1:0])
+
+                    0: port_o <= eax[7:0];
+                    1: port_o <= eax[15:8];
+                    2: port_o <= eax[23:16];
+                    3: port_o <= eax[31:24];
+
+                endcase
+
+                port_w   <= 1;
+                port_clk <= 1;
+
+            end
+            2: begin tstate <= 3; port_w <= 0; port_clk <= 0; end
+            3: begin tstate <= 1;
+
+                port     <= port + 1;
+                op2[1:0] <= op2[1:0] + 1;
+
+                if (op1[1:0] == op2[1:0]) mode <= PREPARE;
+
+            end
+
+        endcase
+
         // CALL b16
         8'b1110_1000: case (tstate)
 
@@ -656,7 +736,7 @@ else if (locked) case (mode)
                     op2 <= isize ? (opsize ? eax : {{16{eax[15]}},eax[15:0]}) : {{24{eax[7]}},eax[7:0]};
 
                 end
-                // DIV
+                // DIV, IDIV
                 6, 7: begin
 
                     divcnt <= isize ? (opsize ? 64 : 32) : 16;
@@ -846,17 +926,27 @@ else if (locked) case (mode)
 
         endcase
 
+        // Коды расширенных инструкции
+        // =============================================================
+
+        // Jccc NEAR b16
+        89'b1_1000_xxxx: case (tstate)
+
+            0: begin tstate <= 1; wb <= bus; ip <= ip + 1; end
+            1: begin
+
+                if (branches[opcode[3:1]] ^ opcode[0])
+                    ip <= ip + (adsize ? 3 : 1) + {{8{bus[7]}}, wb[7:0]};
+                else
+                    ip <= ip + (adsize ? 3 : 1);
+
+                mode <= PREPARE;
+
+            end
+
+        endcase
+
     endcase
-
-    // Расширенный опкод
-    // -----------------------------------------------------------------
-    EXTENDED: casex (opcode)
-
-        // Jccc i16/32
-        8'b1000_xxxx: begin end
-
-    endcase
-    EXTENDED0: begin mode <= EXTENDED; opcode <= bus; ip <= ip + 1; end
 
     // Считывание эффективного адреса и регистров
     FETCHEA: case (estate)

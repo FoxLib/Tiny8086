@@ -38,15 +38,30 @@ wire [ 7:0] data;
 wire        locked;
 wire        wreq;
 
+wire        port_clk;
+wire [15:0] port;
+reg  [ 7:0] port_i = 8'hFF;
+wire [ 7:0] port_o;
+wire        port_w;
+
 core88 UnitCPU
 (
     .clock      (clock_25),
     .resetn     (1'b1),
     .locked     (1'b1),
+
+    // Данные
     .address    (address),
     .bus        (bus),
     .data       (data),
-    .wreq       (wreq)
+    .wreq       (wreq),
+
+    // Порты
+    .port_clk   (port_clk),
+    .port       (port),
+    .port_i     (port_i),
+    .port_o     (port_o),
+    .port_w     (port_w)
 );
 
 endmodule

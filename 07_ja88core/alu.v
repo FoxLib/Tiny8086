@@ -32,11 +32,11 @@ wire auxf    = op1[4]^op2[4]^res[4];
 wire add_o   = (op1[isize] ^ op2[isize] ^ 1) & (op1[isize] ^ res[isize]);
 wire sub_o   = (op1[isize] ^ op2[isize] ^ 0) & (op1[isize] ^ res[isize]);
 
+// Десятичная коррекция
 reg       daa_a;
 reg       daa_c;
 reg       daa_x;
-reg [7:0] daa_i;
-
+reg [8:0] daa_i;
 
 // Общие АЛУ
 always @* begin
@@ -130,17 +130,17 @@ always @* begin
             // Младший ниббл
             if (op1[3:0] > 9 || flags[4]) begin
                 daa_i = op1[7:0] + 6;
-                daa_c = 1;
+                daa_c = daa_i[8];
                 daa_a = 1;
             end
 
-            daa_r = daa_i;
+            daa_r = daa_i[7:0];
             daa_x = daa_c;
 
             // Старший ниббл
-            if (daa_c || daa_i > 8'h9F) begin
-                daa_r = daa_i + 8'h60;
-                daa_x = 1'b1;
+            if (daa_c || daa_i[7:0] > 8'h9F) begin
+                daa_r = daa_i[7:0] + 8'h60;
+                daa_x = 1;
             end
 
             flags_d[7] =   daa_r[7];        // S

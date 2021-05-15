@@ -11,7 +11,7 @@ reg [15:0]  seg_fs = 16'h0000;
 reg [15:0]  seg_gs = 16'h0000;
 
 // Регистры
-reg [31:0]  eax = 32'h4321_1234;
+reg [31:0]  eax = 32'h4321_12F0;
 reg [31:0]  ebx = 32'hefd0_0000;
 reg [31:0]  ecx = 32'ha1ac_0103;
 reg [31:0]  edx = 32'h0b21_0000;
@@ -40,7 +40,7 @@ reg [ 1:0]  sel_rep = 0;
 reg [3:0]   mode    = 0;
 reg [3:0]   tstate  = 0;
 reg [4:0]   estate  = 0;
-reg [7:0]   opcode  = 0;
+reg [8:0]   opcode  = 0;
 reg [7:0]   modrm   = 0;
 reg         skip_op = 0;    // Не считывать операнды
 reg         stack32 = 0;    // 16/32
@@ -89,8 +89,7 @@ localparam
     EXTENDED0   = 11,
     EXTENDED    = 12;   // Расширенный опкод
 
-initial data = 8'hFF;
-initial wreq = 0;
+initial begin data = 8'hFF; wreq = 0; port_w = 0; port_o = 0; port_clk = 0; port = 0; end
 
 // ---------------------------------------------------------------------
 // Предвычисления

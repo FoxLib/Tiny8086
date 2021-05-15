@@ -3,7 +3,7 @@
             org     0
 
 bios_entry:
-
+daa
             ; Обнуляем сегменты ds=es=ss=0, sp=300h
             ; Находится в Interrupt Vector Table (256b)
             cli
@@ -17,12 +17,10 @@ bios_entry:
             ; -- Чистая отладка лишь --
             call    cls
 
-            mov     ax, -12
+            mov     ax, -24
             cwd
             mov     bx, -3
             idiv    bx
-
-            ;mov     ax, dx
 
             mov     di, 0
             call    print_hex_ax
