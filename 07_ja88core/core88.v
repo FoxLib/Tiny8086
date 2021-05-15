@@ -574,6 +574,51 @@ else if (locked) case (mode)
 
         endcase
 
+        // AAM
+        8'b1101_0100: case (tstate)
+
+            0: begin tstate <= 1;
+
+                divcnt  <= 8;
+                diva    <= {eax[7:0], 56'b0};
+                divb    <= bus;
+                wb      <= 0;
+                mode    <= bus ? DIVIDE : INTERRUPT;
+                ip      <= ip + 1;
+
+            end
+            1: begin
+
+                sel <= 0;
+                mode <= PREPARE;
+
+                if (divb) begin
+
+                    eax[15:0] <= {divres[7:0], divrem[7:0]};
+                    flags[ZF] <= eax[15:0] == 0;
+                    flags[SF] <= eax[15];
+                    flags[PF] <= ~^eax[15];
+
+                end
+
+            end
+
+        endcase
+
+        // AAD
+        8'b1101_0101: case (tstate)
+
+            0: begin tstate <= 1; eax[15:0] <= eax[15:8]*bus + eax[7:0]; ip <= ip + 1; end
+            1: begin mode <= PREPARE;
+
+                flags[ZF] <= eax[15:0] == 0;
+                flags[SF] <= eax[15];
+                flags[PF] <= ~^eax[15];
+
+            end
+
+        endcase
+
         // SALC
         8'b1101_0110: begin eax[7:0] <= {8{flags[CF]}}; mode <= PREPARE; end
 
@@ -1481,7 +1526,7 @@ else if (locked) case (mode)
 
     endcase
 
-    // Процедура деления
+    // Процедура деления [diva, divb, divcnt]
     DIVIDE: begin
 
         if (divcnt) begin

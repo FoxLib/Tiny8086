@@ -3,14 +3,16 @@
             org     0
 
 bios_entry:
+mov al, 99
+aam
 
             cli
             cld
 
             mov     dx, 0x3d4
-            mov     ax, 0x560f
+            mov     ax, 0x040f
             out     dx, ax
-            mov     ax, 0x020e
+            mov     ax, 0x000e
             out     dx, ax
 
             ; Обнуляем сегменты ds=es=ss=0, sp=300h
