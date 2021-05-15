@@ -37,6 +37,7 @@ reg       daa_a;
 reg       daa_c;
 reg       daa_x;
 reg [8:0] daa_i;
+reg [7:0] daa_h;
 
 // Общие АЛУ
 always @* begin
@@ -120,8 +121,8 @@ always @* begin
 
     case (alumode)
 
-        // DAA
-        0: begin
+        // DAA, DAS
+        0, 1: begin
 
             daa_c = flags[0];
             daa_a = flags[4];
@@ -129,7 +130,7 @@ always @* begin
 
             // Младший ниббл
             if (op1[3:0] > 9 || flags[4]) begin
-                daa_i = op1[7:0] + 6;
+                daa_i = alumode[0] ? op1[7:0]-6 : op1[7:0]+6;
                 daa_c = daa_i[8];
                 daa_a = 1;
             end
@@ -139,7 +140,7 @@ always @* begin
 
             // Старший ниббл
             if (daa_c || daa_i[7:0] > 8'h9F) begin
-                daa_r = daa_i[7:0] + 8'h60;
+                daa_r = alumode[0] ? daa_i[7:0]-8'h60 : daa_i[7:0]+8'h60;
                 daa_x = 1;
             end
 
@@ -148,6 +149,26 @@ always @* begin
             flags_d[4] =   daa_a;           // A
             flags_d[2] = ~^daa_r[7:0];      // P
             flags_d[0] =   daa_x;           // C
+
+        end
+
+        // AAA, AAS
+        2, 3: begin
+
+            daa_i = op1[ 7:0];
+            daa_r = op1[15:0];
+
+            if (flags[4] || op1[3:0] > 9) begin
+
+                daa_i = alumode[0] ? op1[ 7:0] - 6 : op1[ 7:0] + 6;
+                daa_h = alumode[0] ? op1[15:8] - 1 : op1[15:8] + 1;
+                daa_r = {daa_h, 4'h0, daa_i[3:0]};
+
+                flags_d[4] = 1; // AF=1
+                flags_d[0] = 1; // CF=1
+
+            end
+            else begin flags_d[4] = 0; flags_d[0] = 0; end
 
         end
 

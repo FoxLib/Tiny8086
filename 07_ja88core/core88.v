@@ -139,7 +139,14 @@ else if (locked) case (mode)
         8'b00_1xx_111: case (tstate)
 
             0: begin tstate <= 1; op1 <= eax[15:0]; alumode <= opcode[4:3]; end
-            1: begin mode <= PREPARE; flags <= flags_d; eax[7:0] <= daa_r; end
+            1: begin mode <= PREPARE;
+
+                flags <= flags_d;
+                if (opcode[4])
+                     eax[15:0] <= daa_r;
+                else eax[ 7:0] <= daa_r[7:0];
+
+            end
 
         endcase
 
