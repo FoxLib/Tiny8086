@@ -35,6 +35,11 @@ bios_entry:
             mov     di, 0
             call    print_hex_ax
 
+            ; mov [0x24], word irq9
+            ; mov [0x26], cs
+            ; sti
+            ; jmp $
+
             ; Ожидание клавиатуры
             mov     di, 0
             mov     ah, $17
@@ -95,8 +100,12 @@ hlt
             ; Jump to boot sector
 
             jmp     $
-t:
-ret $1234
+
+; --------
+irq9:       mov     al, $20
+            out     $20, al
+            iret
+
             include "biosconfig.asm"
             include "ivt.asm"
             include "keyboard.asm"

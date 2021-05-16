@@ -56,6 +56,7 @@ reg [31:0]  op1     = 0;
 reg [31:0]  op2     = 0;
 reg [31:0]  wb      = 0;    // Для записи в reg/rm
 reg [15:0]  tmp16   = 0;
+reg         is_intr = 0;
 
 // Модуль деления op1 / op2 -> divres | divrem
 reg [63:0]  diva    = 0;
@@ -90,7 +91,7 @@ localparam
     EXTENDED0   = 11,
     EXTENDED    = 12;   // Расширенный опкод
 
-initial begin data = 8'hFF; wreq = 0; port_w = 0; port_o = 0; port_clk = 0; port = 0; end
+initial begin data = 8'hFF; wreq = 0; port_w = 0; port_o = 0; port_clk = 0; port = 0; intr_latch = 0; end
 
 // ---------------------------------------------------------------------
 // Предвычисления

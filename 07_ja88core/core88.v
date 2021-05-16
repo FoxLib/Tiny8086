@@ -15,7 +15,12 @@ module core88
     output  reg  [15:0] port,
     input   wire [ 7:0] port_i,
     output  reg  [ 7:0] port_o,
-    output  reg         port_w
+    output  reg         port_w,
+
+    // Прерывания
+    input   wire        intr,       // Запрос прерывания
+    input   wire [ 7:0] irq,        // Номер прерывания
+    output  reg         intr_latch  // ACCEPT прерывания
 );
 
 `include "decl.v"
@@ -39,7 +44,6 @@ else if (locked) case (mode)
     PREPARE: begin
 
         opcode  <= bus;
-        ip      <= ip + 1;
         idir    <= 0;
         isize   <= 0;
         modrm   <= 0;
@@ -51,8 +55,24 @@ else if (locked) case (mode)
         skip_op <= 0;
         seg_ea  <= seg_ds;
         tstate  <= 0;
-        mode    <= MAIN;
         ipstart <= ip;
+
+        // Есть наличие IRQ из контроллера прерываний
+        if (flags[IF] & (intr ^ intr_latch)) begin
+
+            is_intr <= 1;
+            mode    <= INTERRUPT;
+            wb      <= irq;
+            intr_latch <= intr;
+
+        end
+        else begin
+
+            is_intr <= 0;
+            ip      <= ip + 1;
+            mode    <= MAIN;
+
+        end
 
     end
 
@@ -1462,7 +1482,10 @@ else if (locked) case (mode)
 
         0: begin
 
-            mode <= MAIN;
+            // Если это было прерывание
+            if (is_intr) begin mode <= PREPARE; end
+            else mode <= MAIN;
+
             case (regn)
 
                 3'b000: seg_es <= wb;

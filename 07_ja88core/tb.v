@@ -29,6 +29,19 @@ always @(posedge clock) begin
 end
 
 // ---------------------------------------------------------------------
+// Отладка
+// ---------------------------------------------------------------------
+
+initial begin
+
+    #20.0 ps2_hit = 1;
+    #2    ps2_hit = 0;
+    #500  ps2_hit = 1;
+    #2    ps2_hit = 0;
+
+end
+
+// ---------------------------------------------------------------------
 // Процессор
 // ---------------------------------------------------------------------
 
@@ -43,6 +56,13 @@ wire [15:0] port;
 wire [ 7:0] port_i;
 wire [ 7:0] port_o;
 wire        port_w;
+
+wire        intr;
+wire        intr_latch;
+wire [ 7:0] irq;
+
+reg  [ 7:0] ps2_data = 8'h01;
+reg         ps2_hit  = 0;
 
 wire [10:0] vga_cursor;
 
@@ -63,12 +83,19 @@ core88 UnitCPU
     .port       (port),
     .port_i     (port_i),
     .port_o     (port_o),
-    .port_w     (port_w)
+    .port_w     (port_w),
+
+    // Прерывания
+    .intr       (intr),
+    .irq        (irq),
+    .intr_latch (intr_latch)
 );
 
 portctl PortCtlUnit
 (
+    .resetn     (1'b1),
     .clock      (clock_25),
+    .clock50    (clock_50),
     .port_clk   (port_clk),
     .port       (port),
     .port_i     (port_i),
@@ -76,7 +103,14 @@ portctl PortCtlUnit
     .port_w     (port_w),
 
     // Устройства
-    .vga_cursor (vga_cursor)
+    .vga_cursor (vga_cursor),
+    .ps2_data   (ps2_data),
+    .ps2_hit    (ps2_hit),
+
+    // Прерывания
+    .intr       (intr),
+    .irq        (irq),
+    .intr_latch (intr_latch)
 );
 
 endmodule

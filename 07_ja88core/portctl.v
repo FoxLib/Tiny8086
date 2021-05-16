@@ -1,5 +1,6 @@
 module portctl
 (
+    input   wire        resetn,
     input   wire        clock,      // cpu host clock
     input   wire        clock50,
 
@@ -15,20 +16,32 @@ module portctl
 
     // Клавиатура
     input   wire [ 7:0] ps2_data,
-    input   wire        ps2_hit
+    input   wire        ps2_hit,
 
+    // Прерывания
+    output reg          intr,
+    output reg   [ 7:0] irq,
+    input  wire         intr_latch
 );
 
-initial begin vga_cursor = 0; port_i = 0; end
+initial begin vga_cursor = 0; port_i = 0; intr = 0; irq = 0; end
 
-reg [ 7:0] cga_reg;
+// Обработка прерываний
+reg [15:0]  irq_mask = 16'b0000_0000_0000_0000; // Маски
+reg [15:0]  irq_pend = 16'b0000_0000_0000_0000; // Запросы
+reg [ 7:0]  vect_master = 8;
+reg         eoi_master = 0; // Ожидание обработки прерывания
+
+reg [ 7:0]  cga_reg;
 
 // Клавиатура
-reg [ 7:0] keyb_data    = 8'h0;      // Выходные данные для порта
-reg [ 7:0] keyb_xt      = 8'h0;      // Сконвертированное AT -> XT
-reg        keyb_counter       = 0;
-reg        keyb_counter_latch = 0;
-reg        keyb_unpressed = 1'b0;    // Признак "отжатой" клаваши
+reg [ 7:0]  keyb_data    = 8'h0;      // Выходные данные для порта
+reg [ 7:0]  keyb_xt      = 8'h0;      // Сконвертированное AT -> XT
+reg         keyb_counter       = 0;
+reg         keyb_counter_latch = 0;
+reg         keyb_unpressed  = 1'b0;    // Признак "отжатой" клаваши
+reg         keyb_intr       = 0;
+reg         keyb_intr_latch = 0;
 
 /*
  * Обработка ввода-вывода
@@ -38,10 +51,35 @@ reg        keyb_unpressed = 1'b0;    // Признак "отжатой" клав
 
 always @(posedge clock) begin
 
+    // Приведение к начальным значениям
+    if (!resetn) begin vect_master <= 8; irq_mask <= 0; end
+
+    // Появился вызов прерывания с клавиатуры
+    if (keyb_intr_latch ^  keyb_intr) begin
+        keyb_intr_latch <= keyb_intr;
+        if (irq_mask[1] == 0) irq_pend[1] <= 1;
+    end
+
+    // При наличии PEND прерывания, выставить его к процессору и ожидать EOI
+    if (eoi_master == 0) begin
+
+        // Убираем REQUEST
+        if      (irq_pend[0]) begin irq_pend[0] <= 0; irq <= 0 + vect_master; end
+        else if (irq_pend[1]) begin irq_pend[1] <= 0; irq <= 1 + vect_master; end
+
+        // Наличие любого запроса прерывания
+        if (|irq_pend[7:0]) begin eoi_master <= 1; intr <= ~intr_latch; end
+
+    end
+
+    // Обработка портов
     if (port_clk) begin
 
         if (port_w)
         case (port)
+
+            // Сброс готовности Master-контроллера
+            16'h20: if (port_o[5]) eoi_master <= 0;
 
             // Выбор регистра CGA/EGA
             16'h3D4: cga_reg <= port_o;
@@ -198,14 +236,15 @@ always @(posedge clock50) begin
 
         // Признак "отжатая клавиша"
         if (ps2_data == 8'hF0) begin
-            keyb_unpressed <= 1'b1;
+            keyb_unpressed  <= 1'b1;
         end
         // Если предыдущий скан-код - это признак "отжатия" клавиши, то записать 1 в 7-й бит */
         else begin
 
-            keyb_unpressed <= 1'b0;
-            keyb_data      <= keyb_unpressed ? {1'b1, keyb_xt[6:0] } : keyb_xt;
-            keyb_counter   <= ~keyb_counter_latch;
+            keyb_unpressed  <= 1'b0;
+            keyb_data       <= keyb_unpressed ? {1'b1, keyb_xt[6:0]} : keyb_xt;
+            keyb_counter    <= ~keyb_counter_latch;
+            keyb_intr       <= ~keyb_intr_latch;
 
         end
 

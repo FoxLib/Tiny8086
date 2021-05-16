@@ -224,12 +224,21 @@ core88 UnitCore88
     .port       (port),
     .port_i     (port_i),
     .port_o     (port_o),
-    .port_w     (port_w)
+    .port_w     (port_w),
+
+    // Прерывания
+    .intr       (intr),
+    .irq        (irq),
+    .intr_latch (intr_latch)
 );
 
 // ---------------------------------------------------------------------
 // Управление портами
 // ---------------------------------------------------------------------
+
+wire        intr;
+wire        intr_latch;
+wire [ 7:0] irq;
 
 portctl PortCtlUnit
 (
@@ -247,6 +256,11 @@ portctl PortCtlUnit
     // Клавиатура
     .ps2_data   (ps2_data),
     .ps2_hit    (ps2_hit),
+
+    // Прерывания
+    .intr       (intr),
+    .irq        (irq),
+    .intr_latch (intr_latch)
 );
 
 endmodule
