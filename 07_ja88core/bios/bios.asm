@@ -7,6 +7,10 @@ bios_entry:
             cli
             cld
 
+            ; interrupt
+            mov [0x24], word irq9
+            mov [0x26], cs
+
             mov     dx, 0x3d4
             mov     ax, 0x040f
             out     dx, ax
@@ -21,9 +25,12 @@ bios_entry:
             mov     ss, ax
             mov     sp, 0x0400
 
-            ; -- Чисто сладкая мышь --
             mov     bx, $b800
             mov     es, bx
+            ;sti
+            ;jmp $
+
+            ; -- Чисто сладкая мышь --
 
             call    cls
 
@@ -35,11 +42,6 @@ bios_entry:
             mov     di, 0
             call    print_hex_ax
 
-            ; mov [0x24], word irq9
-            ; mov [0x26], cs
-            ; sti
-            ; jmp $
-
             ; Ожидание клавиатуры
             mov     di, 0
             mov     ah, $17
@@ -47,10 +49,24 @@ bios_entry:
             test    al, 1
             je      @b
             in      al, $60
-            stosw
+            mov     di, 5*2
+            call    print_hex_ax
             jmp     @b
 
             hlt
+
+; --------
+irq9:       inc     byte [$1000]
+            mov     ah, [$1000]
+            in      al, $60
+            mov     di, 5*2
+            mov     [es:di+8], al
+
+            call    print_hex_ax
+
+            mov     al, $20
+            out     $20, al
+            iret
 
             ; Установка IVT (2kb)
             xor     di, di
@@ -100,11 +116,6 @@ hlt
             ; Jump to boot sector
 
             jmp     $
-
-; --------
-irq9:       mov     al, $20
-            out     $20, al
-            iret
 
             include "biosconfig.asm"
             include "ivt.asm"

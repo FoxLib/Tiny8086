@@ -65,6 +65,9 @@ else if (locked) case (mode)
             wb      <= irq;
             intr_latch <= intr;
 
+            // Разблокировка HLT
+            if (bus == 8'hF4) ip <= ip + 1;
+
         end
         else begin
 
