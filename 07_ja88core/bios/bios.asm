@@ -45,6 +45,10 @@ bios_entry:
             mov     ax, $0003
             int     10h
 
+            mov     ah, $01
+            mov     cx, $000f
+            int     10h
+
             jmp     $
 
             ; Чтение из HD и загрузка в 0:7C00

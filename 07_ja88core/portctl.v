@@ -80,7 +80,7 @@ reg         keyb_intr_latch = 0;
 always @(posedge clock) begin
 
     // Приведение к начальным значениям
-    if (!resetn) begin
+    if (resetn == 0) begin
 
         vect_master     <= 8;
         irq_mask        <= 0;

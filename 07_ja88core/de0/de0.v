@@ -293,8 +293,11 @@ wire [ 7:0] irq;
 
 portctl PortCtlUnit
 (
+    .resetn     (locked),
     .clock      (cpu_clock),
     .clock50    (clock_50),
+
+    // Интерфейс
     .port_clk   (port_clk),
     .port       (port),
     .port_i     (port_i),
