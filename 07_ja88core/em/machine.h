@@ -16,7 +16,7 @@ struct timeb    ms_clock;
 int     ms_prevtime;
 int     width;
 int     height;
-int     flash_cursor, cursor_x, cursor_y, cursor_l, cursor_h;
+int     flash_cursor, cursor_x, cursor_y, cursor_l, cursor_h, cursor_hi, cursor_lo;
 int     cga_register;
 
 unsigned char RAM[RAMTOP];

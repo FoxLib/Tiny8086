@@ -9,6 +9,8 @@ int10:      and     ah, ah
             je      int10_set_vm
             cmp     ah, 1
             je      int10_set_cshape
+            cmp     ah, 2
+            je      int10_set_cursor
 .int10exit: iret
 
 ; ----------------------------------------------------------------------
@@ -51,4 +53,27 @@ int10_set_cshape:
             mov     ah, cl
             out     dx, ax
             pop     dx ax
+            iret
+
+; ----------------------------------------------------------------------
+; Положение курсора
+; DH = строка, DL = столбец
+; ----------------------------------------------------------------------
+
+int10_set_cursor:
+
+            push    ax bx dx
+            mov     al, dh
+            mov     bl, 80
+            mul     bl           ; ax = ch*80
+            mov     dh, 0
+            add     ax, dx
+            mov     bl, al
+            mov     al, 0eh
+            mov     dx, 3d4h
+            out     dx, ax      ; старшие 3 бита
+            mov     al, 0fh
+            mov     ah, bl
+            out     dx, ax      ; младшие 8 бит
+            pop     dx bx ax
             iret

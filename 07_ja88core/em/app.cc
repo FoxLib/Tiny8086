@@ -1,3 +1,10 @@
+void recalc_cursor() {
+
+    int addr = (cursor_hi*256 + cursor_lo);
+    cursor_x = addr % 80;
+    cursor_y = addr / 80;
+}
+
 // Порты
 // FFh RW SPI Data
 // FFh  W SPI Command
@@ -57,8 +64,10 @@ void iowrite(uint16_t port, uint8_t data) {
 
             switch (cga_register) {
 
-                case 0x0A: cursor_l = data & 0x3f; break;
-                case 0x0B: cursor_h = data & 0x1f; break;
+                case 0x0A: cursor_l  = data & 0x3f; break;
+                case 0x0B: cursor_h  = data & 0x1f; break;
+                case 0x0E: cursor_hi = data & 0x07; recalc_cursor(); break;
+                case 0x0F: cursor_lo = data;        recalc_cursor(); break;
             }
 
             break;
@@ -80,6 +89,8 @@ void reset() {
     cursor_y = 0;
     cursor_l = 14;
     cursor_h = 15;
+    cursor_hi = 0;
+    cursor_lo = 0;
     cga_register = 0;
 
     SpiModule.start();
