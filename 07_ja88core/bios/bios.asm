@@ -1,4 +1,6 @@
 
+SD_CMD_ARG  equ     $500
+
             ; F000h : 0000
             org     0
 
@@ -13,8 +15,15 @@ bios_entry:
             mov     es, ax
             mov     sp, 0x0400
 
+
             call    sd_enable
-            call    sd_init
+
+            mov     [SD_CMD_ARG],   word 0x0
+            mov     [SD_CMD_ARG+2], word 0x0
+            mov     ah, 0
+            call    sd_command
+
+            ; call    sd_init
 
             ;mov     ax, $1234
             ;xor     di, di

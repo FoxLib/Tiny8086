@@ -5,11 +5,11 @@ sd_enable:  call    sd_wait
             ret
 
 ; Ожидание BSY=0
-sd_wait:    mov     bp, ax
+sd_wait:    push    ax
 @@:         in      al, $fe
             add     al, al
             jb      @b
-            mov     ax, bp
+            pop     ax
             ret
 
 ; Отсылка команды AL к SD
@@ -36,10 +36,12 @@ sd_get:     mov     al, 0xff
             in      al, $ff     ; Прием результата
             ret
 
-; Инициализация карты
+; Отсылка команды AH и [sd_arg] к SD
 ; ----------------------------------------------------------------------
 
-sd_init:    mov     al, 2
+sd_command:
+
+            mov     al, 2
             call    sd_cmd      ; ChipEnable
 
             ; for 0..65535: if (get() == FF) break;
@@ -50,7 +52,38 @@ sd_init:    mov     al, 2
             and     cx, cx
             je      .error
 
-mov ax, cx
+            ; Отсылка команды к SD
+            mov     al, ah
+            or      al, $40
+            call    sd_put
+
+            ; Отослать 32-х битную команду
+            mov     bx, SD_CMD_ARG+3
+            mov     cx, 4
+@@:         mov     al, [bx]
+            call    sd_put
+            dec     bx
+            loop    @b
+
+            ; Отправка CRC
+            mov     al, 0xff
+            cmp     ah, 0
+            jne     .c1
+            mov     al, 0x95        ; CMD0 with arg 0
+            jmp     .c2
+.c1:        cmp     ah, 8
+            jne     .c2
+            mov     al, 0x87        ; CMD8 with arg 0x1AA
+.c2:        call    sd_put
+
+            ; Ожидать снятия флага BUSY
+            mov     cx, 256
+@@:         call    sd_get
+            test    al, $80
+            loopnz  @b
+            and     cx, cx
+            je      .error
+
 xor di, di
 call print_hex_ax
 jmp $
