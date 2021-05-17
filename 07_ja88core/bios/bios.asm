@@ -16,10 +16,9 @@ bios_entry:
             xor     ax, ax
             mov     ds, ax
             mov     ss, ax
-            mov     sp, 0x0400
             mov     ax, $b800
             mov     es, ax
-            int     9
+            mov     sp, 0x0400
 
             ;mov     dx, 0x3d4
             ;mov     ax, 0x040f
@@ -29,31 +28,6 @@ bios_entry:
 
 @@:         sti
             jmp @b
-
-            ; -- Чисто сладкая мышь --
-
-            call    cls
-
-            mov     ax, -24
-            cwd
-            mov     bx, -3
-            idiv    bx
-
-            mov     di, 0
-            call    print_hex_ax
-
-            ; Ожидание клавиатуры
-            mov     di, 0
-            mov     ah, $17
-@@:         in      al, $64
-            test    al, 1
-            je      @b
-            in      al, $60
-            mov     di, 5*2
-            call    print_hex_ax
-            jmp     @b
-
-            hlt
 
 ; --------
 irq9:       inc     byte [$1000]

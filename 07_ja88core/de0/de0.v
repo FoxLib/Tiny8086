@@ -79,9 +79,9 @@ wire [23:0] debug;
 
 // ---------------------------------------------------------------------
 reg [15:0] pwm; always @(posedge clock_25) pwm <= pwm + 1; wire ena = pwm < 1024;
-hex7 h5(debug[  3:0], HEX5, ena); hex7 h4(debug[  7:4], HEX4, ena);
-hex7 h3(debug[ 11:8], HEX3, ena); hex7 h2(debug[15:12], HEX2, ena);
-hex7 h1(debug[19:16], HEX1, ena); hex7 h0(debug[23:20], HEX0, ena);
+hex7 h5(debug[  3:0], HEX0, ena); hex7 h4(debug[  7:4], HEX1, ena);
+hex7 h3(debug[ 11:8], HEX2, ena); hex7 h2(debug[15:12], HEX3, ena);
+hex7 h1(debug[19:16], HEX4, ena); hex7 h0(debug[23:20], HEX5, ena);
 
 // ---------------------------------------------------------------------
 // Генерация частот

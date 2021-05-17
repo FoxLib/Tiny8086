@@ -600,10 +600,7 @@ else if (locked) case (mode)
 
                 // Если RET imm, то добавить к стеку
                 if (opcode[0] == 0) begin
-
-                    if (stack32) esp       <= esp       + wb;
-                    else         esp[15:0] <= esp[15:0] + wb;
-
+                if (stack32) esp <= esp + wb; else esp[15:0] <= esp[15:0] + wb;
                 end
 
             end
@@ -645,7 +642,10 @@ else if (locked) case (mode)
                 regn <= 1;
                 sel  <= 0;
                 mode <= LOADSEG;
+
+                if (opcode[0] == 0) begin
                 if (stack32) esp <= esp + wb; else esp[15:0] <= esp[15:0] + wb;
+                end
 
             end
             4: mode <= PREPARE;
