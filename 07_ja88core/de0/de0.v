@@ -262,7 +262,7 @@ wire        sd_timeout;
 sd UnitSD(
 
     // 50 Mhz
-    .clock50    (CLOCK_50),
+    .clock50    (clock_50),
 
     // Физический интерфейс
     .SPI_CS     (SD_DATA[3]),   // Выбор чипа

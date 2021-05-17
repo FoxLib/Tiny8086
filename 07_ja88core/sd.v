@@ -26,6 +26,7 @@ initial begin
     SPI_SCLK = 1'b0;
     SPI_MOSI = 1'b0;
     sd_din   = 8'h00;
+    sd_busy  = 1'b0;
 
 end
 

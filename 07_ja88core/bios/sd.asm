@@ -1,25 +1,25 @@
-; Ожидание BSY=0
-sd_wait:    push    ax
-@@:         in      al, $fe
-            add     al, al
-            jb      @b
-            pop     ax
-            ret
-
-; Отсылка команды AL к SD
-sd_cmd:     and     al, $fc
-            out     $fe, al
-            or      al, $80
-            out     $fe, al
-            call    sd_wait
-            and     al, $fc
-            out     $fe, al
-            ret
-
 ; Отсылка 80 тактов
 sd_enable:  call    sd_wait
             mov     al, 0
             call    sd_cmd
+            ret
+
+; Ожидание BSY=0
+sd_wait:    mov     bp, ax
+@@:         in      al, $fe
+            add     al, al
+            jb      @b
+            mov     ax, bp
+            ret
+
+; Отсылка команды AL к SD
+sd_cmd:     and     al, $03
+            out     $fe, al
+            or      al, $80
+            out     $fe, al
+            call    sd_wait
+            and     al, $03
+            out     $fe, al
             ret
 
 ; Запись в SD

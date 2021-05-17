@@ -9,7 +9,7 @@ always #0.5 clock    = ~clock;
 always #1.0 clock_50 = ~clock_50;
 always #1.5 clock_25 = ~clock_25;
 
-initial begin clock = 0; clock_25 = 0; clock_50 = 0; #2000 $finish; end
+initial begin clock = 0; clock_25 = 0; clock_50 = 0; #5000 $finish; end
 initial begin $dumpfile("tb.vcd"); $dumpvars(0, tb); end
 
 // ---------------------------------------------------------------------
@@ -66,6 +66,13 @@ reg         ps2_hit  = 0;
 
 wire [10:0] vga_cursor;
 
+wire [1:0]  sd_cmd;
+wire [7:0]  sd_din;
+wire [7:0]  sd_out;
+wire        sd_signal;
+wire        sd_busy;
+wire        sd_timeout;
+
 core88 UnitCPU
 (
     .clock      (clock_25),
@@ -107,10 +114,46 @@ portctl PortCtlUnit
     .ps2_data   (ps2_data),
     .ps2_hit    (ps2_hit),
 
+    // SD-карта
+    .sd_signal  (sd_signal),   // In   =1 Сообщение отослано на spi
+    .sd_cmd     (sd_cmd),      // In      Команда
+    .sd_din     (sd_din),      // Out     Принятое сообщение от карты
+    .sd_out     (sd_out),      // In      Сообщение на отправку к карте
+    .sd_busy    (sd_busy),     // Out  =1 Занято
+    .sd_timeout (sd_timeout),  // Out  =1 Таймаут
+
     // Прерывания
     .intr       (intr),
     .irq        (irq),
     .intr_latch (intr_latch)
+);
+
+// ---------------------------------------------------------------------
+// Модуль SD
+// ---------------------------------------------------------------------
+
+assign SD_DATA[0] = 1'bZ;
+
+wire [3:0]  SD_DATA;
+
+sd UnitSD
+(
+    // 50 Mhz
+    .clock50    (clock_50),
+
+    // Физический интерфейс
+    .SPI_CS     (SD_DATA[3]),   // Выбор чипа
+    .SPI_SCLK   (SD_CLK),       // Тактовая частота
+    .SPI_MISO   (SD_DATA[0]),   // Входящие данные
+    .SPI_MOSI   (SD_CMD),       // Исходящие
+
+    // Интерфейс
+    .sd_signal  (sd_signal),   // In   =1 Сообщение отослано на spi
+    .sd_cmd     (sd_cmd),      // In      Команда
+    .sd_din     (sd_din),      // Out     Принятое сообщение от карты
+    .sd_out     (sd_out),      // In      Сообщение на отправку к карте
+    .sd_busy    (sd_busy),     // Out  =1 Занято
+    .sd_timeout (sd_timeout)   // Out  =1 Таймаут
 );
 
 endmodule

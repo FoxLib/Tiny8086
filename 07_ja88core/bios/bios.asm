@@ -16,8 +16,6 @@ bios_entry:
             call    sd_enable
             call    sd_init
 
-
-
             ;mov     ax, $1234
             ;xor     di, di
             ;call    print_hex_ax
