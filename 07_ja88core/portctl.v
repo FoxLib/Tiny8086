@@ -34,6 +34,13 @@ reg         eoi_master = 0; // Ожидание обработки прерыв�
 
 reg [ 7:0]  cga_reg;
 
+// Таймер
+// https://wiki.osdev.org/Programmable_Interval_Timer#Read_Back_Command
+reg [15:0]  pit_channel0 = 0;
+reg [15:0]  pit_cnt      = 0;
+reg [ 7:0]  pit_mode     = 0;
+reg [ 4:0]  pit_119mhz   = 0;
+
 // Клавиатура
 reg [ 7:0]  keyb_data    = 8'h0;      // Выходные данные для порта
 reg [ 7:0]  keyb_xt      = 8'h0;      // Сконвертированное AT -> XT
@@ -52,13 +59,27 @@ reg         keyb_intr_latch = 0;
 always @(posedge clock) begin
 
     // Приведение к начальным значениям
-    if (!resetn) begin vect_master <= 8; irq_mask <= 0; end
+    if (!resetn) begin vect_master <= 8; irq_mask <= 0; pit_channel0 <= 0; end
 
     // Появился вызов прерывания с клавиатуры
     if (keyb_intr_latch ^  keyb_intr) begin
         keyb_intr_latch <= keyb_intr;
         if (irq_mask[1] == 0) irq_pend[1] <= 1;
     end
+
+    // Отсчет таймера 25mhz/21 ~ 1.190476 (оригинал 1.193182)
+    if (pit_119mhz == 20) begin
+        pit_119mhz <= 0;
+
+        // Проверить достижение триггера
+        if (pit_cnt == pit_channel0) begin
+            pit_cnt <= 1;
+            if (irq_mask[0] == 0) irq_pend[0] <= 1;
+        end else
+            pit_cnt <= pit_cnt + 1;
+
+    end
+    else pit_119mhz <= pit_119mhz + 1;
 
     // При наличии PEND прерывания, выставить его к процессору и ожидать EOI
     if (eoi_master == 0) begin
@@ -80,6 +101,10 @@ always @(posedge clock) begin
 
             // Сброс готовности Master-контроллера
             16'h20: if (port_o[5]) eoi_master <= 0;
+
+            // Программирование PIT
+            16'h40: pit_channel0 <= {port_o[7:0], pit_channel0[15:8]};
+            16'h43: pit_mode     <= port_o;
 
             // Выбор регистра CGA/EGA
             16'h3D4: cga_reg <= port_o;

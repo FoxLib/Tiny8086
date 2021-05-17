@@ -8,6 +8,8 @@ bios_entry:
             cld
 
             ; interrupt
+            mov [0x20], word irq8
+            mov [0x22], cs
             mov [0x24], word irq9
             mov [0x26], cs
 
@@ -30,15 +32,19 @@ bios_entry:
             jmp @b
 
 ; --------
+irq8:       inc     word [$1001]
+            mov     ax, [$1001]
+            mov     di, 10*2
+            call    print_hex_ax
+            mov     al, $20
+            out     $20, al
+            iret
+
 irq9:       inc     byte [$1000]
             mov     ah, [$1000]
             in      al, $60
             mov     di, 5*2
-
             call    print_hex_ax
-
-            mov     [es:di+8], ax
-
             mov     al, $20
             out     $20, al
             iret
