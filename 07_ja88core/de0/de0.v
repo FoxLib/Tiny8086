@@ -83,8 +83,14 @@ wire clock_12;
 wire clock_25;
 wire clock_50;
 wire clock_100;
+reg  clock_manual;
 
-wire cpu_clock = clock_25;
+wire cpu_clock = SW[0] ? clock_manual : clock_25;
+
+// Отладочные такты на SR триггере
+always @(posedge clock_12)
+    if      (KEY[0] == 0) clock_manual <= 1;
+    else if (KEY[1] == 0) clock_manual <= 0;
 
 de0pll UnitPLL
 (

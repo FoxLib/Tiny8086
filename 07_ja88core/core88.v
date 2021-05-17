@@ -32,7 +32,8 @@ wire __m0 = (mode == PREPARE);
 
 // Выбор источника памяти
 assign address = sel ? {seg_ea, 4'h0} + ea : {seg_cs, 4'h0} + ip;
-assign debug[11:0] = flags;
+
+assign debug = {isize, estate[3:0], tstate[3:0], ip[15:0]};
 
 // =====================================================================
 // Основная работа процессорного микрокода, так сказать
@@ -101,6 +102,255 @@ else if (locked) case (mode)
 
         // Неиспользуемые коды операции
         8'hF0, 8'h9B: begin opcode <= bus; ip <= ip + 1; end
+
+        // ==== Групповые инструкции должны идти первыми ====
+
+        // Групповые инструкции F6/F7
+        8'b1111_011x: case (tstate)
+
+            0: begin tstate <= 1; {idir, isize} <= opcode[0]; mode <= FETCHEA; end
+            1: begin tstate <= 2; case (modrm[5:3])
+
+                // TEST
+                0, 1: begin sel <= 0; mode <= IMMEDIATE; end
+                // NOT
+                2:    begin wb  <= ~op1; mode <= SETEA; end
+                // NEG
+                3:    begin op1 <= 0; op2 <= op1; alumode <= 5; end
+                // MUL
+                4:    begin op2 <= isize ? (opsize ? eax : eax[15:0]) : eax[7:0]; end
+                // IMUL
+                5:    begin
+
+                    op1 <= isize ? (opsize ? op1 : {{16{op1[15]}},op1[15:0]}) : {{24{op1[7]}},op1[7:0]};
+                    op2 <= isize ? (opsize ? eax : {{16{eax[15]}},eax[15:0]}) : {{24{eax[7]}},eax[7:0]};
+
+                end
+                // DIV, IDIV
+                6, 7: begin
+
+                    divcnt <= isize ? (opsize ? 64 : 32) : 16;
+                    diva   <= isize ? (opsize ? {edx, eax} : {edx[15:0],eax[15:0],32'h0}) : {eax[15:0],48'h0};
+                    divb   <= isize ? (opsize ? op1 : op1[15:0]) : op1[7:0];
+                    divrem <= 0;
+                    divres <= 0;
+                    signa  <= 0;
+                    signb  <= 0;
+
+                    // Переход к IDIV вместо DIV
+                    if (modrm[3]) tstate <= 4; else mode <= DIVIDE;
+
+                end
+
+            endcase end
+            2: begin tstate <= 3; case (modrm[5:3])
+
+                0, 1: begin op2 <= wb; alumode <= 4; end
+                2:    begin sel <= 0; mode <= PREPARE; end
+                3:    begin wb <= result; flags <= flags_o; mode <= SETEA; end
+                4, 5: begin
+
+                    sel  <= 0;
+                    mode <= PREPARE;
+
+                    // CF,OF устанавливаются при переполнении
+                    // ZF при нулевом результате
+                    if (opsize && isize) begin // 32 bit
+
+                        eax <= mult[31:0];
+                        edx <= mult[63:32];
+                        flags[ZF] <= mult[63:0] == 0;
+                        flags[CF] <= edx != 0;
+                        flags[OF] <= edx != 0;
+
+                    end else if (isize) begin // 16 bit
+
+                        eax[15:0] <= mult[15:0];
+                        edx[15:0] <= mult[31:16];
+                        flags[ZF] <= mult[31:0] == 0;
+                        flags[CF] <= edx[15:0]  != 0;
+                        flags[OF] <= edx[15:0]  != 0;
+
+                    end else begin // 8 bit
+
+                        eax[15:0] <= mult[15:0];
+                        flags[ZF] <= mult[15:0] == 0;
+                        flags[CF] <= eax[15:8]  != 0;
+                        flags[OF] <= eax[15:8]  != 0;
+
+                    end
+
+                end
+                6, 7: begin
+
+                    sel  <= 0;
+                    wb   <= 0;
+                    mode <= PREPARE;
+
+                    if (isize && opsize) begin
+
+                        eax <= signd ? -divres[31:0] : divres[31:0];
+                        edx <= divrem[31:0];
+
+                        if (|divres[63:32] || divb[31:0] == 0) mode <= INTERRUPT;
+
+                    end else if (isize) begin
+
+                        eax[15:0] <= signd ? -divres[15:0] : divres[15:0];
+                        edx[15:0] <= divrem[15:0];
+
+                        if (|divres[31:16] || divb[15:0] == 0) mode <= INTERRUPT;
+
+                    end else begin
+
+                        eax[7:0] <= signd ? -divres[7:0] : divres[7:0];
+                        edx[7:0] <= divrem[7:0];
+
+                        if (|divres[15:8] || divb[7:0] == 0) mode <= INTERRUPT;
+
+                    end
+
+                end
+
+            endcase end
+            3: case (modrm[5:3])
+
+                0, 1: begin flags <= flags_o; mode <= PREPARE; end
+                3, 6: begin sel <= 0; mode <= PREPARE; end
+
+            endcase
+
+            // Коррекция IDIV
+            4: begin
+
+                signa <= diva[63];
+
+                // Определение знака A
+                if (diva[63]) begin
+
+                    if (isize && opsize) diva        <= -diva;
+                    else if (isize)      diva[63:32] <= -diva[63:32];
+                    else                 diva[63:48] <= -diva[63:48];
+
+                end
+
+                // Определение знака A
+                if (isize && opsize && divb[31]) begin signb <= 1; divb[31:0] <= -divb[31:0]; end
+                else if (isize && divb[15])      begin signb <= 1; divb[15:0] <= -divb[15:0]; end
+                else if (divb[7])                begin signb <= 1; divb[ 7:0] <= -divb[ 7:0]; end
+
+                tstate <= 2;
+                mode   <= DIVIDE;
+
+            end
+
+        endcase
+
+        // Групповые инструкции #2 INC/DEC r8
+        8'b1111_1110: case (tstate)
+
+            0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= 2'b00; end
+            1: begin tstate <= 2; op2 <= 1; alumode <= modrm[3] ? 5 : 0; end
+            2: begin tstate <= 3; wb <= result; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
+            3: begin sel <= 0; mode <= PREPARE; end
+
+        endcase
+
+        // Групповые инструкции #3 Word/DWord
+        8'b1111_1111: case (tstate)
+
+            0: begin tstate <= 1; {idir, isize} <= 2'b01; mode <= FETCHEA; end
+            1: begin tstate <= 2; case (modrm[5:3])
+
+                // INC|DEC
+                0, 1: begin op2 <= 1; alumode <= modrm[3] ? 5 : 0; end
+                // CALL rm16
+                2: begin wb <= ip; ip <= op1; mode <= PUSH; end
+                // CALL far: Запись CS
+                3: begin wb <= seg_cs; mode <= PUSH; op2 <= ea; tmp16 <= seg_ea; end
+                // JMP rm16
+                4: begin ip <= op1; sel <= 0; mode <= PREPARE; end
+                // JMP far
+                5: begin ip <= op1; ea <= ea + (opsize ? 4 : 2); sel <= 1; end
+                // PUSH rm16
+                6: begin wb <= op1; mode <= PUSH; end
+
+            endcase end
+            2: begin tstate <= 3; case (modrm[5:3])
+
+                // INC|DEC {idir, isize} <= 2'b01;
+                0, 1: begin wb <= result; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
+                // CALL far: запись IP
+                3: begin wb <= ip; ip <= op1; mode <= PUSH; end
+                // JMP far
+                5: begin wb <= bus; ea <= ea + 1; end
+                2, 6: mode <= PREPARE;
+
+            endcase end
+            3: begin tstate <= 4; case (modrm[5:3])
+
+                // INC|DEC
+                0, 1: begin sel <= 0; mode <= PREPARE; end
+                // CALL far
+                3: begin sel <= 1; seg_ea <= op2; ea <= tmp16 + (opsize ? 4 : 2); end
+                // JMP far
+                5: begin wb[15:8] <= bus; mode <= LOADSEG; regn <= 1; end
+
+            endcase end
+            4: begin tstate <= 5; case (modrm[5:3])
+
+                3: begin wb <= bus; ea <= ea + 1; end
+                5: begin sel <= 0; mode <= PREPARE; end
+
+            endcase end
+            5: begin tstate <= 6; case (modrm[5:3])
+
+                3: begin wb[15:8] <= bus; mode <= LOADSEG; regn <= 1; end
+
+            endcase end
+            5: case (modrm[5:3])
+
+                3: begin sel <= 0; mode <= PREPARE; end
+
+            endcase
+
+        endcase
+
+        // Arithmetic Grp
+        8'b1000_00xx: case (tstate)
+
+            // Прочесть байт modrm, найти ссылку на память
+            0: begin tstate <= 1; mode <= FETCHEA; isize <= opcode[0]; idir <= 0; end
+
+            // Запрос на получение второго операнда
+            1: begin tstate <= 2; mode <= IMMEDIATE;
+
+                alumode <= modrm[5:3];
+                sel     <= 0;
+                if (opcode[1:0] == 2'b11) isize <= 0;
+
+            end
+            // Распознание второго операнда
+            2: begin
+
+                tstate <= 3;
+                op2    <= opcode[1:0] == 2'b11 ? (opsize ? {{24{wb[7]}},wb[7:0]} : {{8{wb[7]}},wb[7:0]}) : wb;
+                isize  <= opcode[0];
+
+            end
+            // Запись результата
+            3: begin
+
+                mode  <= alumode == 7 ? PREPARE : SETEA;
+                wb    <= result;
+                flags <= flags_o;
+                tstate <= 4;
+                if (alumode == 7) sel <= 0;
+
+            end
+            4: begin sel <= 0; mode <= PREPARE; end
+
+        endcase
 
         // ALU modrm
         8'b00_xxx_0xx: case (tstate)
@@ -227,42 +477,6 @@ else if (locked) case (mode)
             mode <= PREPARE;
 
         end
-
-        // Arithmetic Grp
-        8'b1000_00xx: case (tstate)
-
-            // Прочесть байт modrm, найти ссылку на память
-            0: begin tstate <= 1; mode <= FETCHEA; isize <= opcode[0]; idir <= 0; end
-
-            // Запрос на получение второго операнда
-            1: begin tstate <= 2; mode <= IMMEDIATE;
-
-                alumode <= modrm[5:3];
-                sel     <= 0;
-                if (opcode[1:0] == 2'b11) isize <= 0;
-
-            end
-            // Распознание второго операнда
-            2: begin
-
-                tstate <= 3;
-                op2    <= opcode[1:0] == 2'b11 ? (opsize ? {{24{wb[7]}},wb[7:0]} : {{8{wb[7]}},wb[7:0]}) : wb;
-                isize  <= opcode[0];
-
-            end
-            // Запись результата
-            3: begin
-
-                mode  <= alumode == 7 ? PREPARE : SETEA;
-                wb    <= result;
-                flags <= flags_o;
-                tstate <= 4;
-                if (alumode == 7) sel <= 0;
-
-            end
-            4: begin sel <= 0; mode <= PREPARE; end
-
-        endcase
 
         // TEST rm, r
         8'b1000_010x: case (tstate)
@@ -908,217 +1122,6 @@ else if (locked) case (mode)
         8'b1111_100x: begin flags[CF] <= opcode[0];  mode <= PREPARE; end
         8'b1111_101x: begin flags[IF] <= opcode[0];  mode <= PREPARE; end
         8'b1111_110x: begin flags[DF] <= opcode[0];  mode <= PREPARE; end
-
-        // Групповые инструкции F6/F7
-        8'b1111_011x: case (tstate)
-
-            0: begin tstate <= 1; {idir, isize} <= opcode[0]; mode <= FETCHEA; end
-            1: begin tstate <= 2; case (modrm[5:3])
-
-                // TEST
-                0, 1: begin sel <= 0; mode <= IMMEDIATE; end
-                // NOT
-                2:    begin wb  <= ~op1; mode <= SETEA; end
-                // NEG
-                3:    begin op1 <= 0; op2 <= op1; alumode <= 5; end
-                // MUL
-                4:    begin op2 <= isize ? (opsize ? eax : eax[15:0]) : eax[7:0]; end
-                // IMUL
-                5:    begin
-
-                    op1 <= isize ? (opsize ? op1 : {{16{op1[15]}},op1[15:0]}) : {{24{op1[7]}},op1[7:0]};
-                    op2 <= isize ? (opsize ? eax : {{16{eax[15]}},eax[15:0]}) : {{24{eax[7]}},eax[7:0]};
-
-                end
-                // DIV, IDIV
-                6, 7: begin
-
-                    divcnt <= isize ? (opsize ? 64 : 32) : 16;
-                    diva   <= isize ? (opsize ? {edx, eax} : {edx[15:0],eax[15:0],32'h0}) : {eax[15:0],48'h0};
-                    divb   <= isize ? (opsize ? op1 : op1[15:0]) : op1[7:0];
-                    divrem <= 0;
-                    divres <= 0;
-                    signa  <= 0;
-                    signb  <= 0;
-
-                    // Переход к IDIV вместо DIV
-                    if (modrm[3]) tstate <= 4; else mode <= DIVIDE;
-
-                end
-
-            endcase end
-            2: begin tstate <= 3; case (modrm[5:3])
-
-                0, 1: begin op2 <= wb; alumode <= 4; end
-                2:    begin sel <= 0; mode <= PREPARE; end
-                3:    begin wb <= result; flags <= flags_o; mode <= SETEA; end
-                4, 5: begin
-
-                    sel  <= 0;
-                    mode <= PREPARE;
-
-                    // CF,OF устанавливаются при переполнении
-                    // ZF при нулевом результате
-                    if (opsize && isize) begin // 32 bit
-
-                        eax <= mult[31:0];
-                        edx <= mult[63:32];
-                        flags[ZF] <= mult[63:0] == 0;
-                        flags[CF] <= edx != 0;
-                        flags[OF] <= edx != 0;
-
-                    end else if (isize) begin // 16 bit
-
-                        eax[15:0] <= mult[15:0];
-                        edx[15:0] <= mult[31:16];
-                        flags[ZF] <= mult[31:0] == 0;
-                        flags[CF] <= edx[15:0]  != 0;
-                        flags[OF] <= edx[15:0]  != 0;
-
-                    end else begin // 8 bit
-
-                        eax[15:0] <= mult[15:0];
-                        flags[ZF] <= mult[15:0] == 0;
-                        flags[CF] <= eax[15:8]  != 0;
-                        flags[OF] <= eax[15:8]  != 0;
-
-                    end
-
-                end
-                6, 7: begin
-
-                    sel  <= 0;
-                    wb   <= 0;
-                    mode <= PREPARE;
-
-                    if (isize && opsize) begin
-
-                        eax <= signd ? -divres[31:0] : divres[31:0];
-                        edx <= divrem[31:0];
-
-                        if (|divres[63:32] || divb[31:0] == 0) mode <= INTERRUPT;
-
-                    end else if (isize) begin
-
-                        eax[15:0] <= signd ? -divres[15:0] : divres[15:0];
-                        edx[15:0] <= divrem[15:0];
-
-                        if (|divres[31:16] || divb[15:0] == 0) mode <= INTERRUPT;
-
-                    end else begin
-
-                        eax[7:0] <= signd ? -divres[7:0] : divres[7:0];
-                        edx[7:0] <= divrem[7:0];
-
-                        if (|divres[15:8] || divb[7:0] == 0) mode <= INTERRUPT;
-
-                    end
-
-                end
-
-            endcase end
-            3: case (modrm[5:3])
-
-                0, 1: begin flags <= flags_o; mode <= PREPARE; end
-                3, 6: begin sel <= 0; mode <= PREPARE; end
-
-            endcase
-
-            // Коррекция IDIV
-            4: begin
-
-                signa <= diva[63];
-
-                // Определение знака A
-                if (diva[63]) begin
-
-                    if (isize && opsize) diva        <= -diva;
-                    else if (isize)      diva[63:32] <= -diva[63:32];
-                    else                 diva[63:48] <= -diva[63:48];
-
-                end
-
-                // Определение знака A
-                if (isize && opsize && divb[31]) begin signb <= 1; divb[31:0] <= -divb[31:0]; end
-                else if (isize && divb[15])      begin signb <= 1; divb[15:0] <= -divb[15:0]; end
-                else if (divb[7])                begin signb <= 1; divb[ 7:0] <= -divb[ 7:0]; end
-
-                tstate <= 2;
-                mode   <= DIVIDE;
-
-            end
-
-        endcase
-
-        // Групповые инструкции #2 INC/DEC r8
-        8'b1111_1110: case (tstate)
-
-            0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= 2'b00; end
-            1: begin tstate <= 2; op2 <= 1; alumode <= modrm[3] ? 5 : 0; end
-            2: begin tstate <= 3; wb <= result; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
-            3: begin sel <= 0; mode <= PREPARE; end
-
-        endcase
-
-        // Групповые инструкции #3 Word/DWord
-        8'b1111_1111: case (tstate)
-
-            0: begin tstate <= 1; {idir, isize} <= 2'b01; mode <= FETCHEA; end
-            1: begin tstate <= 2; case (modrm[5:3])
-
-                // INC|DEC
-                0, 1: begin op2 <= 1; alumode <= modrm[3] ? 5 : 0; end
-                // CALL rm16
-                2: begin wb <= ip; ip <= op1; mode <= PUSH; end
-                // CALL far: Запись CS
-                3: begin wb <= seg_cs; mode <= PUSH; op2 <= ea; tmp16 <= seg_ea; end
-                // JMP rm16
-                4: begin ip <= op1; sel <= 0; mode <= PREPARE; end
-                // JMP far
-                5: begin ip <= op1; ea <= ea + (opsize ? 4 : 2); sel <= 1; end
-                // PUSH rm16
-                6: begin wb <= op1; mode <= PUSH; end
-
-            endcase end
-            2: begin tstate <= 3; case (modrm[5:3])
-
-                // INC|DEC
-                0, 1: begin wb <= result; {idir, isize} <= 2'b01; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
-                // CALL far: запись IP
-                3: begin wb <= ip; ip <= op1; mode <= PUSH; end
-                // JMP far
-                5: begin wb <= bus; ea <= ea + 1; end
-                2, 6: mode <= PREPARE;
-
-            endcase end
-            3: begin tstate <= 4; case (modrm[5:3])
-
-                // INC|DEC
-                0, 1: begin sel <= 0; mode <= PREPARE; end
-                // CALL far
-                3: begin sel <= 1; seg_ea <= op2; ea <= tmp16 + (opsize ? 4 : 2); end
-                // JMP far
-                5: begin wb[15:8] <= bus; mode <= LOADSEG; regn <= 1; end
-
-            endcase end
-            4: begin tstate <= 5; case (modrm[5:3])
-
-                3: begin wb <= bus; ea <= ea + 1; end
-                5: begin sel <= 0; mode <= PREPARE; end
-
-            endcase end
-            5: begin tstate <= 6; case (modrm[5:3])
-
-                3: begin wb[15:8] <= bus; mode <= LOADSEG; regn <= 1; end
-
-            endcase end
-            5: case (modrm[5:3])
-
-                3: begin sel <= 0; mode <= PREPARE; end
-
-            endcase
-
-        endcase
 
         // Коды расширенных инструкции
         // =============================================================

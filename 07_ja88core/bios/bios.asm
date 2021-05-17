@@ -34,8 +34,6 @@ bios_entry:
 ; --------
 irq8:       inc     word [$1001]
             mov     ax, [$1001]
-            ;inc     ax
-            ;mov     [$1002], ax
             mov     di, 10*2
             call    print_hex_ax
             mov     al, $20
