@@ -239,6 +239,3 @@ sd_read:    push    ds
             call    sd_cmd
             pop     ds
             ret
-
-
-

@@ -54,7 +54,13 @@ int main(int argc, char* argv[]) {
             ms_prevtime = time_curr;
 
             // 25k x 60 ~ 1.5 MIPS
-            x86run(25000);
+            if (x86run(25000)) {
+
+                printf("STOP AT %x:%x\n", segs[1], ip);
+                regdump();
+
+                in_start = 0; break;
+            }
 
             if (counter++ >= 25) {
                 flash_cursor = !flash_cursor;

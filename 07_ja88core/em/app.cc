@@ -69,16 +69,15 @@ void reset() {
 // Отладка
 void regdump() {
 
-/*
-    printf("| ax %04X | cx %04X | dx %04X | bx %04X\n", regs16[REG_AX], regs16[REG_CX], regs16[REG_DX], regs16[REG_BX]);
-    printf("| sp %04X | bp %04X | si %04X | di %04X\n", regs16[REG_SP], regs16[REG_BP], regs16[REG_SI], regs16[REG_DI]);
-    printf("| cs %04X | es %04X | ss %04X | ds %04X\n", regs16[REG_CS], regs16[REG_ES], regs16[REG_SS], regs16[REG_DS]);
-    printf("| ip %04X\n", reg_ip);
+    printf("| ax %04X | cx %04X | dx %04X | bx %04X\n", regs[REG_AX], regs[REG_CX], regs[REG_DX], regs[REG_BX]);
+    printf("| sp %04X | bp %04X | si %04X | di %04X\n", regs[REG_SP], regs[REG_BP], regs[REG_SI], regs[REG_DI]);
+    printf("| cs %04X | es %04X | ss %04X | ds %04X\n", segs[SEG_CS], segs[SEG_ES], segs[SEG_SS], segs[SEG_DS]);
+    printf("| ip %04X\n", ip);
     printf("| %c%c%c%c%c%c%c%c%c\n",
-        flags.o ? 'O' : '-', flags.d ? 'D' : '-', flags.i ? 'I' : '-',
-        flags.t ? 'T' : '-', flags.s ? 'S' : '-', flags.z ? 'Z' : '-',
-        flags.a ? 'A' : '-', flags.p ? 'P' : '-', flags.c ? 'C' : '-');
-*/
+        flags&V_FLAG ? 'O' : '-', flags&D_FLAG ? 'D' : '-', flags&I_FLAG ? 'I' : '-',
+        flags&T_FLAG ? 'T' : '-', flags&N_FLAG ? 'S' : '-', flags&Z_FLAG ? 'Z' : '-',
+        flags&A_FLAG ? 'A' : '-', flags&P_FLAG ? 'P' : '-', flags&C_FLAG ? 'C' : '-');
+
 }
 
 void memdump(int address) {
