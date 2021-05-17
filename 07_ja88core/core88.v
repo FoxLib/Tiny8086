@@ -20,7 +20,10 @@ module core88
     // Прерывания
     input   wire        intr,       // Запрос прерывания
     input   wire [ 7:0] irq,        // Номер прерывания
-    output  reg         intr_latch  // ACCEPT прерывания
+    output  reg         intr_latch, // ACCEPT прерывания
+
+    // Отладочные LED
+    output  wire [23:0] debug
 );
 
 `include "decl.v"
@@ -29,6 +32,7 @@ wire __m0 = (mode == PREPARE);
 
 // Выбор источника памяти
 assign address = sel ? {seg_ea, 4'h0} + ea : {seg_cs, 4'h0} + ip;
+assign debug[11:0] = flags;
 
 // =====================================================================
 // Основная работа процессорного микрокода, так сказать
@@ -299,7 +303,7 @@ else if (locked) case (mode)
         // MOV sreg|rm
         8'b1000_11x0: case (tstate)
 
-            0: begin tstate <= 1; idir <= opcode[1]; isize <= 1; mode <= FETCHEA; end
+            0: begin tstate <= 1; {isize, idir} <= opcode[2:1]; skip_op <= ~opcode[1]; mode <= FETCHEA; end
             1: begin
 
                 tstate <= 2;
@@ -593,7 +597,14 @@ else if (locked) case (mode)
                 ip   <= op1;
                 sel  <= 0;
                 mode <= PREPARE;
-                if (stack32) esp <= esp + wb; else esp[15:0] <= esp[15:0] + wb;
+
+                // Если RET imm, то добавить к стеку
+                if (opcode[0] == 0) begin
+
+                    if (stack32) esp       <= esp       + wb;
+                    else         esp[15:0] <= esp[15:0] + wb;
+
+                end
 
             end
 

@@ -68,12 +68,20 @@ assign GPIO_0  = 36'hzzzzzzzz;
 assign GPIO_1  = 36'hzzzzzzzz;
 
 // LED OFF
-assign HEX0 = 7'b1111111;
-assign HEX1 = 7'b1111111;
-assign HEX2 = 7'b1111111;
-assign HEX3 = 7'b1111111;
-assign HEX4 = 7'b1111111;
-assign HEX5 = 7'b1111111;
+// assign HEX0 = 7'b1111111;
+// assign HEX1 = 7'b1111111;
+// assign HEX2 = 7'b1111111;
+// assign HEX3 = 7'b1111111;
+// assign HEX4 = 7'b1111111;
+// assign HEX5 = 7'b1111111;
+
+wire [23:0] debug;
+
+// ---------------------------------------------------------------------
+reg [15:0] pwm; always @(posedge clock_25) pwm <= pwm + 1; wire ena = pwm < 1024;
+hex7 h5(debug[  3:0], HEX5, ena); hex7 h4(debug[  7:4], HEX4, ena);
+hex7 h3(debug[ 11:8], HEX3, ena); hex7 h2(debug[15:12], HEX2, ena);
+hex7 h1(debug[19:16], HEX1, ena); hex7 h0(debug[23:20], HEX0, ena);
 
 // ---------------------------------------------------------------------
 // Генерация частот
@@ -81,12 +89,14 @@ assign HEX5 = 7'b1111111;
 
 wire locked;
 wire clock_25;
+wire clock_50;
 wire clock_100;
 
 de0pll UnitPLL
 (
     .clkin     (CLOCK_50),
     .m25       (clock_25),
+    .m50       (clock_50),
     .m100      (clock_100),
     .locked    (locked)
 );
@@ -196,7 +206,7 @@ wire       ps2_hit;
 // Контроллер клавиатуры
 keyboard KEYBOARD
 (
-    .CLOCK_50           (CLOCK_50),    // Тактовый генератор на 50 Мгц
+    .CLOCK_50           (clock_50),    // Тактовый генератор на 50 Мгц
     .PS2_CLK            (PS2_CLK),     // Таймингс PS/2
     .PS2_DAT            (PS2_DAT),     // Данные с PS/2
     .received_data      (ps2_data),    // Принятые данные
@@ -229,7 +239,10 @@ core88 UnitCore88
     // Прерывания
     .intr       (intr),
     .irq        (irq),
-    .intr_latch (intr_latch)
+    .intr_latch (intr_latch),
+
+    // Отладка
+    .debug      (debug)
 );
 
 // ---------------------------------------------------------------------
@@ -243,7 +256,7 @@ wire [ 7:0] irq;
 portctl PortCtlUnit
 (
     .clock      (clock_25),
-    .clock50    (CLOCK_50),
+    .clock50    (clock_50),
     .port_clk   (port_clk),
     .port       (port),
     .port_i     (port_i),
