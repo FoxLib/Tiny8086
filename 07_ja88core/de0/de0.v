@@ -109,6 +109,8 @@ de0pll UnitPLL
 wire [12:0] cga_address;
 wire [ 7:0] cga_data;
 wire [10:0] cga_cursor;
+wire [ 5:0] cursor_shape_lo;
+wire [ 4:0] cursor_shape_hi;
 
 cga CGA
 (
@@ -121,6 +123,8 @@ cga CGA
     .address    (cga_address),
     .data       (cga_data),
     .cursor     (cga_cursor),
+    .cursor_shape_lo (cursor_shape_lo),
+    .cursor_shape_hi (cursor_shape_hi),
 );
 
 // Контроллер памяти
@@ -298,7 +302,9 @@ portctl PortCtlUnit
     .port_w     (port_w),
 
     // Видео
-    .vga_cursor (cga_cursor),
+    .vga_cursor      (cga_cursor),
+    .cursor_shape_lo (cursor_shape_lo),
+    .cursor_shape_hi (cursor_shape_hi),
 
     // Клавиатура
     .ps2_data   (ps2_data),

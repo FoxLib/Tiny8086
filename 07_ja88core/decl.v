@@ -113,9 +113,12 @@ wire [7:0] branches = {
 
     (flags[SF] ^ flags[OF]) | flags[ZF], // 7: (ZF=1) OR (SF!=OF)
     (flags[SF] ^ flags[OF]),             // 6: SF!=OF
-     flags[PF], flags[SF],               // 5: PF; 4: SF
-     flags[CF] | flags[OF],              // 3: CF != OF
-     flags[ZF], flags[CF], flags[OF]     // 2: OF; 1: CF; 0: ZF
+     flags[PF],                          // 5: PF
+     flags[SF],                          // 4: SF
+     flags[CF] | flags[ZF],              // 3: CF or ZF
+     flags[ZF],                          // 2: ZF
+     flags[CF],                          // 1: CF
+     flags[OF]                           // 0: OF
 };
 
 // Модуль умножения

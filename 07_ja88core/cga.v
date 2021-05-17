@@ -15,7 +15,10 @@ module cga
     input   wire [ 7:0] data,    // data = videoram[ address ]
 
     // Внешний интерфейс
-    input   wire [10:0] cursor   // Положение курсора от 0 до 2047
+    input   wire [10:0] cursor,          // Положение курсора от 0 до 2047
+    input   wire [ 5:0] cursor_shape_lo, // Начало курсора
+    input   wire [ 4:0] cursor_shape_hi  // Конец
+
 );
 
 // ---------------------------------------------------------------------
@@ -52,8 +55,9 @@ reg         flash;
 // Текущая позиция курсора
 wire [10:0] id = X[9:3] + (Y[8:4] * 80);
 
-// Если появляется курсор [1..4000], то он использует нижние 2 строки у линии
-wire maskbit = (char[ 3'h7 ^ X[2:0] ]) | (flash && (id == cursor+1) && Y[3:0] >= 14);
+// Если появляется курсор [1..4000], то он использует нижние [cursor_shape_lo..cursor_shape_hi] строки у линии
+wire shapec  = Y[3:0] >= cursor_shape_lo && Y[3:0] <= cursor_shape_hi;
+wire maskbit = (char[ 3'h7 ^ X[2:0] ]) | (flash && (id == cursor+1) && shapec);
 
 // Разбираем цветовую компоненту (нижние 4 бита отвечают за цвет символа)
 wire [15:0] frcolor =

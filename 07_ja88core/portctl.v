@@ -13,6 +13,8 @@ module portctl
 
     // Видеоадаптер
     output  reg  [10:0] vga_cursor,
+    output  reg  [ 5:0] cursor_shape_lo,
+    output  reg  [ 4:0] cursor_shape_hi,
 
     // Клавиатура
     input   wire [ 7:0] ps2_data,
@@ -78,7 +80,15 @@ reg         keyb_intr_latch = 0;
 always @(posedge clock) begin
 
     // Приведение к начальным значениям
-    if (!resetn) begin vect_master <= 8; irq_mask <= 0; pit_channel0 <= 0; end
+    if (!resetn) begin
+
+        vect_master     <= 8;
+        irq_mask        <= 0;
+        pit_channel0    <= 0;
+        cursor_shape_lo <= 14;
+        cursor_shape_hi <= 15;
+
+    end
 
     // Появился вызов прерывания с клавиатуры
     if (keyb_intr_latch ^  keyb_intr) begin
@@ -136,6 +146,8 @@ always @(posedge clock) begin
             16'h3D5: case (cga_reg)
 
                 // Положение курсора на экране
+                8'h0A: cursor_shape_lo[5:0] <= port_o[5:0]; // START
+                8'h0B: cursor_shape_hi[4:0] <= port_o[4:0]; // END
                 8'h0E: vga_cursor[10:8] <= port_o[2:0];
                 8'h0F: vga_cursor[ 7:0] <= port_o;
 
@@ -163,6 +175,8 @@ always @(posedge clock) begin
             16'h3D4: port_i <= cga_reg;
             16'h3D5: case (cga_reg)
 
+                8'h0A: port_i <= cursor_shape_lo;
+                8'h0B: port_i <= cursor_shape_hi;
                 8'h0E: port_i <= vga_cursor[10:8];
                 8'h0F: port_i <= vga_cursor[ 7:0];
 
