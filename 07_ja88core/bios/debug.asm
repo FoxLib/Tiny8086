@@ -22,3 +22,8 @@ cls:        ; ----- pont --------
             mov     ax, $0122
 @@:         rep     stosw
             ret
+
+; Вывод AX на экран
+outax:      mov     di, 2*(3*80 + 30)
+            call    print_hex_ax
+            jmp     $

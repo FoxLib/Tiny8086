@@ -1,3 +1,4 @@
+
 ; Отсылка 80 тактов
 sd_enable:  call    sd_wait
             mov     al, 0
@@ -36,13 +37,11 @@ sd_get:     mov     al, 0xff
             in      al, $ff     ; Прием результата
             ret
 
+; ----------------------------------------------------------------------
 ; Отсылка команды AH и [sd_arg] к SD
 ; ----------------------------------------------------------------------
 
 sd_command:
-
-            mov     al, 2
-            call    sd_cmd      ; ChipEnable
 
             ; for 0..65535: if (get() == FF) break;
             mov     cx, 65535
@@ -58,11 +57,11 @@ sd_command:
             call    sd_put
 
             ; Отослать 32-х битную команду
-            mov     bx, SD_CMD_ARG+3
+            mov     bx, SD_CMD_ARG+4
             mov     cx, 4
-@@:         mov     al, [bx]
+@@:         dec     bx
+            mov     al, [bx]
             call    sd_put
-            dec     bx
             loop    @b
 
             ; Отправка CRC
@@ -84,10 +83,116 @@ sd_command:
             and     cx, cx
             je      .error
 
-xor di, di
-call print_hex_ax
-jmp $
-
-
-.error:     ; ошибка
+            ; Возвращает AL
+            clc
             ret
+.error:     stc
+            ret
+
+; ----------------------------------------------------------------------
+sd_acmd:    push    cx
+            push    ax
+            push    word [bx+2]
+            push    word [bx]
+
+            ; command(SD_CMD55, 0);
+            xor     ax, ax
+            mov     [bx],  ax
+            mov     [bx+2], ax
+            mov     ah, 55
+            call    sd_command
+
+            ; command(cmd, arg);
+            pop     word [bx]
+            pop     word [bx+2]
+            pop     ax
+            call    sd_command
+            pop     cx
+            ret
+
+; ----------------------------------------------------------------------
+; Инициализация устройства
+; DS должен быть равен 0
+; ----------------------------------------------------------------------
+
+sd_init:
+
+            mov     bx, SD_CMD_ARG
+            mov     al, 2
+            call    sd_cmd          ; ChipEnable
+
+            ; SDCommand(CMD0, 0)
+            xor     ax, ax
+            mov     [bx+2], ax
+            mov     [bx],   ax
+            mov     [SD_TYPE],      al
+            call    sd_command
+            jc      .error          ; Возможно тайм-аут
+            cmp     al, 1
+            jne     .error          ; Неправильный ответ
+
+            ; Определить тип карты (SD1)
+            mov     [SD_CMD_ARG],   word 0x01AA
+            mov     ah, 8
+            call    sd_command
+            jc      .error
+            test    al, R1_ILLEGAL_COMMAND
+            je      .checksd2
+            ; Есть illegal-бит, это карта SD1
+            mov     [SD_TYPE], byte SD_CARD_TYPE_SD1
+            jmp     .init1
+
+.checksd2:  ; Прочесть 4 байта, последний будет важный
+            call    sd_get
+            call    sd_get
+            call    sd_get
+            call    sd_get
+            cmp     al, $AA
+            jne     .error
+            mov     [SD_TYPE], byte SD_CARD_TYPE_SD2
+            mov     [bx+2], word 0x4000
+
+.init1:     ; Инициализация карты и отправка кода поддержки (SDHC если SD2)
+            ; Отсылка ACMD = 0x29. Отсылать и ждать, пока не придет корректный ответ
+            mov     cx, 8192
+@@:         mov     ah, 0x29
+            call    sd_acmd
+            cmp     al, R1_READY_STATE
+            loopnz  @b
+            and     cx, cx
+            je      .error
+
+            ; Если SD2, читать OCR регистр для проверки SDHC карты
+            cmp     [SD_TYPE], byte SD_CARD_TYPE_SD2
+            jne     .exit
+
+            ; Проверка наличия байта в ответе CMD58 (должно быть 0)
+            xor     ax, ax
+            mov     [bx], ax
+            mov     [bx+2], ax
+            mov     ah, 58
+            call    sd_command
+            and     al, al
+            jne     .error
+
+            ; Прочесть ответ от карты и определить тип (SDHC если есть)
+            call    sd_get
+            cmp     al, 0xc0
+            jne     @f
+            ; Если ответ C0h это SDHC
+            mov     [SD_TYPE], byte SD_CARD_TYPE_SD3
+            call    outax
+@@:         call    sd_get
+            call    sd_get
+            call    sd_get
+
+            ; Ошибок не было
+.exit:      clc
+            ret
+
+.error:     stc
+            ret
+
+
+
+
