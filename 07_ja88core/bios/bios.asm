@@ -16,16 +16,12 @@ bios_entry:
             mov     es, ax
             mov     sp, 0x0400
 
-            call    sd_enable
-            call    sd_init
+            mov     di, 0
+            mov     [SD_LBA], word 0
+            mov     [SD_LBA+2], word 0
+            call    sd_read
 
-
-            ;mov     ax, $1234
-            ;xor     di, di
-            ;call    print_hex_ax
-
-@@:
-            jmp @b
+            jmp     $
 
 
             ; Установка IVT (2kb)

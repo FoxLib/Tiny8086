@@ -1,5 +1,6 @@
-
 ; Standard PC-compatible BIOS data area - to copy to 40:0
+; https://stanislavs.org/helppc/bios_data_area.html
+; ----------------------------------------------------------------------
 
 bios_data:
 
@@ -11,20 +12,21 @@ bios_data:
     lpt2addr            dw  0
     lpt3addr            dw  0
     lpt4addr            dw  0
-    equip               dw  0000000000100001b
+
+    equip               dw  0000000000100101b   ; 10h
                         db  0
-    memsize             dw  256         ; 640
+    memsize             dw  256                 ; Максимум 640, INT 12h
                         db  0
                         db  0
-    keyflags1           db  0
-    keyflags2           db  0
+    keyflags1           db  0                   ; 17h
+    keyflags2           db  0                   ; 18h
                         db  0
-    kbbuf_head          dw  kbbuf - bios_data
-    kbbuf_tail          dw  kbbuf - bios_data
-    kbbuf: times 32     db  'X'
+    kbbuf_head          dw  kbbuf - bios_data   ; 1Ah
+    kbbuf_tail          dw  kbbuf - bios_data   ; 1Ch
+    kbbuf: times 32     db  'X'                 ; 1Eh Клавиатурный буфер
     drivecal            db  0
     diskmotor           db  0
-    motorshutoff        db  0x07
+    motorshutoff        db  0x07                ; Декрементируется INT 8h
     disk_laststatus     db  0
     times 7             db  0
     vidmode             db  0x03
@@ -37,7 +39,7 @@ bios_data:
     cur_v_end           db  7
     cur_v_start         db  6
     disp_page           db  0
-    crtport             dw  0x3d4
+    crtport             dw  0x3d4               ; Цветной 3D4h
                         db  10
                         db  0
     times 5             db  0
@@ -53,13 +55,13 @@ bios_data:
                         dd  0
     kbbuf_start_ptr     dw  0x001e
     kbbuf_end_ptr       dw  0x003e
-    vid_rows            db  25         ; at 40:84
+    vid_rows            db  25                   ; at 40:84
                         db  0
                         db  0
-    vidmode_opt         db  0   ; 0x70
-                        db  0   ; 0x89
-                        db  0   ; 0x51
-                        db  0   ; 0x0c
+    vidmode_opt         db  0                   ; 0x70
+                        db  0                   ; 0x89
+                        db  0                   ; 0x51
+                        db  0                   ; 0x0c
                         db  0
                         db  0
                         db  0
@@ -89,10 +91,10 @@ bios_data:
     notranslate_flg     db  0
     this_keystroke      db  0
     this_keystroke_ext  db  0
-    timer0_freq         dw  0xFFFF ; PIT channel 0 (55ms)
-    timer2_freq         dw  0      ; PIT channel 2
+    timer0_freq         dw  0xFFFF      ; PIT channel 0 (55ms)
+    timer2_freq         dw  0           ; PIT channel 2
     cga_vmode           db  0
-    vmem_offset         dw  0      ; Video RAM offset
+    vmem_offset         dw  0           ; Video RAM offset
 
 ; Keyboard scan code tables
 

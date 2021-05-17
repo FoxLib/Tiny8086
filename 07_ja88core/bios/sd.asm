@@ -111,13 +111,10 @@ sd_acmd:    push    cx
             ret
 
 ; ----------------------------------------------------------------------
-; Инициализация устройства
-; DS должен быть равен 0
+; Инициализация устройства, DS должен быть равен 0
 ; ----------------------------------------------------------------------
 
-sd_init:
-
-            mov     bx, SD_CMD_ARG
+sd_init:    mov     bx, SD_CMD_ARG
             mov     al, 2
             call    sd_cmd          ; ChipEnable
 
@@ -181,18 +178,67 @@ sd_init:
             jne     @f
             ; Если ответ C0h это SDHC
             mov     [SD_TYPE], byte SD_CARD_TYPE_SD3
-            call    outax
 @@:         call    sd_get
             call    sd_get
             call    sd_get
 
-            ; Ошибок не было
+            ; Ошибок не было CF=0
 .exit:      clc
             ret
 
+            ; Появились ошибки CF=1
 .error:     stc
             ret
 
+; ----------------------------------------------------------------------
+; Чтение сектора в ES:DI; LBA находится в SD_LBA (dword)
+; ----------------------------------------------------------------------
+
+sd_read:    push    ds
+            xor     ax, ax
+            mov     ds, ax
+
+            ; В случае истечения таймаута ожидания
+            in      al, $fe
+            test    al, $40
+            je      @f
+
+            call    sd_enable
+            call    sd_init
+
+            ; Запрос сектора
+@@:         mov     ax, [SD_LBA]
+            mov     [SD_CMD_ARG], ax
+            mov     ax, [SD_LBA+2]
+            mov     [SD_CMD_ARG+2], ax
+            mov     ah, 17
+            call    sd_command
+            and     al, al
+            jne     .error
+
+            ; Ожидание ответа от SD
+            mov     cx, 8192
+@@:         call    sd_get
+            cmp     al, 0xff
+            loopz   @b
+            and     cx, cx
+            je      .error          ; Таймаут ответа
+            cmp     al, 0xFE
+            jne     .error          ; Не тот ответ
+
+            ; Чтение сектора
+            mov     cx, 512
+@@:         call    sd_get
+            stosb
+            loop    @b
+
+.done:      clc
+            jmp     .exit
+.error:     stc
+.exit:      mov     al, 3           ; Отключение чипа
+            call    sd_cmd
+            pop     ds
+            ret
 
 
 
