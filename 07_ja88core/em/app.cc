@@ -30,9 +30,18 @@ uint8_t ioread(uint16_t port) {
 
     switch (port) {
 
+        case 0x3D4: return cga_register;
+        case 0x3D5:
+
+            switch (cga_register) {
+
+                case 0x0A: return cursor_l;
+                case 0x0B: return cursor_h;
+            }
+            break;
+
         case 0xFE: return SpiModule.spi_read_status();
         case 0xFF: return SpiModule.spi_read_data();
-
     }
 
     return io_ports[port];
@@ -42,6 +51,17 @@ uint8_t ioread(uint16_t port) {
 void iowrite(uint16_t port, uint8_t data) {
 
     switch (port) {
+
+        case 0x3D4: cga_register = data; break;
+        case 0x3D5:
+
+            switch (cga_register) {
+
+                case 0x0A: cursor_l = data & 0x3f; break;
+                case 0x0B: cursor_h = data & 0x1f; break;
+            }
+
+            break;
 
         case 0xFE: SpiModule.spi_write_cmd(data); break;
         case 0xFF: SpiModule.spi_write_data(data); break;
@@ -60,6 +80,7 @@ void reset() {
     cursor_y = 0;
     cursor_l = 14;
     cursor_h = 15;
+    cga_register = 0;
 
     SpiModule.start();
 }

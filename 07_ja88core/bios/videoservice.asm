@@ -7,9 +7,12 @@
 
 int10:      and     ah, ah
             je      int10_set_vm
+            cmp     ah, 1
+            je      int10_set_cshape
 .int10exit: iret
 
-; Видеорежим
+; ----------------------------------------------------------------------
+; Видеорежим: AL=0..3 TEXT
 ; ----------------------------------------------------------------------
 
 int10_set_vm:
@@ -21,6 +24,7 @@ int10_set_vm:
 
 .set_text_mode:
 
+            ; Установка и очистка экрана
             mov     bx, 0xb800
             mov     es, bx
             xor     di, di
@@ -29,4 +33,22 @@ int10_set_vm:
             rep     stosw
 
 .exit:      pop     bx es
+            iret
+
+; ----------------------------------------------------------------------
+; Вид курсора
+; CH-начальная CL-конечная
+; ----------------------------------------------------------------------
+
+int10_set_cshape:
+
+            push    ax dx
+            mov     dx, 0x3d4
+            mov     al, 0x0a
+            mov     ah, ch
+            out     dx, ax
+            inc     al
+            mov     ah, cl
+            out     dx, ax
+            pop     dx ax
             iret

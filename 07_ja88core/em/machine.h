@@ -17,6 +17,7 @@ int     ms_prevtime;
 int     width;
 int     height;
 int     flash_cursor, cursor_x, cursor_y, cursor_l, cursor_h;
+int     cga_register;
 
 unsigned char RAM[RAMTOP];
 unsigned char io_ports[65536];

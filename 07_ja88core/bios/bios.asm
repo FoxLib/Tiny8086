@@ -41,13 +41,6 @@ bios_entry:
             mov     cx, 0x100
             rep     movsb
 
-;mov dx, 0x3d4
-;mov ax, 0x000a
-;out dx, ax
-;mov ax, 0x070b
-;out dx, ax
-
-
             ; Очистка памяти
             mov     ax, $0003
             int     10h
