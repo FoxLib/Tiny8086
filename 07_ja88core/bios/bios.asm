@@ -6,15 +6,6 @@ bios_entry:
 
             cli
             cld
-
-            ; interrupt
-            mov [0x20], word irq8
-            mov [0x22], cs
-            mov [0x24], word irq9
-            mov [0x26], cs
-
-            ; Обнуляем сегменты ds=ss=0, sp=300h
-            ; Находится в Interrupt Vector Table (256b)
             xor     ax, ax
             mov     ds, ax
             mov     ss, ax
@@ -22,32 +13,18 @@ bios_entry:
             mov     es, ax
             mov     sp, 0x0400
 
-            ;mov     dx, 0x3d4
-            ;mov     ax, 0x040f
-            ;out     dx, ax
-            ;mov     ax, 0x000e
-            ;out     dx, ax
+            call    sd_enable
+            call    sd_init
 
-@@:         sti
+
+
+            ;mov     ax, $1234
+            ;xor     di, di
+            ;call    print_hex_ax
+
+@@:
             jmp @b
 
-; --------
-irq8:       inc     word [$1001]
-            mov     ax, [$1001]
-            mov     di, 10*2
-            call    print_hex_ax
-            mov     al, $20
-            out     $20, al
-            iret
-
-irq9:       inc     byte [$1000]
-            mov     ah, [$1000]
-            in      al, $60
-            mov     di, 5*2
-            call    print_hex_ax
-            mov     al, $20
-            out     $20, al
-            iret
 
             ; Установка IVT (2kb)
             xor     di, di
@@ -98,6 +75,7 @@ hlt
 
             jmp     $
 
+            include "sd.asm"
             include "biosconfig.asm"
             include "ivt.asm"
             include "keyboard.asm"

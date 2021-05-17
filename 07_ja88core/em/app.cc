@@ -1,7 +1,7 @@
 // Порты
-// 100h RW SPI Data
-// 101h  W SPI Command
-// 101h  R SPI Status
+// FFh RW SPI Data
+// FFh  W SPI Command
+// FFh  R SPI Status
 // =====================================================================
 
 // Реальная запись в память
@@ -30,8 +30,8 @@ uint8_t ioread(uint16_t port) {
 
     switch (port) {
 
-        case 0x100: return SpiModule.spi_read_data();
-        case 0x101: return SpiModule.spi_read_status();
+        case 0xFE: return SpiModule.spi_read_status();
+        case 0xFF: return SpiModule.spi_read_data();
 
     }
 
@@ -43,8 +43,8 @@ void iowrite(uint16_t port, uint8_t data) {
 
     switch (port) {
 
-        case 0x100: SpiModule.spi_write_data(data); break;
-        case 0x101: SpiModule.spi_write_cmd(data); break;
+        case 0xFE: SpiModule.spi_write_cmd(data); break;
+        case 0xFF: SpiModule.spi_write_data(data); break;
     }
 
     io_ports[port] = data;

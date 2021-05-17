@@ -247,6 +247,39 @@ core88 UnitCore88
 );
 
 // ---------------------------------------------------------------------
+// Модуль SD
+// ---------------------------------------------------------------------
+
+assign SD_DATA[0] = 1'bZ;
+
+wire [1:0]  sd_cmd;
+wire [7:0]  sd_din;
+wire [7:0]  sd_out;
+wire        sd_signal;
+wire        sd_busy;
+wire        sd_timeout;
+
+sd UnitSD(
+
+    // 50 Mhz
+    .clock50    (CLOCK_50),
+
+    // Физический интерфейс
+    .SPI_CS     (SD_DATA[3]),   // Выбор чипа
+    .SPI_SCLK   (SD_CLK),       // Тактовая частота
+    .SPI_MISO   (SD_DATA[0]),   // Входящие данные
+    .SPI_MOSI   (SD_CMD),       // Исходящие
+
+    // Интерфейс
+    .sd_signal  (sd_signal),   // In   =1 Сообщение отослано на spi
+    .sd_cmd     (sd_cmd),      // In      Команда
+    .sd_din     (sd_din),      // Out     Принятое сообщение от карты
+    .sd_out     (sd_out),      // In      Сообщение на отправку к карте
+    .sd_busy    (sd_busy),     // Out  =1 Занято
+    .sd_timeout (sd_timeout),  // Out  =1 Таймаут
+);
+
+// ---------------------------------------------------------------------
 // Управление портами
 // ---------------------------------------------------------------------
 
@@ -271,6 +304,14 @@ portctl PortCtlUnit
     .ps2_data   (ps2_data),
     .ps2_hit    (ps2_hit),
 
+    // SD-карта
+    .sd_signal  (sd_signal),   // In   =1 Сообщение отослано на spi
+    .sd_cmd     (sd_cmd),      // In      Команда
+    .sd_din     (sd_din),      // Out     Принятое сообщение от карты
+    .sd_out     (sd_out),      // In      Сообщение на отправку к карте
+    .sd_busy    (sd_busy),     // Out  =1 Занято
+    .sd_timeout (sd_timeout),  // Out  =1 Таймаут
+
     // Прерывания
     .intr       (intr),
     .irq        (irq),
@@ -279,6 +320,7 @@ portctl PortCtlUnit
 
 endmodule
 
+`include "../sd.v"
 `include "../cga.v"
 `include "../core88.v"
 `include "../alu.v"

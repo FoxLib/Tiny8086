@@ -18,13 +18,32 @@ module portctl
     input   wire [ 7:0] ps2_data,
     input   wire        ps2_hit,
 
+    // SD-карта
+    output  reg         sd_signal,  // 0->1 Команда на позитивном фронте
+    output  reg  [ 1:0] sd_cmd,     // ID команды
+    input   wire [ 7:0] sd_din,     // Исходящие данные в процессор
+    output  reg  [ 7:0] sd_out,     // Входящие данные из процессора
+    input   wire        sd_busy,    // =1 Устройство занято
+    input   wire        sd_timeout, // =1 Вышел таймаут
+
+
     // Прерывания
     output reg          intr,
     output reg   [ 7:0] irq,
     input  wire         intr_latch
 );
 
-initial begin vga_cursor = 0; port_i = 0; intr = 0; irq = 0; end
+initial begin
+
+    vga_cursor  = 0;
+    port_i      = 0;
+    intr        = 0;
+    irq         = 0;
+    sd_signal   = 0;
+    sd_cmd      = 0;
+    sd_out      = 0;
+
+end
 
 // Обработка прерываний
 reg [15:0]  irq_mask = 16'b0000_0000_0000_0000; // Маски
@@ -106,6 +125,10 @@ always @(posedge clock) begin
             16'h40: pit_channel0 <= {port_o[7:0], pit_channel0[15:8]};
             16'h43: pit_mode     <= port_o;
 
+            // SD
+            16'hFE: {sd_signal, sd_cmd} <= {port_o[7], port_o[1:0]};
+            16'hFF: sd_out <= port_o;
+
             // Выбор регистра CGA/EGA
             16'h3D4: cga_reg <= port_o;
 
@@ -132,6 +155,11 @@ always @(posedge clock) begin
                 keyb_counter_latch <= keyb_counter;
 
             end
+
+            // SD
+            16'hFE: port_i <= {sd_busy, sd_timeout, 6'h0};
+            16'hFF: port_i <= sd_din;
+
             16'h3D4: port_i <= cga_reg;
             16'h3D5: case (cga_reg)
 
