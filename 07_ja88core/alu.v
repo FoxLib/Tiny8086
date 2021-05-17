@@ -15,7 +15,7 @@ module alu
     output  reg  [11:0] flags_d
 );
 
-assign result = isize ? (opsize ? res : res[15:0]) : res[7:0];
+assign result = isize ? (opsize ? res[31:0] : res[15:0]) : res[7:0];
 
 reg [32:0] res;
 

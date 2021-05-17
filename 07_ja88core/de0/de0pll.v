@@ -3,11 +3,11 @@ module de0pll(
     input wire clkin,
     input wire rst,
 
+    output wire m12,
     output wire m25,
     output wire m50,
     output wire m75,
     output wire m100,
-    output wire m106,
 
     output wire locked
 );
@@ -26,7 +26,7 @@ altera_pll #(
     .output_clock_frequency2("50 MHz"),
     .phase_shift2("0 ps"),
     .duty_cycle2(50),
-    .output_clock_frequency3("106 MHz"),
+    .output_clock_frequency3("12.5 MHz"),
     .phase_shift3("0 ps"),
     .duty_cycle3(50),
     .output_clock_frequency4("75 MHz"),
@@ -76,7 +76,7 @@ altera_pll #(
 )
 altera_pll_i (
     .rst (rst),
-    .outclk ({m75, m106, m50, m100, m25}),
+    .outclk ({m75, m12, m50, m100, m25}),
     .locked (locked),
     .fboutclk ( ),
     .fbclk (1'b0),

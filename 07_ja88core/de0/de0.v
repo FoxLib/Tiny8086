@@ -67,17 +67,8 @@ assign DRAM_DQ = 16'hzzzz;
 assign GPIO_0  = 36'hzzzzzzzz;
 assign GPIO_1  = 36'hzzzzzzzz;
 
-// LED OFF
-// assign HEX0 = 7'b1111111;
-// assign HEX1 = 7'b1111111;
-// assign HEX2 = 7'b1111111;
-// assign HEX3 = 7'b1111111;
-// assign HEX4 = 7'b1111111;
-// assign HEX5 = 7'b1111111;
-
-wire [23:0] debug;
-
 // ---------------------------------------------------------------------
+wire [23:0] debug;
 reg [15:0] pwm; always @(posedge clock_25) pwm <= pwm + 1; wire ena = pwm < 1024;
 hex7 h5(debug[  3:0], HEX0, ena); hex7 h4(debug[  7:4], HEX1, ena);
 hex7 h3(debug[ 11:8], HEX2, ena); hex7 h2(debug[15:12], HEX3, ena);
@@ -88,13 +79,17 @@ hex7 h1(debug[19:16], HEX4, ena); hex7 h0(debug[23:20], HEX5, ena);
 // ---------------------------------------------------------------------
 
 wire locked;
+wire clock_12;
 wire clock_25;
 wire clock_50;
 wire clock_100;
 
+wire cpu_clock = clock_25;
+
 de0pll UnitPLL
 (
     .clkin     (CLOCK_50),
+    .m12       (clock_12),
     .m25       (clock_25),
     .m50       (clock_50),
     .m100      (clock_100),
@@ -219,7 +214,7 @@ keyboard KEYBOARD
 
 core88 UnitCore88
 (
-    .clock      (clock_25),
+    .clock      (cpu_clock),
     .resetn     (locked),
     .locked     (locked),
 
@@ -255,7 +250,7 @@ wire [ 7:0] irq;
 
 portctl PortCtlUnit
 (
-    .clock      (clock_25),
+    .clock      (cpu_clock),
     .clock50    (clock_50),
     .port_clk   (port_clk),
     .port       (port),

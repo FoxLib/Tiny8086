@@ -413,11 +413,11 @@ else if (locked) case (mode)
 
             0: begin
 
-                tstate <= 1;
-                idir   <= 1;
-                isize  <= opcode[3];
+                tstate  <= 1;
+                idir    <= 1;
+                isize   <= opcode[3];
                 modrm[5:3] <= opcode[2:0];
-                mode   <= IMMEDIATE;
+                mode    <= IMMEDIATE;
 
             end
             1: begin tstate <= 2; mode <= SETEA; end
@@ -709,7 +709,7 @@ else if (locked) case (mode)
         // Сдвиговые инструкции (CL,N)
         8'b1101_00xx: case (tstate)
 
-            0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= opcode[0]; end
+            0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= {1'b0, opcode[0]}; end
             1: begin tstate <= 2; mode <= SHIFT; alumode <= modrm[5:3]; op2 <= opcode[1] ? ecx[4:0] : 1; end
             2: begin tstate <= 3; mode <= SETEA; wb <= op1; end
             3: begin sel    <= 0; mode <= PREPARE;  end
@@ -1063,7 +1063,7 @@ else if (locked) case (mode)
         // Групповые инструкции #3 Word/DWord
         8'b1111_1111: case (tstate)
 
-            0: begin tstate <= 1; mode <= FETCHEA; {idir, isize} <= {1'b0, opcode[0]}; end
+            0: begin tstate <= 1; {idir, isize} <= 2'b01; mode <= FETCHEA; end
             1: begin tstate <= 2; case (modrm[5:3])
 
                 // INC|DEC
@@ -1083,7 +1083,7 @@ else if (locked) case (mode)
             2: begin tstate <= 3; case (modrm[5:3])
 
                 // INC|DEC
-                0, 1: begin wb <= result; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
+                0, 1: begin wb <= result; {idir, isize} <= 2'b01; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
                 // CALL far: запись IP
                 3: begin wb <= ip; ip <= op1; mode <= PUSH; end
                 // JMP far
