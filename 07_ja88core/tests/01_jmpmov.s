@@ -1,5 +1,5 @@
-# mov: 1 (word), 2 (word), 3 (off, base+index+off), 4, 5 (off), 
-#      7 (byte,word), 8 (byte off), 9 (word base), 10 (byte,word), 
+# mov: 1 (word), 2 (word), 3 (off, base+index+off), 4, 5 (off),
+#      7 (byte,word), 8 (byte off), 9 (word base), 10 (byte,word),
 #      11 (word off, byte base+index), 12 (imm,special)
 # jmp: 1, 2, 3 (reg), 3 (mem base+index+off), 4, 5 (mem base+index+off)
 .code16
@@ -25,7 +25,7 @@ movw %bx, %ds           # (4)  mov
 
 movb $0xfb, %ah         # (10) mov byte
 movb $0xe1, %al         # (10) mov byte
-movw %ax, (0x2501)      # (1)  mov word
+movw %ax, (0x2501)      # (1)  mov word, [$12501]=$fbe1
 
 movw $0x1001, (0x2600)  # (11) mov word
 movw (0x2600), %ss      # (3)  mov

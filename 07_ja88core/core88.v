@@ -1198,14 +1198,14 @@ else if (locked) case (mode)
             // Вычисление эффективного адреса 16 bit
             case (bus[2:0])
 
-                0: ea <= ebx[15:0] + esi[15:0];
-                1: ea <= ebx[15:0] + edi[15:0];
-                2: ea <= ebp[15:0] + esi[15:0];
-                3: ea <= ebp[15:0] + edi[15:0];
-                4: ea <= esi[15:0];
-                5: ea <= edi[15:0];
-                6: ea <= ebp[15:0];
-                7: ea <= ebx[15:0];
+                0: ea[15:0] <= ebx[15:0] + esi[15:0];
+                1: ea[15:0] <= ebx[15:0] + edi[15:0];
+                2: ea[15:0] <= ebp[15:0] + esi[15:0];
+                3: ea[15:0] <= ebp[15:0] + edi[15:0];
+                4: ea[15:0] <= esi[15:0];
+                5: ea[15:0] <= edi[15:0];
+                6: ea[15:0] <= ebp[15:0];
+                7: ea[15:0] <= ebx[15:0];
 
             endcase
 
@@ -1246,7 +1246,7 @@ else if (locked) case (mode)
 
         // Считывание 16-бит displacement
         1: begin estate <= 2; ip <= ip + 1; ea <= ea + bus; end
-        2: begin estate <= 4; ip <= ip + 1; ea[15:8] <= ea[15:8] + bus; sel <= 1; end
+        2: begin estate <= 4; ip <= ip + 1; ea[15:8] <= ea[15:8] + bus; ea[31:16] <= 0; sel <= 1; end
 
         // Считывание 8-бит displacement
         3: begin estate <= 4;
@@ -1256,7 +1256,7 @@ else if (locked) case (mode)
 
             if (adsize)
                  ea <= ea + {{24{bus[7]}}, bus[7:0]};
-            else ea <= ea[15:0] + {{8{bus[7]}}, bus[7:0]};
+            else ea[15:0] <= ea[15:0] + {{8{bus[7]}}, bus[7:0]};
 
         end
 

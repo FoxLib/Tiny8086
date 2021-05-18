@@ -16,7 +16,7 @@ int10:      and     ah, ah
             je      int10_set_cursor
             cmp     ah, 03h
             je      int10_get_cursor
-            cmp     ah, 06h  ; Scroll up window
+            cmp     ah, 06h
             je      int10_scrollup
 
             ; 07h Scroll down window
