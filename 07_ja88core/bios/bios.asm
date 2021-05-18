@@ -45,18 +45,24 @@ bios_entry:
             mov     ax, $0003
             int     10h
 
-            mov     ah, $01
-            mov     cx, $000f
-            int     10h
+            ; Просто закрасить на время
+            mov     es, [cs:SEG_B800h]
+            xor     di, di
+            mov     cx, 2000
+            mov     ax, $1700
+@@:         stosw
+            add     ax, 1
+            loop    @b
 
-            mov     ah, $02
-            mov     dx, $1802
+            ; Прокрутка вверх
+            mov     ah, 6
+            mov     al, 1
+            mov     bh, 0x07 ; Атрибут
+            mov     ch, 1  ; Верх
+            mov     cl, 1  ; Лево
+            mov     dh, 24 ; Низ
+            mov     dl, 79 ; Право
             int     10h
-
-            mov     ah, $03
-            int     10h
-mov ax, dx
-            call outax
 
             jmp     $
 

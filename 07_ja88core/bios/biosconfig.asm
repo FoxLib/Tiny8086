@@ -139,7 +139,7 @@ int1e_spt:
 
 int41:
 
-int41_max_cyls      dw 1024
+int41_max_cyls      dw 1023
 int41_max_heads:    db 255
 
     dw 0
@@ -153,21 +153,17 @@ int41_max_heads:    db 255
 
 int41_max_sect:     db 63, 0
 
-; ************************* ROM configuration table
+; ********************** ROM configuration table ***********************
 
 rom_config:
-    dw 16       ; 16 bytes following
-    db 0xfe         ; Model
+
+    dw 16           ; 16 bytes following
+    db 0xFE         ; Model
     db 'A'          ; Submodel
     db 'C'          ; BIOS revision
-    db 00100000b   ; Feature 1
-    db 00000000b   ; Feature 2
-    db 00000000b   ; Feature 3
-    db 00000000b   ; Feature 4
-    db 00000000b   ; Feature 5
+    db 00100000b    ; Feature 1
+    db 00000000b    ; Feature 2
+    db 00000000b    ; Feature 3
+    db 00000000b    ; Feature 4
+    db 00000000b    ; Feature 5
     db 0, 0, 0, 0, 0, 0
-
-; INT 8 millisecond counter
-
-last_int8_msec  dw 0
-last_key_sdl    db 0
