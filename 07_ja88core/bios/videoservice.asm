@@ -140,53 +140,63 @@ int10_get_cursor:
 
 int10_scrollup:
 
+            call    int10_scrollup_routine
+            iret
+
+; Общий скроллинг для разных целей
+int10_scrollup_routine:
+
             push    ds es
-            mov     ds, [cs:SEG_B800h]
-            mov     es, [cs:SEG_B800h]
-
-            ; Определение границ
-            and     al, al
-            jne     @f
-            mov     al, 25      ; Если AL=0, то очистка экрана
-@@:         cmp     ch, 25
-            jnb     .end
-            cmp     cl, 80
-            jnb     .end
-            cmp     dh, 25
-            jb      @f
-            mov     dh, 24
-@@:         cmp     dl, 80
-            jb      .scroll
-            mov     dl, 79
-
-            ; Прокрутка AL раз
-.scroll:    push    ax bx cx dx
+            call    int10_scrollbound
+.repeat:    push    ax bx cx dx     ; Прокрутка AL раз
             mov     al, 80
             mul     ch
             add     al, cl
             adc     ah, 0
             add     ax, ax
-            mov     di, ax       ; DI = 2*(CH*80 + CL)
-            lea     si, [di+160] ; SI = DI + 160
+            mov     di, ax          ; DI = 2*(CH*80 + CL)
+            lea     si, [di+160]    ; SI = DI + 160
             sub     dl, cl
-            mov     cl, dl       ; CL = X2-X1+1
-            sub     dh, ch       ; DH = Y2-Y1
+            mov     cl, dl          ; CL = X2-X1+1
+            sub     dh, ch          ; DH = Y2-Y1
             mov     ch, 0
             inc     cx
-@@:         push    si di cx    ; Прокрутить все окно
+@@:         push    si di cx        ; Прокрутить все окно
             rep     movsw
             pop     cx di si
             add     si, 160
             add     di, 160
             dec     dh
-            js      @f          ; Защита от DH=0
+            js      @f              ; Защита от DH=0
             jne     @b
 @@:         mov     ah, bh
             mov     al, $20
             lea     di, [si-160]
-            rep     stosw       ; Закрасить последнюю строку атрибутом BH
+            rep     stosw           ; Закрасить последнюю строку атрибутом BH
             pop     dx cx bx ax
             dec     al
-            jne     .scroll
+            jne     .repeat
 .end:       pop     es ds
-            iret
+            ret
+
+; Определение границ области CX:DX
+int10_scrollbound:
+
+            mov     ds, [cs:SEG_B800h]
+            mov     es, [cs:SEG_B800h]
+            and     al, al          ; Определение границ
+            jne     @f
+            mov     al, 25          ; Если AL=0, то очистка экрана
+@@:         cmp     ch, 25
+            jb      @f
+            mov     ch, 24
+@@:         cmp     cl, 80
+            jb      @f
+            mov     cl, 79
+@@:         cmp     dh, 25
+            jb      @f
+            mov     dh, 24
+@@:         cmp     dl, 80
+            jb      .end
+            mov     dl, 79
+.end:       ret

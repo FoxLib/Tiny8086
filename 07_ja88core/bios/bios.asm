@@ -56,7 +56,7 @@ bios_entry:
 
             ; Прокрутка вверх
             mov     ah, 6
-            mov     al, 1
+            mov     al, 2
             mov     bh, 0x07 ; Атрибут
             mov     ch, 1  ; Верх
             mov     cl, 1  ; Лево
