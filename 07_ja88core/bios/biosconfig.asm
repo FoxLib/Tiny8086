@@ -12,8 +12,7 @@ bios_data:
     lpt2addr            dw  0
     lpt3addr            dw  0
     lpt4addr            dw  0
-
-    equip               dw  0000000000100101b   ; 10h
+    equip               dw  0000000000100100b   ; 2=old PC system board RAM < 256K, 5=initial video mode
                         db  0
     memsize             dw  256                 ; Максимум 640, INT 12h
                         db  0
@@ -29,16 +28,16 @@ bios_data:
     motorshutoff        db  0x07                ; Декрементируется INT 8h
     disk_laststatus     db  0
     times 7             db  0
-    vidmode             db  0x03
-    vid_cols            dw  80
+    vidmode             db  0x03                ; *Видеорежим
+    vid_cols            dw  80                  ; Количество столбцов
     page_size           dw  0x1000
                         dw  0
-    curpos_x            db  0
+    curpos_x            db  0                   ; *Положение курсора
     curpos_y            db  0
     times 7             dw  0
-    cur_v_end           db  7
-    cur_v_start         db  6
-    disp_page           db  0
+    cur_v_end           db  7                   ; *Форма курсора
+    cur_v_start         db  6                   ; *OK
+    disp_page           db  0                   ; Текущая страница
     crtport             dw  0x3d4               ; Цветной 3D4h
                         db  10
                         db  0
@@ -55,7 +54,7 @@ bios_data:
                         dd  0
     kbbuf_start_ptr     dw  0x001e
     kbbuf_end_ptr       dw  0x003e
-    vid_rows            db  25                   ; at 40:84
+    vid_rows            db  25                  ; at 40:84 Количество строк
                         db  0
                         db  0
     vidmode_opt         db  0                   ; 0x70
@@ -84,7 +83,7 @@ bios_data:
     crt_curpos_y        db  0
     key_now_down        db  0
     next_key_fn         db  0
-    cursor_visible      db  1
+    cursor_visible      db  1           ; *Видно ли курсор?
     escape_flag_last    db  0
     next_key_alt        db  0
     escape_flag         db  0

@@ -23,7 +23,10 @@ cls:        ; ----- pont --------
 @@:         rep     stosw
             ret
 
-; Вывод AX на экран
-outax:      mov     di, 2*(3*80 + 30)
+
+outax:      ; Вывод AX на экран
+            mov     di, 0xb800
+            mov     es, di
+            mov     di, 2*(3*80 + 30)
             call    print_hex_ax
             jmp     $

@@ -50,8 +50,13 @@ bios_entry:
             int     10h
 
             mov     ah, $02
-            mov     dx, $0102
+            mov     dx, $1802
             int     10h
+
+            mov     ah, $03
+            int     10h
+mov ax, dx
+            call outax
 
             jmp     $
 
