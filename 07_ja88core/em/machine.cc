@@ -72,6 +72,7 @@ int main(int argc, char* argv[]) {
             if (eoi_master == 0 && (flags & I_FLAG))
             for (int i = 0; i < 8; i++) {
                 if (irr_pend & (1 << i)) {
+                    irr_pend &= ~(1 << i);
                     eoi_master = 1;
                     interrupt(irr_vect_master + i);
                 }
