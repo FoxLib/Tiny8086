@@ -121,6 +121,7 @@ void reset() {
 // =====================================================================
 
 // Получение XT-кода
+// https://ru.wikipedia.org/wiki/%D0%A1%D0%BA%D0%B0%D0%BD-%D0%BA%D0%BE%D0%B4
 int get_xt_key(SDL_Event event) {
 
     /* Получение ссылки на структуру с данными о нажатой клавише */
@@ -128,6 +129,8 @@ int get_xt_key(SDL_Event event) {
 
     int xt = 0;
     int k  = eventkey->keysym.scancode;
+
+    // printf("%x\n", k);
 
     switch (k) {
 
@@ -181,14 +184,34 @@ int get_xt_key(SDL_Event event) {
         /* . */ case 0x3c: xt = 0x34; break;
         /* / */ case 0x3d: xt = 0x35; break;
 
-        /* bs */ case 0x16: xt = 0x0E; break;
-        /* sp */ case 0x41: xt = 0x39; break;
-        /* tb */ case 0x17: xt = 0x0F; break;
-        /* ls */ case 0x32: xt = 0x2A; break;
-        /* lc */ case 0x25: xt = 0x1D; break;
-        /* la */ case 0x40: xt = 0x38; break;
-        /* en */ case 0x24: xt = 0x1C; break;
-        /* es */ case 0x09: xt = 0x01; break;
+        /* bs */ case 0x16: xt = 0x0E; break; // backspace
+        /* sp */ case 0x41: xt = 0x39; break; // space
+        /* tb */ case 0x17: xt = 0x0F; break; // tab
+        /* ls */ case 0x32: xt = 0x2A; break; // left shift
+        /* lc */ case 0x25: xt = 0x1D; break; // left ctrl
+        /* la */ case 0x40: xt = 0x38; break; // left alt
+        /* en */ case 0x24: xt = 0x1C; break; // enter
+        /* es */ case 0x09: xt = 0x01; break; // escape
+
+        // Стрелки
+        case 0x6f: xt = 0x48; break; // up
+        case 0x72: xt = 0x4D; break; // rt
+        case 0x74: xt = 0x50; break; // dn
+        case 0x71: xt = 0x4B; break; // lf
+
+        // Функциональные клавиши
+        case 0x43:  xt = 0x3B; break; // F1
+        case 0x44:  xt = 0x3C; break; // F2
+        case 0x45:  xt = 0x3D; break; // F3
+        case 0x46:  xt = 0x3E; break; // F4
+        case 0x47:  xt = 0x3F; break; // F5
+        case 0x48:  xt = 0x40; break; // F6
+        case 0x49:  xt = 0x41; break; // F7
+        case 0x4A:  xt = 0x42; break; // F8
+        case 0x4B:  xt = 0x43; break; // F9
+        case 0x4C:  xt = 0x44; break; // F10
+        // не работает f11 в sdl у меня
+        case 0x60:  xt = 0x58; break; // F12
 
         default: return -k;
     }

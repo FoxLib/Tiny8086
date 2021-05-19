@@ -54,16 +54,6 @@ bios_entry:
             add     ax, 1
             loop    @b
 
-        sti
-
-        mov     ds, [cs:SEG_40h]
-        mov     es, [cs:SEG_B800h]
-
-
-@@:     mov al, [keyflags1-bios_data]
-        mov [es:160], al
-        jmp @b
-
             ; ----
 
             ; Прокрутка вверх
