@@ -54,6 +54,11 @@ bios_entry:
             add     ax, 1
             loop    @b
 
+        sti
+        jmp $
+
+            ; ----
+
             ; Прокрутка вверх
             mov     ah, 6
             mov     al, 2
@@ -72,5 +77,6 @@ bios_entry:
             include "biosconfig.asm"
             include "ivt.asm"
             include "videoservice.asm"
+            include "misc.asm"
             include "keyboard.asm"
             include "debug.asm"

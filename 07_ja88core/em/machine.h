@@ -19,6 +19,9 @@ int     height;
 int     flash_cursor, cursor_x, cursor_y, cursor_l, cursor_h, cursor_hi, cursor_lo;
 int     cga_register;
 
+int     irr_mask, irr_pend, irr_vect_master, irr_vect_slave, eoi_master;
+int     keyb_60h, keyb_64h;
+
 unsigned char RAM[RAMTOP];
 unsigned char io_ports[65536];
 

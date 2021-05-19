@@ -32,11 +32,26 @@ int main(int argc, char* argv[]) {
     // Цикл исполнения одной инструкции
     while (in_start) {
 
+        int xt;
+
         // Проверить наличие нового события
         while (SDL_PollEvent(& sdl_event)) {
 
             switch (sdl_event.type) {
+
                 case SDL_QUIT: in_start = 0; break;
+
+                // Нажатие на клавишу вызывает запрос прерывания
+                case SDL_KEYDOWN:
+                case SDL_KEYUP:
+
+                    if ((irr_mask & 2) == 0) {
+                        keyb_60h  = get_xt_key(sdl_event) | (sdl_event.type == SDL_KEYUP ? 0x80 : 0);
+                        keyb_64h |= 1;
+                        irr_pend |= 2;
+                    }
+
+                    break;
             }
         }
 
@@ -52,6 +67,15 @@ int main(int argc, char* argv[]) {
         if (time_diff >= 20) {
 
             ms_prevtime = time_curr;
+
+            // Прерывание срабатывает только если IF=1 и EOI=0
+            if (eoi_master == 0 && (flags & I_FLAG))
+            for (int i = 0; i < 8; i++) {
+                if (irr_pend & (1 << i)) {
+                    eoi_master = 1;
+                    interrupt(irr_vect_master + i);
+                }
+            }
 
             // 25k x 60 ~ 1.5 MIPS
             if (x86run(25000)) {

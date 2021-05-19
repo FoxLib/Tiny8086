@@ -12,7 +12,6 @@ int4:
 int5:
 int6:
 int7:
-int8:
 inta:
 intb:
 intc:

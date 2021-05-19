@@ -35,8 +35,15 @@ uint8_t readmemb(uint32_t address) {
 // Ввод данных
 uint8_t ioread(uint16_t port) {
 
+    uint8_t tmp;
+
     switch (port) {
 
+        // Клавиатура
+        case 0x60: return keyb_60h;
+        case 0x64: tmp = keyb_64h; keyb_64h &= ~1; return tmp;
+
+        // CGA
         case 0x3D4: return cga_register;
         case 0x3D5:
 
@@ -44,9 +51,12 @@ uint8_t ioread(uint16_t port) {
 
                 case 0x0A: return cursor_l;
                 case 0x0B: return cursor_h;
+                case 0x0E: return cursor_hi;
+                case 0x0F: return cursor_lo;
             }
             break;
 
+        // SPI SD
         case 0xFE: return SpiModule.spi_read_status();
         case 0xFF: return SpiModule.spi_read_data();
     }
@@ -58,6 +68,9 @@ uint8_t ioread(uint16_t port) {
 void iowrite(uint16_t port, uint8_t data) {
 
     switch (port) {
+
+        // Отсылка EOI
+        case 0x20: if (data & 0x20) eoi_master = 0; break;
 
         case 0x3D4: cga_register = data; break;
         case 0x3D5:
@@ -93,10 +106,96 @@ void reset() {
     cursor_lo = 0;
     cga_register = 0;
 
+    irr_mask = 0;
+    irr_pend = 0;
+    irr_vect_master = 0x08;
+    irr_vect_slave  = 0x70;
+    eoi_master = 0;
+
+    keyb_60h = 0;
+    keyb_64h = 0;
+
     SpiModule.start();
 }
 
 // =====================================================================
+
+// Получение XT-кода
+int get_xt_key(SDL_Event event) {
+
+    /* Получение ссылки на структуру с данными о нажатой клавише */
+    SDL_KeyboardEvent * eventkey = & event.key;
+
+    int xt = 0;
+    int k  = eventkey->keysym.scancode;
+
+    switch (k) {
+
+        /* A */ case 0x26: xt = 0x1E; break;
+        /* B */ case 0x38: xt = 0x30; break;
+        /* C */ case 0x36: xt = 0x2E; break;
+        /* D */ case 0x28: xt = 0x20; break;
+        /* E */ case 0x1a: xt = 0x12; break;
+        /* F */ case 0x29: xt = 0x21; break;
+        /* G */ case 0x2a: xt = 0x22; break;
+        /* H */ case 0x2b: xt = 0x23; break;
+        /* I */ case 0x1f: xt = 0x17; break;
+        /* J */ case 0x2c: xt = 0x24; break;
+        /* K */ case 0x2d: xt = 0x25; break;
+        /* L */ case 0x2e: xt = 0x26; break;
+        /* M */ case 0x3a: xt = 0x32; break;
+        /* N */ case 0x39: xt = 0x31; break;
+        /* O */ case 0x20: xt = 0x18; break;
+        /* P */ case 0x21: xt = 0x19; break;
+        /* Q */ case 0x18: xt = 0x10; break;
+        /* R */ case 0x1b: xt = 0x13; break;
+        /* S */ case 0x27: xt = 0x1F; break;
+        /* T */ case 0x1c: xt = 0x14; break;
+        /* U */ case 0x1e: xt = 0x16; break;
+        /* V */ case 0x37: xt = 0x2F; break;
+        /* W */ case 0x19: xt = 0x11; break;
+        /* X */ case 0x35: xt = 0x2D; break;
+        /* Y */ case 0x1d: xt = 0x15; break;
+        /* Z */ case 0x34: xt = 0x2C; break;
+
+        /* 0 */ case 0x13: xt = 0x0B; break;
+        /* 1 */ case 0x0A: xt = 0x02; break;
+        /* 2 */ case 0x0B: xt = 0x03; break;
+        /* 3 */ case 0x0C: xt = 0x04; break;
+        /* 4 */ case 0x0D: xt = 0x05; break;
+        /* 5 */ case 0x0E: xt = 0x06; break;
+        /* 6 */ case 0x0F: xt = 0x07; break;
+        /* 7 */ case 0x10: xt = 0x08; break;
+        /* 8 */ case 0x11: xt = 0x09; break;
+        /* 9 */ case 0x12: xt = 0x0A; break;
+
+        /* ~ */ case 0x31: xt = 0x29; break;
+        /* - */ case 0x14: xt = 0x0C; break;
+        /* = */ case 0x15: xt = 0x0D; break;
+        /* \ */ case 0x33: xt = 0x2B; break;
+        /* [ */ case 0x22: xt = 0x1A; break;
+        /* ] */ case 0x23: xt = 0x1B; break;
+        /* ; */ case 0x2f: xt = 0x27; break;
+        /* ' */ case 0x30: xt = 0x28; break;
+        /* , */ case 0x3b: xt = 0x33; break;
+        /* . */ case 0x3c: xt = 0x34; break;
+        /* / */ case 0x3d: xt = 0x35; break;
+
+        /* bs */ case 0x16: xt = 0x0E; break;
+        /* sp */ case 0x41: xt = 0x39; break;
+        /* tb */ case 0x17: xt = 0x0F; break;
+        /* ls */ case 0x32: xt = 0x2A; break;
+        /* lc */ case 0x25: xt = 0x1D; break;
+        /* la */ case 0x40: xt = 0x38; break;
+        /* en */ case 0x24: xt = 0x1C; break;
+        /* es */ case 0x09: xt = 0x01; break;
+
+        default: return -k;
+    }
+
+    /* Получить скан-код клавиш */
+    return xt;
+}
 
 // Отладка
 void regdump() {
