@@ -97,8 +97,8 @@ else if (locked) case (mode)
         8'h65: begin opcode <= bus; ip <= ip + 1; sel_seg <= 1; seg_ea <= seg_gs; end
         8'h66: begin opcode <= bus; ip <= ip + 1; opsize  <= ~opsize; end
         8'h67: begin opcode <= bus; ip <= ip + 1; adsize  <= ~adsize; end
-        8'hF2: begin opcode <= bus; ip <= ip + 1; sel_rep <= 1; end
-        8'hF3: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2; end
+        8'hF2: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2'b10; end // REPNZ
+        8'hF3: begin opcode <= bus; ip <= ip + 1; sel_rep <= 2'b11; end // REPZ
         8'h0F: begin opcode <= {1'b1, bus}; ip <= ip + 1; end
 
         // Неиспользуемые коды операции
@@ -279,8 +279,8 @@ else if (locked) case (mode)
             endcase end
             2: begin tstate <= 3; case (modrm[5:3])
 
-                // INC|DEC {idir, isize} <= 2'b01;
-                0, 1: begin wb <= result; flags <= {flags_o[11:1], 1'b0}; mode <= SETEA; end
+                // INC|DEC
+                0, 1: begin mode <= SETEA; wb <= result; flags <= {flags_o[11:1], 1'b0}; {idir, isize} <= 2'b01; end
                 // CALL far: запись IP
                 3: begin wb <= ip; ip <= op1; mode <= PUSH; end
                 // JMP far
@@ -387,6 +387,8 @@ else if (locked) case (mode)
 
         endcase
 
+        // ==== Строковые инструкции ====
+
         // MOVSx
         8'b1010_010x: case (tstate)
 
@@ -422,6 +424,52 @@ else if (locked) case (mode)
                 edi[15:0] <= flags[DF] ? edi[15:0] - op2 : edi[15:0] + op2;
 
                 if (sel_rep) begin ecx[15:0] <= ecx[15:0] - 1; ip <= ipstart; end
+
+            end
+
+        endcase
+
+        // CMPSx
+        8'b1010_011x: case (tstate)
+
+            0: begin // Читать DS:SI
+
+                tstate  <= 1;
+                isize   <= opcode[0];
+                ea      <= esi[15:0];
+                op1     <= 0;
+                tmp16   <= opcode[0] ? (opsize ? 4 : 2) : 1;
+                alumode <= 7; // alu=CMP
+
+                // Если REP и CX=0, то пропуск инструкции
+                if (sel_rep && ecx[15:0] == 0)
+                     begin sel <= 0; mode <= PREPARE; end
+                else begin sel <= 1; mode <= FETCHEA; estate <= 4; end
+
+            end
+            1: begin // Читать ES:DI
+
+                tstate  <= 2;
+                estate  <= 4;
+                idir    <= 1;
+                seg_ea  <= seg_es;
+                ea      <= edi[15:0];
+                mode    <= FETCHEA;
+
+            end
+            2: begin // Инкременты
+
+                sel   <= 0;
+                mode  <= PREPARE;
+                flags <= flags_o;
+
+                esi[15:0] <= flags[DF] ? esi[15:0] - tmp16 : esi[15:0] + tmp16;
+                edi[15:0] <= flags[DF] ? edi[15:0] - tmp16 : edi[15:0] + tmp16;
+
+                // При CMPSx всегда проверяется REPZ/REPNZ
+                // При любом REP должен быть декрементирован CX
+                if (sel_rep) ecx[15:0] <= ecx[15:0] - 1;
+                if (sel_rep && sel_rep[0] == flags_o[ZF]) ip <= ipstart;
 
             end
 
@@ -492,6 +540,44 @@ else if (locked) case (mode)
             end
 
         endcase
+
+        // SCASx
+        8'b1010_111x: case (tstate)
+
+            0: begin // Читать ES:DI
+
+                tstate  <= 1;
+                idir    <= 1;
+                isize   <= opcode[0];
+                seg_ea  <= seg_es;
+                ea      <= edi[15:0];
+                op1     <= eax;
+                tmp16   <= opcode[0] ? (opsize ? 4 : 2) : 1;
+                alumode <= 7; // alu=CMP
+
+                // Если REP и CX=0, то пропуск инструкции
+                if (sel_rep && ecx[15:0] == 0)
+                     begin sel <= 0; mode <= PREPARE; end
+                else begin sel <= 1; mode <= FETCHEA; estate <= 4; end
+
+            end
+            1: begin // Инкременты
+
+                sel   <= 0;
+                mode  <= PREPARE;
+                flags <= flags_o;
+
+                edi[15:0] <= flags[DF] ? edi[15:0] - tmp16 : edi[15:0] + tmp16;
+
+                // Учет префикса REP:
+                if (sel_rep) ecx[15:0] <= ecx[15:0] - 1;
+                if (sel_rep && sel_rep[0] == flags_o[ZF]) ip <= ipstart;
+
+            end
+
+        endcase
+
+        // ==== Все инструкции ====
 
         // PUSH sr
         8'b00_0xx_110: case (tstate)
