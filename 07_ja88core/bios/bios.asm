@@ -55,7 +55,14 @@ bios_entry:
             loop    @b
 
         sti
-        jmp $
+
+        mov     ds, [cs:SEG_40h]
+        mov     es, [cs:SEG_B800h]
+
+
+@@:     mov al, [keyflags1-bios_data]
+        mov [es:160], al
+        jmp @b
 
             ; ----
 
