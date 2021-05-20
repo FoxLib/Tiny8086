@@ -226,7 +226,7 @@ int10_get_vm:
 
 int10_write_char:
 
-            push    ds es ax bx cx dx di
+            push    ds es ax bx cx dx si di
 
             ; Используемые адреса ds/es
             push    ax
@@ -288,5 +288,5 @@ int10_write_char:
             mov     ah, 2
             int     10h
 
-            pop     di dx cx bx ax es ds
+            pop     di si dx cx bx ax es ds
             iret

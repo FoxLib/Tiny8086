@@ -401,5 +401,3 @@ reverse_l       db      2,3
                 db      0,2,0,0
                 db      2,2,0,0
                 db      0,0,0,0
-
-include "../../bios/debug.asm"
