@@ -128,7 +128,7 @@ generate_dungeon:
         xor ax,ax
         xor di,di
         mov ch,0x08
-        ;rep stosw
+        rep stosw
 
         ;
         ; Draw the nine rooms
