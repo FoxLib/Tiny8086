@@ -230,7 +230,7 @@ keyboard KEYBOARD
 core88 UnitCore88
 (
     .clock      (cpu_clock),
-    .resetn     (locked),
+    .resetn     (locked & RESET_N),
     .locked     (locked),
 
     // Данные
@@ -298,7 +298,7 @@ wire [ 7:0] irq;
 
 portctl PortCtlUnit
 (
-    .resetn     (locked),
+    .resetn     (locked & RESET_N),
     .clock      (cpu_clock),
     .clock50    (clock_50),
 

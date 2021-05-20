@@ -33,7 +33,7 @@ wire __m0 = (mode == PREPARE);
 // Выбор источника памяти
 assign address = sel ? {seg_ea, 4'h0} + ea : {seg_cs, 4'h0} + ip;
 
-assign debug = {estate[3:0], tstate[3:0], ip[15:0]};
+assign debug = {eax[7:0], ip[15:0]};
 
 // =====================================================================
 // Основная работа процессорного микрокода, так сказать
@@ -342,10 +342,11 @@ else if (locked) case (mode)
             // Запись результата
             3: begin
 
+                tstate <= 4;
                 mode  <= alumode == 7 ? PREPARE : SETEA;
+                sel   <= alumode == 7 ? 0 : 1;
                 wb    <= result;
                 flags <= flags_o;
-                tstate <= 4;
                 if (alumode == 7) sel <= 0;
 
             end
