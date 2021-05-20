@@ -56,6 +56,16 @@ bios_entry:
 
             ; ----
 
+mov es, [cs:SEG_B800h]
+
+@@:
+mov ax, 0
+int 16h
+mov [es:bx], al
+mov [es:bx+2], ah
+add bx, 4
+jmp @b
+
             ; Прокрутка вверх
             mov     ah, 6
             mov     al, 2

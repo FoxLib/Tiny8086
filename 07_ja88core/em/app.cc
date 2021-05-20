@@ -134,32 +134,34 @@ int get_xt_key(SDL_Event event) {
 
     switch (k) {
 
-        /* A */ case 0x26: xt = 0x1E; break;
-        /* B */ case 0x38: xt = 0x30; break;
-        /* C */ case 0x36: xt = 0x2E; break;
-        /* D */ case 0x28: xt = 0x20; break;
+        /* Q */ case 0x18: xt = 0x10; break;
+        /* W */ case 0x19: xt = 0x11; break;
         /* E */ case 0x1a: xt = 0x12; break;
+        /* R */ case 0x1b: xt = 0x13; break;
+        /* T */ case 0x1c: xt = 0x14; break;
+        /* Y */ case 0x1d: xt = 0x15; break;
+        /* U */ case 0x1e: xt = 0x16; break;
+        /* I */ case 0x1f: xt = 0x17; break;
+        /* O */ case 0x20: xt = 0x18; break;
+        /* P */ case 0x21: xt = 0x19; break;
+
+        /* A */ case 0x26: xt = 0x1E; break;
+        /* S */ case 0x27: xt = 0x1F; break;
+        /* D */ case 0x28: xt = 0x20; break;
         /* F */ case 0x29: xt = 0x21; break;
         /* G */ case 0x2a: xt = 0x22; break;
         /* H */ case 0x2b: xt = 0x23; break;
-        /* I */ case 0x1f: xt = 0x17; break;
         /* J */ case 0x2c: xt = 0x24; break;
         /* K */ case 0x2d: xt = 0x25; break;
         /* L */ case 0x2e: xt = 0x26; break;
-        /* M */ case 0x3a: xt = 0x32; break;
-        /* N */ case 0x39: xt = 0x31; break;
-        /* O */ case 0x20: xt = 0x18; break;
-        /* P */ case 0x21: xt = 0x19; break;
-        /* Q */ case 0x18: xt = 0x10; break;
-        /* R */ case 0x1b: xt = 0x13; break;
-        /* S */ case 0x27: xt = 0x1F; break;
-        /* T */ case 0x1c: xt = 0x14; break;
-        /* U */ case 0x1e: xt = 0x16; break;
-        /* V */ case 0x37: xt = 0x2F; break;
-        /* W */ case 0x19: xt = 0x11; break;
-        /* X */ case 0x35: xt = 0x2D; break;
-        /* Y */ case 0x1d: xt = 0x15; break;
+
         /* Z */ case 0x34: xt = 0x2C; break;
+        /* X */ case 0x35: xt = 0x2D; break;
+        /* C */ case 0x36: xt = 0x2E; break;
+        /* V */ case 0x37: xt = 0x2F; break;
+        /* B */ case 0x38: xt = 0x30; break;
+        /* N */ case 0x39: xt = 0x31; break;
+        /* M */ case 0x3a: xt = 0x32; break;
 
         /* 0 */ case 0x13: xt = 0x0B; break;
         /* 1 */ case 0x0A: xt = 0x02; break;
