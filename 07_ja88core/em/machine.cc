@@ -63,10 +63,15 @@ int main(int argc, char* argv[]) {
         int time_diff = time_curr - ms_prevtime;
         if (time_diff < 0) time_diff += 1000;
 
-        // Если прошло 20 мс, выполнить инструкции, обновить экран
-        if (time_diff >= 20) {
+        // Если прошло 18 мс, выполнить инструкции, обновить экран
+        if (time_diff >= 18) {
 
             ms_prevtime = time_curr;
+
+            // Системный таймер 18 ms
+            if ((irr_mask & 1) == 0) {
+                irr_pend |= 1;
+            }
 
             // Прерывание срабатывает только если IF=1 и EOI=0
             if (eoi_master == 0 && (flags & I_FLAG))
@@ -78,7 +83,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            // 25k x 60 ~ 1.5 MIPS
+            // 25k x 55 ~ 1.3 MIPS
             if (x86run(25000)) {
 
                 printf("STOP AT %x:%x\n", segs[1], ip);

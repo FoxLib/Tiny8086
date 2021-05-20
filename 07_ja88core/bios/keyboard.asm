@@ -65,8 +65,9 @@ int9:       push    ax bx cx dx ds
             jne     @f
             or      [bx], byte 00001000b
             jmp     .skip_key
-@@:         ; Не пропускать отжатые клавиши в клавиатурный буфер
-            test    al, $80
+
+            ; Не пропускать отжатые клавиши в клавиатурный буфер
+@@:         test    al, $80
             jne     .skip_key
 
             ; Трансляция скан-кода
@@ -110,28 +111,70 @@ int9:       push    ax bx cx dx ds
 ; ----------------------------------------------------------------------
 
 int16:      cmp     ah, 0x00
-            je      int16_waitkey
+            je      int16_kb_wait
+            cmp     ah, 0x01
+            je      int16_kb_checkkey
+            ;cmp     ah, 0x02
+            ;je      int16_kb_shiftflags
+            ;cmp     ah, 0x12
+            ;je      int16_kb_extshiftflags
             iret
 
-int16_waitkey:
+; AH = 0
+; AL = ASCII-код символа или 0, если AH содержит расширенный ASCII-код символа
+; AH = скан-код или расширенный ASCII-код символа, если AL=0.
+
+int16_kb_wait:
 
             push    ds dx cx bx
             mov     ds, [cs:SEG_40h]
 @@:         cli
             mov     bx, [kbbuf_tail-bios_data]
             mov     dx, [kbbuf_head-bios_data]
-            mov     ax, [bx]
             sti
             cmp     bx, dx
             je      @b
             cli
+            call    int16_kb_nextkey
+            pop     bx cx dx ds
+            iret
+
+; AH = 1
+; На выходе: ZF = 0, если в буфере имеется код нажатой на клавиатуре клавиши;
+;            ZF = 1, если буфер клавиатуры пуст
+
+INT16_FLAGS equ 14
+
+int16_kb_checkkey:
+
+            push    ds dx cx bx bp
+            mov     bp, sp
+            mov     al, [bp+INT16_FLAGS]
+            or      al, 01000000b       ; ZF=1
+            mov     [bp+INT16_FLAGS], al
+            mov     ds, [cs:SEG_40h]
+            xor     ax, ax
+            mov     bx, [kbbuf_tail-bios_data]
+            mov     dx, [kbbuf_head-bios_data]
+            cmp     dx, bx
+            je      .end                ; ZF=1, буфер пуст
+            mov     al, [bp+INT16_FLAGS]
+            and     al, 10111111b       ; ZF=0
+            mov     [bp+INT16_FLAGS], al
+.end:       pop     bp bx cx dx ds
+            iret
+
+; Получение следующей клавиши
+int16_kb_nextkey:
+
+            mov     bx, [kbbuf_tail-bios_data]
+            mov     ax, [bx]
             add     bx, 2
             cmp     bx, kbbuf-bios_data+32
             jb      @f
             mov     bx, kbbuf-bios_data
 @@:         mov     [kbbuf_tail-bios_data], bx
-            pop     bx cx dx ds
-            iret
+            ret
 
 ; ----------------------------------------------------------------------
 ; Преобразование скан-кода

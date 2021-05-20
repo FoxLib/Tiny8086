@@ -20,7 +20,7 @@ CHAR_BOTTOM_RIGHT_CORNER equ 0d9h
 CHAR_HORIZ_LINE     equ 0c4h
 CHAR_VERTICAL_LINE  equ 0b3h
 
-KEY_ESC             equ 011bh
+KEY_ESC             equ  011bh
 KEY_LEFT            equ 04b00h
 KEY_RIGHT           equ 04d00h
 KEY_UP              equ 04800h

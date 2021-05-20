@@ -26,7 +26,6 @@ int15:
 int17:
 int18:
 int19:
-int1a:
 int1b:
 int1c:
 int1d:

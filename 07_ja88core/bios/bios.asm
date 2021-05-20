@@ -49,17 +49,18 @@ bios_entry:
             mov     es, [cs:SEG_B800h]
             xor     di, di
             mov     cx, 2000
-            mov     ax, $1700
+            mov     ax, $0700
 @@:         stosw
-            add     ax, 1
+;            add     ax, 1
             loop    @b
 
             ; ----
-
-mov es, [cs:SEG_B800h]
-
+sti
 @@:
-mov ax, 0
+mov ah, 1
+int 16h
+jz @b
+mov ah, 0
 int 16h
 mov [es:bx], al
 mov [es:bx+2], ah

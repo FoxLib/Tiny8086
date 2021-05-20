@@ -42,10 +42,10 @@ bios_data:
                         db  10
                         db  0
     times 5             db  0
-    clk_dtimer          dd  0
+    clk_dtimer          dd  0                   ; Таймер
     clk_rollover        db  0
     ctrl_break          db  0
-    soft_rst_flg        dw  0x1234
+    soft_rst_flg        dw  0x1234              ; 72h
                         db  0
     num_hd              db  0
                         db  0
