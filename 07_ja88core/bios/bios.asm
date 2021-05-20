@@ -54,18 +54,11 @@ bios_entry:
 ;            add     ax, 1
             loop    @b
 
-            ; ----
-sti
-@@:
-mov ah, 1
-int 16h
-jz @b
-mov ah, 0
-int 16h
-mov [es:bx], al
-mov [es:bx+2], ah
-add bx, 4
-jmp @b
+            ; Переинициализировать сегменты
+            xor     ax, ax
+            mov     ds, ax
+            mov     es, ax
+            jmp     0:0x7c00
 
             ; Прокрутка вверх
             mov     ah, 6

@@ -22,12 +22,16 @@ int main(int argc, char* argv[]) {
     reset();
 
     // Загрузка bios в память
-    int bios_rom = open("../bios/bios.bin", 32898);
+    int bios_rom = open("bios.bin", 32898);
     if (bios_rom < 0) {
         bios_rom = argc > 1 ? open(argv[1], 32898) : -1;
         if (bios_rom < 0) { printf("No bios.bin present"); exit(1); }
     }
     (void) read(bios_rom, RAM + 0xF0000, 0xFF00);
+
+    // Чтение дампа памяти, если есть
+    int memory_file = open("memory.bin", 32898);
+    if (memory_file) (void) read(memory_file, RAM, 0xFF00);
 
     // Цикл исполнения одной инструкции
     while (in_start) {
