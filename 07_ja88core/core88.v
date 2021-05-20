@@ -204,8 +204,8 @@ else if (locked) case (mode)
 
                     end else begin
 
-                        eax[7:0] <= signd ? -divres[7:0] : divres[7:0];
-                        edx[7:0] <= divrem[7:0];
+                        eax[ 7:0] <= signd ? -divres[7:0] : divres[7:0];
+                        eax[15:8] <= divrem[7:0];
 
                         if (|divres[15:8] || divb[7:0] == 0) mode <= INTERRUPT;
 

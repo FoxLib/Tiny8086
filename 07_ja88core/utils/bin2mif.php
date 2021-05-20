@@ -18,7 +18,7 @@ for ($n = 0; $n < $len; $n++) {
     echo sprintf("  %x: %02x;\n", $n, ord($data[$n]));
 }
 
-echo "  [".sprintf("%x..%x]: 00;\n", $len, $size-1);
+if ($len < $size-1) echo "  [".sprintf("%x..%x]: 00;\n", $len, $size-1);
 ?>
 END;
 

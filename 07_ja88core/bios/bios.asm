@@ -52,6 +52,16 @@ bios_entry:
             mov     ss, ax
             mov     sp, 7c00h
 
+mov es, [cs:SEG_B800h]
+xor di, di
+mov ax, 0x0700
+mov cx, 256
+@@: stosw
+inc al
+jne @b
+
+jmp $
+
             ; Чтение из HD и загрузка в 0:7C00
             mov     dl, 0x80
             cld
