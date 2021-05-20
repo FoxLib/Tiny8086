@@ -149,6 +149,7 @@ wire        port_w;
 
 reg we_cgamem = 0;
 reg we_memory = 0;
+reg we_bios   = 0;
 
 // 256kb
 memory MEMORY
@@ -177,7 +178,10 @@ bios BIOS
 (
     .clock      (clock_100),
     .address_a  (address[12:0]),
-    .q_a        (q_bios)
+    .q_a        (q_bios),
+    // Возможность писать данные в bios
+    .data_a     (o_data),
+    .wren_a     (we_bios)
 );
 
 // Маршрутизация
@@ -186,6 +190,7 @@ always @* begin
     i_data    = 8'hFF;
     we_cgamem = 0;
     we_memory = 0;
+    we_bios   = 0;
 
     casex (address)
 
@@ -196,7 +201,7 @@ always @* begin
         20'b1011_100x_xxxx_xxxx_xxxx: begin i_data = q_cgamem; we_cgamem = we; end
 
         // f0000-f1fff 8k BIOS
-        20'b1111_000x_xxxx_xxxx_xxxx: begin i_data = q_bios; end
+        20'b1111_000x_xxxx_xxxx_xxxx: begin i_data = q_bios;   we_bios   = we; end
 
     endcase
 
