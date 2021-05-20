@@ -1221,7 +1221,7 @@ else if (locked) case (mode)
             1: begin
 
                 if (branches[opcode[3:1]] ^ opcode[0])
-                    ip <= ip + (adsize ? 3 : 1) + {{8{bus[7]}}, wb[7:0]};
+                    ip <= ip + (adsize ? 3 : 1) + {bus, wb[7:0]};
                 else
                     ip <= ip + (adsize ? 3 : 1);
 

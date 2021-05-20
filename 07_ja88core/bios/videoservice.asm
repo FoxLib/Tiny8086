@@ -30,6 +30,10 @@ int10:      and     ah, ah
 
             cmp     ah, 0Eh
             je      int10_write_char
+
+mov al, ah
+jmp $
+
             cmp     ah, 0Fh
             je      int10_get_vm
 
@@ -239,6 +243,7 @@ int10_write_char:
             add     ax, ax      ; ax=2*(80*bh+bl)
             mov     di, ax
             pop     ax
+
 
             ; Управляющие символы
             mov     bx, word [curpos_x-bios_data]
