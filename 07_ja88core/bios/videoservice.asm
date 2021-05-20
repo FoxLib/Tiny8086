@@ -267,9 +267,12 @@ int10_write_char:
             inc     bl
             cmp     bl, 80
             jb      .next1
-.LF:        inc     bh
+            inc     bh          ; Y++
+            jmp     .CR
+.LF:        inc     bh          ; Y++
+            jmp     .LFO
 .CR:        mov     bl, 0
-            cmp     bh, 25
+.LFO:       cmp     bh, 25
             jb      .next1
             mov     bh, 24
 
