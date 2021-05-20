@@ -1,3 +1,4 @@
 *.s.bin
 *.o
 *.bin
+*.lst

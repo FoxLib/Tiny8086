@@ -267,12 +267,13 @@ $out .= "ADDRESS_RADIX=HEX;\n";
 $out .= "DATA_RADIX=HEX;\n";
 $out .= "CONTENT BEGIN\n";
 
-$n = 0;
+$out .= "  [0000..0FFF]: 17;\n";
+$n = 4096;
+
 foreach ($font16 as $char)
 foreach ($char as $row)
-    $out .= sprintf("  %03X: %02X;\n", $n++, $row);
+    $out .= sprintf("  %04X: %02X;\n", $n++, $row);
 
-$out .= "  [1000..1FFF]: 17;\n";
 $out .= "END;\n";
 
 echo $out;
