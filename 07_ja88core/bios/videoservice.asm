@@ -28,11 +28,10 @@ int10:      and     ah, ah
             ; 09h Write char and attribute
             ; int10_write_char_attrib
 
-            ; 0Eh Write character at cursor position
-            ; int10_write_char
-
-            ; 0Fh Get video mode
-            ; int10_get_vm
+            cmp     ah, 0Eh
+            je      int10_write_char
+            cmp     ah, 0Fh
+            je      int10_get_vm
 
 .int10exit: iret
 
@@ -146,7 +145,7 @@ int10_scrollup:
 ; Общий скроллинг для разных целей
 int10_scrollup_routine:
 
-            push    ds es
+            push    ds es ax bx cx dx
             call    int10_scrollbound
 .repeat:    push    ax bx cx dx     ; Прокрутка AL раз
             mov     al, 80
@@ -176,7 +175,7 @@ int10_scrollup_routine:
             pop     dx cx bx ax
             dec     al
             jne     .repeat
-.end:       pop     es ds
+.end:       pop     dx cx bx ax es ds
             ret
 
 ; Определение границ области CX:DX
@@ -200,3 +199,89 @@ int10_scrollbound:
             jb      .end
             mov     dl, 79
 .end:       ret
+
+; ----------------------------------------------------------------------
+; Получение видеорежима 0Fh
+; ----------------------------------------------------------------------
+
+int10_get_vm:
+
+            push    ds
+            mov     ds, [cs:SEG_40h]
+            mov     ah, 80
+            mov     al, [es:vidmode-bios_data]
+            mov     bh, 0
+            pop     es
+            iret
+
+; ----------------------------------------------------------------------
+; Печать символа в положении текущего курсора в строчном режиме
+; AL-символ BL-цвет (только для графики)
+; BEL (07h), BS (08h), LF (0Ah), and CR (0Dh)
+; ----------------------------------------------------------------------
+
+int10_write_char:
+
+            push    ds es ax bx cx dx di
+
+            ; Используемые адреса ds/es
+            push    ax
+            mov     ds, [cs:SEG_40h]
+            mov     es, [cs:SEG_B800h]
+
+            ; Текущее положение курсора
+            mov     bx, word [curpos_x-bios_data]
+            mov     al, bh
+            mov     ah, 80
+            mul     ah
+            mov     bh, 0
+            add     ax, bx
+            add     ax, ax      ; ax=2*(80*bh+bl)
+            mov     di, ax
+            pop     ax
+
+            ; Управляющие символы
+            mov     bx, word [curpos_x-bios_data]
+            cmp     al, 0x0A
+            je      .LF         ; Y++
+            cmp     al, 0x0D
+            je      .CR         ; X=0
+            cmp     al, 0x07
+            je      .next1
+            cmp     al, 0x08
+            jne     .psym
+            and     bl, bl
+            je      .next1
+            dec     bl
+            jmp     .next1
+
+.psym:      ; Печать символа
+            stosb
+
+            ; Следующий символ
+            inc     bl
+            cmp     bl, 80
+            jb      .next1
+.LF:        inc     bh
+.CR:        mov     bl, 0
+            cmp     bh, 25
+            jb      .next1
+            mov     bh, 24
+
+            ; Скроллинг экрана наверх
+            push    bx
+            mov     ax, 0601h
+            mov     bh, 07h
+            mov     cx, 0000h
+            mov     dx, 184Fh
+            int     10h
+            pop     bx
+
+            ; Установка нового положения курсора
+.next1:     mov     word [curpos_x-bios_data], bx
+            mov     dx, bx
+            mov     ah, 2
+            int     10h
+
+            pop     di dx cx bx ax es ds
+            iret

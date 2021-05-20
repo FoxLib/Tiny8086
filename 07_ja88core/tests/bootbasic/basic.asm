@@ -136,8 +136,6 @@
         ; 120 print b
         ;
 
-;           cpu 8086
-
 com_file    equ 0
             org 0x7c00
 
@@ -161,8 +159,8 @@ start:
         pop ss
         cld             ; Clear Direction flag
         mov di,program  ; Point to program
-f14:    mov byte [di],0x0d ; Fill with Carriage Return (CR) character
-        inc di          ; Until reaching maximum 64K (DI becomes zero)
+f14:    mov byte [di],0x0d  ; Fill with Carriage Return (CR) character
+        inc di              ; Until reaching maximum 64K (DI becomes zero)
         jne f14
 
         ;
