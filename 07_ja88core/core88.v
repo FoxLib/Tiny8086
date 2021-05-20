@@ -370,9 +370,9 @@ else if (locked) case (mode)
 
                 tstate  <= 1;
                 mode    <= IMMEDIATE;
-                isize   <= opcode[0];
                 alumode <= opcode[5:3];
-                op1     <= isize ? (opsize ? eax : eax[15:0]) : eax[7:0];
+                isize   <= opcode[0];
+                op1     <= opcode[0] ? (opsize ? eax : eax[15:0]) : eax[7:0];
 
             end
             1: begin tstate <= 2; op2 <= wb; end

@@ -28,12 +28,19 @@ KEY_UP              equ 04800h
 
                 org     100h
 
+; ----------------------------------------------------------------------
+                ; Имитация DOS COM
+                mov     ax, 07B0h
+                mov     ds, ax
+                jmp     7B0h : start
+; ----------------------------------------------------------------------
+
+                ; Старт программы
 start:          mov     ax, 0003h       ; AH=0 - set video mode, AL=3 80x25 text mode
                 int     10h
 
 @@spawnFigure:  mov     ax, (0*256)+(FIELD_WIDTH/2)
                 mov     word [cur_x], ax
-
                 mov     al, byte [next_figure]
                 inc     al
                 cmp     al, 7
@@ -99,7 +106,9 @@ start:          mov     ax, 0003h       ; AH=0 - set video mode, AL=3 80x25 text
 @@exit:         mov     ax, 4c00h       ; AH=4c - exit app, AL=00 - exit code
                 int     21h
 
-@@rotate:       call    RotateFigure
+@@rotate:
+
+                call    RotateFigure
                 jmp     @@keyLoop
 
 @@moveLeft:     mov     al, byte[cur_x]
@@ -123,7 +132,7 @@ start:          mov     ax, 0003h       ; AH=0 - set video mode, AL=3 80x25 text
                 jmp     @@keyLoop
 
 DrawField:      mov     bx, FIELD_HEIGHT
-                mov     si,  field; DS:SI -> field
+                mov     si, field       ; DS:SI -> field
                 mov     ax, 0b800h
                 mov     es, ax          ; ES:DI -> video ram
                 mov     di, FIELD_Y*SCREEN_SKIP_ROW+FIELD_X*SCREEN_SKIP_CHAR
@@ -392,3 +401,5 @@ reverse_l       db      2,3
                 db      0,2,0,0
                 db      2,2,0,0
                 db      0,0,0,0
+
+include "../../bios/debug.asm"

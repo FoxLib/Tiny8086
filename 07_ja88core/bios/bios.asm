@@ -45,34 +45,17 @@ bios_entry:
             mov     ax, $0003
             int     10h
 
-            ; Просто закрасить на время
-            mov     es, [cs:SEG_B800h]
-            xor     di, di
-            mov     cx, 2000
-            mov     ax, $0700
-@@:         stosw
-;            add     ax, 1
-            loop    @b
-
             ; Переинициализировать сегменты
             xor     ax, ax
             mov     ds, ax
             mov     es, ax
-            jmp     0:0x7c00
-
-            ; Прокрутка вверх
-            mov     ah, 6
-            mov     al, 2
-            mov     bh, 0x07 ; Атрибут
-            mov     ch, 1  ; Верх
-            mov     cl, 1  ; Лево
-            mov     dh, 24 ; Низ
-            mov     dl, 79 ; Право
-            int     10h
-
-            jmp     $
+            mov     ss, ax
+            mov     sp, 7c00h
 
             ; Чтение из HD и загрузка в 0:7C00
+            sti
+            cld
+            jmp     0:0x7c00
 
             include "sd.asm"
             include "biosconfig.asm"
