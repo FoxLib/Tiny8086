@@ -53,9 +53,10 @@ bios_entry:
             mov     sp, 7c00h
 
             ; Чтение из HD и загрузка в 0:7C00
-            sti
+            mov     dl, 0x80
             cld
-            jmp     0:0x7c00
+            sti
+            jmp     0 : 0x7c00
 
             include "sd.asm"
             include "biosconfig.asm"
