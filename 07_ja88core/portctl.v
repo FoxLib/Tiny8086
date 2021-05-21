@@ -60,6 +60,7 @@ reg [ 7:0]  cga_reg;
 // https://wiki.osdev.org/Programmable_Interval_Timer#Read_Back_Command
 reg [15:0]  pit_channel0 = 0;
 reg [15:0]  pit_cnt      = 0;
+reg         pit0_ff      = 0;   // flip-flop регистр
 reg [ 7:0]  pit_mode     = 0;
 reg [ 4:0]  pit_119mhz   = 0;
 
@@ -83,10 +84,12 @@ always @(posedge clock) begin
     // Приведение к начальным значениям
     if (resetn == 0) begin
 
-        videomode       <= 2; // 0-Тестовый, 2-screen13
+        videomode       <= 0; // 0-Тестовый, 2-screen13
         vect_master     <= 8;
+        pit0_ff         <= 0;
         irq_mask        <= 0;
         pit_channel0    <= 0;
+        pit_mode        <= 4'b0110;
         cursor_shape_lo <= 14;
         cursor_shape_hi <= 15;
 
@@ -134,8 +137,17 @@ always @(posedge clock) begin
             16'h20: if (port_o[5]) eoi_master <= 0;
 
             // Программирование PIT
-            16'h40: pit_channel0 <= {port_o[7:0], pit_channel0[15:8]};
-            16'h43: pit_mode     <= port_o;
+            16'h40: if (pit_mode[2:1])
+            begin
+                pit_channel0 <= {port_o[7:0], pit_channel0[15:8]};
+                pit0_ff      <= ~pit0_ff;
+            end
+
+            // Выбор режима работы PIT
+            16'h43: pit_mode <= port_o;
+
+            // Speaker
+            16'h61: pit0_ff <= 0;
 
             // SD
             16'hFE: {sd_signal, sd_cmd} <= {port_o[7], port_o[1:0]};
@@ -155,10 +167,24 @@ always @(posedge clock) begin
 
             endcase
 
+            // D0-режим символов(1=80 или 0=40)
+            // D1-графический 320
+            // D4-графический 640
+            16'h3D8: case (port_o[1:0])
+
+                2'b00,
+                2'b01: videomode <= 0; // Text 80|40
+                2'b10: videomode <= 1; // CGA
+                2'b11: videomode <= 2; // VGA
+
+            endcase
+
+
         endcase
         else
         case (port)
 
+            16'h40: port_i <= pit_cnt[7:0];
             16'h60: port_i <= keyb_data;
 
             // Статус клавиатуры
@@ -174,6 +200,7 @@ always @(posedge clock) begin
             16'hFE: port_i <= {sd_busy, sd_timeout, 6'h0};
             16'hFF: port_i <= sd_din;
 
+            // https://frolov-lib.ru/books/bsp.old/v03/ch6.htm
             16'h3D4: port_i <= cga_reg;
             16'h3D5: case (cga_reg)
 

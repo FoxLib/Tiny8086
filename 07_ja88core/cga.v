@@ -46,6 +46,7 @@ wire        ymax = (y == vt_whole - 1);
 reg  [10:0] x    = 0;
 reg  [10:0] y    = 0;
 wire [10:0] X    = x - hz_back + 8; // X=[0..639]
+wire [10:0] Xv   = x - hz_back + 4;
 wire [ 9:0] Y    = y - vt_back;     // Y=[0..399]
 // ---------------------------------------------------------------------
 
@@ -151,16 +152,18 @@ always @(posedge clock_25) begin
         endcase
 
         2: // 320x200x256
-        case (X[0])
-
-            // Запрос цвета
-            0: begin vga_dac_address <= vga_data; end
+        case (Xv[0])
 
             // Запрос адреса (последние 64 кб памяти)
+            0: begin
+                vga_address <= Xv[10:1] + Y[9:1]*320 + (256-64)*1024;
+            end
+
+            // Запрос цвета
             1: begin
 
-                vga_color   <= vga_dac_data;
-                vga_address <= X[10:1] + Y[9:1]*320 + (256-64)*1024;
+                vga_dac_address <= vga_data;
+                vga_color <= vga_dac_data;
 
             end
 

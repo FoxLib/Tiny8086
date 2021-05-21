@@ -268,7 +268,7 @@ keyboard KEYBOARD
 
 core88 UnitCore88
 (
-    .clock      (0 && cpu_clock),
+    .clock      (cpu_clock),
     .resetn     (locked & RESET_N),
     .locked     (locked),
 
