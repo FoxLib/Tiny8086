@@ -13,12 +13,18 @@ module cga
     // Доступ к памяти
     output  reg  [12:0] address, // 4k Видеоданные + 4k Шрифты 8x16
     input   wire [ 7:0] data,    // data = videoram[ address ]
+    output  reg  [17:0] vga_address,
+    input   wire [ 7:0] vga_data,
+    output  reg  [ 7:0] vga_dac_address,
+    input   wire [31:0] vga_dac_data,
 
     // Внешний интерфейс
     input   wire [10:0] cursor,          // Положение курсора от 0 до 2047
     input   wire [ 5:0] cursor_shape_lo, // Начало курсора
-    input   wire [ 4:0] cursor_shape_hi  // Конец
+    input   wire [ 4:0] cursor_shape_hi,  // Конец
 
+    // Видеорежи
+    input   wire [ 1:0] videomode
 );
 
 // ---------------------------------------------------------------------
@@ -50,6 +56,11 @@ reg  [ 7:0] char;  reg [7:0] tchar; // Битовая маска
 reg  [ 7:0] attr;  reg [7:0] tattr; // Атрибут
 reg  [23:0] timer; // Мерцание курсора
 reg         flash;
+
+// Графический адаптер
+// ---------------------------------------------------------------------
+reg  [31:0] vga_color;
+
 // ---------------------------------------------------------------------
 
 // Текущая позиция курсора
@@ -102,7 +113,12 @@ always @(posedge clock_25) begin
     if (x >= hz_back && x < hz_visible + hz_back &&
         y >= vt_back && y < vt_visible + vt_back)
     begin
-         {R, G, B} <= maskbit ? (attr[7] & flash ? bgcolor : frcolor) : bgcolor;
+        case (videomode)
+        // 80x25x16
+        0: {R, G, B} <= maskbit ? (attr[7] & flash ? bgcolor : frcolor) : bgcolor;
+        // 320x200x256
+        2: {R, G, B} <= {vga_color[23:20], vga_color[15:12], vga_color[7:4]};
+        endcase
     end
     else {R, G, B} <= 12'h000;
 
@@ -111,22 +127,39 @@ end
 // Извлечение битовой маски и атрибутов для генерации шрифта
 always @(posedge clock_25) begin
 
-    case (X[2:0])
+    // Видеорежимы
+    case (videomode)
 
-        // Запрос на ASCII-символ
-        0: begin address <= {id, 1'b0}; end
+        0: // Текстовый режим
+        case (X[2:0])
 
-        // Сохранить ASCII -> tchar, запрос на атрибут
-        1: begin tchar <= data; address[0] <= 1'b1; end
+            // Запрос на ASCII-символ
+            0: begin address <= {id, 1'b0}; end
 
-        // Сохранить атрибут, запрос на знакогенератор
-        2: begin tattr <= data; address <= {1'b1, tchar, Y[3:0]}; end
+            // Сохранить ASCII -> tchar, запрос на атрибут
+            1: begin tchar <= data; address[0] <= 1'b1; end
 
-        // Сохранить значение битовой маски
-        3: begin tchar <= data; end
+            // Сохранить атрибут, запрос на знакогенератор
+            2: begin tattr <= data; address <= {1'b1, tchar, Y[3:0]}; end
 
-        // Обновить данные для рисования символа
-        7: begin attr  <= tattr; char <= tchar; end
+            // Сохранить значение битовой маски
+            3: begin tchar <= data; end
+
+            // Обновить данные для рисования символа
+            7: begin attr  <= tattr; char <= tchar; end
+
+        endcase
+
+        2: // 320x200x256
+        case (X[0])
+
+            // Запрос цвета
+            0: begin vga_dac_address <= vga_data; end
+            // Запрос адреса
+            1: begin vga_color   <= vga_dac_data;
+                     vga_address <= X + Y*320; end
+
+        endcase
 
     endcase
 

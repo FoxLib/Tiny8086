@@ -104,25 +104,39 @@ de0pll UnitPLL
 
 // ---------------------------------------------------------------------
 // Видеоадаптер
+// videomode = 0 TEXT; 1 CGA; 2 VGA 320x200; 3 VGA 640x480
 // ---------------------------------------------------------------------
 
+wire [ 1:0] videomode;
 wire [12:0] cga_address;
 wire [ 7:0] cga_data;
 wire [10:0] cga_cursor;
 wire [ 5:0] cursor_shape_lo;
 wire [ 4:0] cursor_shape_hi;
+wire [17:0] vga_address;
+wire [ 7:0] vga_data;
+wire [ 7:0] vga_dac_address;
+wire [31:0] vga_dac_data;
 
 cga CGA
 (
     .clock_25   (clock_25),
+
     // Интерфейс
     .R (VGA_R), .HS (VGA_HS),
     .G (VGA_G), .VS (VGA_VS),
     .B (VGA_B),
+
     // Память
-    .address    (cga_address),
-    .data       (cga_data),
-    .cursor     (cga_cursor),
+    .address            (cga_address),
+    .data               (cga_data),
+    .vga_address        (vga_address),
+    .vga_data           (vga_data),
+    .vga_dac_address    (vga_dac_address),
+    .vga_dac_data       (vga_dac_data),
+
+    .videomode   (videomode),
+    .cursor      (cga_cursor),
     .cursor_shape_lo (cursor_shape_lo),
     .cursor_shape_hi (cursor_shape_hi),
 );
@@ -155,10 +169,22 @@ reg we_bios   = 0;
 memory MEMORY
 (
     .clock      (clock_100),
+    // Общая память
     .address_a  (address[17:0]),
     .data_a     (o_data),
     .wren_a     (we_memory),
-    .q_a        (q_memory)
+    .q_a        (q_memory),
+    // Совмещенная видеопамять (последние страницы памяти)
+    .address_b  (vga_address),
+    .q_b        (vga_data),
+);
+
+// 1kb
+dac DACMEM
+(
+    .clock      (clock_100),
+    .address_a  (vga_dac_address),
+    .q_a        (vga_dac_data),
 );
 
 // 8kb
@@ -229,7 +255,7 @@ keyboard KEYBOARD
 
 core88 UnitCore88
 (
-    .clock      (cpu_clock),
+    .clock      (0 && cpu_clock),
     .resetn     (locked & RESET_N),
     .locked     (locked),
 
@@ -310,6 +336,7 @@ portctl PortCtlUnit
     .port_w     (port_w),
 
     // Видео
+    .videomode       (videomode),
     .vga_cursor      (cga_cursor),
     .cursor_shape_lo (cursor_shape_lo),
     .cursor_shape_hi (cursor_shape_hi),

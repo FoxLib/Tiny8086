@@ -12,6 +12,7 @@ module portctl
     input   wire        port_w,
 
     // Видеоадаптер
+    output  reg  [ 1:0] videomode,
     output  reg  [10:0] vga_cursor,
     output  reg  [ 5:0] cursor_shape_lo,
     output  reg  [ 4:0] cursor_shape_hi,
@@ -82,6 +83,7 @@ always @(posedge clock) begin
     // Приведение к начальным значениям
     if (resetn == 0) begin
 
+        videomode       <= 2; // 0-Тестовый, 2-screen13
         vect_master     <= 8;
         irq_mask        <= 0;
         pit_channel0    <= 0;
