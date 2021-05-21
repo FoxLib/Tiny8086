@@ -123,9 +123,11 @@ cga CGA
     .clock_25   (clock_25),
 
     // Интерфейс
-    .R (VGA_R), .HS (VGA_HS),
-    .G (VGA_G), .VS (VGA_VS),
-    .B (VGA_B),
+    .R  (VGA_R),
+    .G  (VGA_G),
+    .B  (VGA_B),
+    .HS (VGA_HS),
+    .VS (VGA_VS),
 
     // Память
     .address            (cga_address),
@@ -135,10 +137,10 @@ cga CGA
     .vga_dac_address    (vga_dac_address),
     .vga_dac_data       (vga_dac_data),
 
-    .videomode   (videomode),
-    .cursor      (cga_cursor),
-    .cursor_shape_lo (cursor_shape_lo),
-    .cursor_shape_hi (cursor_shape_hi),
+    .videomode          (videomode),
+    .cursor             (cga_cursor),
+    .cursor_shape_lo    (cursor_shape_lo),
+    .cursor_shape_hi    (cursor_shape_hi),
 );
 
 // Контроллер памяти
@@ -146,6 +148,7 @@ cga CGA
 
 // Процессор
 wire [19:0] address;
+reg  [17:0] m_address;
 wire [ 7:0] o_data;
 wire        we;
 
@@ -170,7 +173,7 @@ memory MEMORY
 (
     .clock      (clock_100),
     // Общая память
-    .address_a  (address[17:0]),
+    .address_a  (m_address),
     .data_a     (o_data),
     .wren_a     (we_memory),
     .q_a        (q_memory),
@@ -214,6 +217,7 @@ bios BIOS
 always @* begin
 
     i_data    = 8'hFF;
+    m_address = address[17:0];
     we_cgamem = 0;
     we_memory = 0;
     we_bios   = 0;
@@ -221,13 +225,22 @@ always @* begin
     casex (address)
 
         // 00000-3ffff 256k Общая память
-        20'b00xx_xxxx_xxxx_xxxx_xxxx: begin i_data = q_memory; we_memory = we; end
+        20'b00xx_xxxx_xxxx_xxxx_xxxx:
+        begin i_data = q_memory; we_memory = we; end
 
-        // b8000-b9fff 8k CGA
-        20'b1011_100x_xxxx_xxxx_xxxx: begin i_data = q_cgamem; we_cgamem = we; end
+        // a0000-affff 16/64k CGA/VGA
+        20'b1010_xxxx_xxxx_xxxx_xxxx: case (videomode)
+            1: begin i_data = q_memory; we_memory = we; m_address = {4'b1111, address[13:0]}; end
+            2: begin i_data = q_memory; we_memory = we; m_address = {2'b11,   address[15:0]}; end
+        endcase
+
+        // b8000-b9fff 8k TEXTMODE
+        20'b1011_100x_xxxx_xxxx_xxxx:
+        begin i_data = q_cgamem; we_cgamem = we; end
 
         // f0000-f1fff 8k BIOS
-        20'b1111_000x_xxxx_xxxx_xxxx: begin i_data = q_bios;   we_bios   = we; end
+        20'b1111_000x_xxxx_xxxx_xxxx:
+        begin i_data = q_bios;   we_bios   = we; end
 
     endcase
 

@@ -155,9 +155,14 @@ always @(posedge clock_25) begin
 
             // Запрос цвета
             0: begin vga_dac_address <= vga_data; end
-            // Запрос адреса
-            1: begin vga_color   <= vga_dac_data;
-                     vga_address <= X + Y*320; end
+
+            // Запрос адреса (последние 64 кб памяти)
+            1: begin
+
+                vga_color   <= vga_dac_data;
+                vga_address <= X[10:1] + Y[9:1]*320 + (256-64)*1024;
+
+            end
 
         endcase
 

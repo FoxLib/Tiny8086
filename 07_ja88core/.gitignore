@@ -28,3 +28,4 @@ PLLJ_PLLSPE_INFO.txt
 c5_pin_model_dump.txt
 /vendor
 sd.img
+utils/*.bin
