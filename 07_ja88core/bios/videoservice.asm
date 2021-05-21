@@ -1,5 +1,6 @@
 SEG_40h     dw      0x0040
 SEG_B800h   dw      0xB800
+SEG_A000h   dw      0xA000
 
 ; ----------------------------------------------------------------------
 ; Видеосервис BIOS
@@ -40,30 +41,48 @@ jmp $
 .int10exit: iret
 
 ; ----------------------------------------------------------------------
-; Видеорежим: AL=0..3 TEXT
+; Видеорежим: AL=0..3 TEXT; 13 VGA 320x200
 ; ----------------------------------------------------------------------
 
 int10_set_vm:
 
-            push    es bx
+            push    es bx cx dx di
+
+            mov     es, [cs:SEG_40h]
+            mov     [es:vidmode-bios_data], al
+            mov     dx, 3d8h
+            xor     di, di
+
             cmp     al, 3
             jbe     .set_text_mode
+            cmp     al, 13h
+            je      .set_320mode
             jmp     .exit
 
 .set_text_mode:
 
-            ; Текущий видеорежим
-            mov     es, [cs:SEG_40h]
-            mov     [es:vidmode-bios_data], al
+            ; Переход в текстовый видеорежим
+            mov     al, 1
+            out     dx, al
 
             ; Установка и очистка экрана
             mov     es, [cs:SEG_B800h]
-            xor     di, di
             mov     ax, 0x0700
             mov     cx, 80*25
             rep     stosw
+            jmp     .exit
 
-.exit:      pop     bx es
+.set_320mode:
+
+            ; Переход в графический видеорежим
+            mov     al, 3
+            out     dx, al
+            mov     es, [cs:SEG_A000h]
+            xor     ax, ax
+            mov     cx, 320*100
+            rep     stosw
+
+.exit:      pop     di dx cx bx es
             iret
 
 ; ----------------------------------------------------------------------
