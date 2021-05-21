@@ -7,6 +7,7 @@ bios_entry:
 
             cli
             cld
+
             xor     ax, ax
             mov     ds, ax
             mov     ss, ax
@@ -52,9 +53,10 @@ bios_entry:
             mov     ss, ax
             mov     sp, 7c00h
 
+            jmp     microapp
+
             ; Чтение из HD и загрузка в 0:7C00
             mov     dl, 0x80
-            cld
             sti
             jmp     0 : 0x7c00
 
@@ -65,3 +67,4 @@ bios_entry:
             include "misc.asm"
             include "keyboard.asm"
             include "debug.asm"
+            include "microapp.asm"

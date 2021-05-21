@@ -54,7 +54,7 @@ restart:
         cld
         xor cx,cx
         push cx         ; shot+down
-        in ax,0x40
+        mov al,12
         push ax         ; rnd
         mov ah,0x18     ; Start point at maze
         push ax         ; px
@@ -76,7 +76,7 @@ restart:
 .4:     mov [bx],al     ; Put into maze
         inc bx          ; Next square
         jne .0          ; If BX is zero, maze completed
-        
+
         mov cl,12       ; 12 walls and enemies
         mov [bp+down],cl        ; Take note of enemies down
         mov di,maze+34  ; Point to center of maze
@@ -90,7 +90,6 @@ restart:
         loop .2         ; Repeat until filled
 game_loop:
         call wait_frame ; Wait a frame
-
         and dl,31       ; 32 frames have passed?
         jnz .16         ; No, jump
         ;
@@ -209,7 +208,7 @@ game_loop:
         push ax
         push si
         xchg ax,cx
-        mov al,[bp+shot]        ; Ceiling color
+        mov al,[bp+shot] ; Ceiling color
         call fill_column
         xchg ax,bx      ; Wall color
         pop cx
@@ -310,8 +309,8 @@ read_maze:
         ;
         ; Convert coordinates to position
         ;
-get_pos:        
-        mov bl,dh       ; X-coordinate 
+get_pos:
+        mov bl,dh       ; X-coordinate
         mov cl,0x04     ; Divide by 4096
         shr bl,cl
         and bh,0xf0     ; Y-coordinate / 4096 * 16
@@ -365,14 +364,14 @@ wait_frame:
         ; 32 bytes are 90 degrees.
         ;
 sin_table:
-	db 0x00,0x09,0x16,0x24,0x31,0x3e,0x47,0x53
-	db 0x60,0x6c,0x78,0x80,0x8b,0x96,0xa1,0xab
-	db 0xb5,0xbb,0xc4,0xcc,0xd4,0xdb,0xe0,0xe6
+    db 0x00,0x09,0x16,0x24,0x31,0x3e,0x47,0x53
+    db 0x60,0x6c,0x78,0x80,0x8b,0x96,0xa1,0xab
+    db 0xb5,0xbb,0xc4,0xcc,0xd4,0xdb,0xe0,0xe6
         db 0xec,0xf1,0xf5,0xf7,0xfa,0xfd,0xff,0xff
 
     %ifdef com_file
     %else
-	times 510-($-$$) db 0x4f
-	db 0x55,0xaa           ; Make it a bootable sector
+    times 510-($-$$) db 0x4f
+    db 0x55,0xaa           ; Make it a bootable sector
     %endif
 

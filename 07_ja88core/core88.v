@@ -39,6 +39,9 @@ assign debug = {eax[7:0], ip[15:0]};
 // Основная работа процессорного микрокода, так сказать
 // =====================================================================
 
+// Считать такты процессора
+always @(posedge clock) rdtsc <= rdtsc + 1;
+
 always @(posedge clock)
 // Сброс
 if (resetn == 0) begin seg_cs <= 16'hF000; ip <= 0; mode <= PREPARE; end
@@ -1230,6 +1233,9 @@ else if (locked) case (mode)
             end
 
         endcase
+
+        // RDTSC
+        9'b1_0011_0001: begin eax <= rdtsc[31:0]; edx <= rdtsc[63:32]; mode <= PREPARE; end
 
     endcase
 

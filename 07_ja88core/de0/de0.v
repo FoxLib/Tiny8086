@@ -117,6 +117,9 @@ wire [17:0] vga_address;
 wire [ 7:0] vga_data;
 wire [ 7:0] vga_dac_address;
 wire [31:0] vga_dac_data;
+wire [31:0] dac_out;
+wire [ 7:0] dac_address;
+wire        dac_we;
 
 cga CGA
 (
@@ -188,6 +191,9 @@ dac DACMEM
     .clock      (clock_100),
     .address_a  (vga_dac_address),
     .q_a        (vga_dac_data),
+    .address_b  (dac_address),
+    .data_b     (dac_out),
+    .wren_b     (dac_we),
 );
 
 // 8kb
@@ -353,10 +359,12 @@ portctl PortCtlUnit
     .vga_cursor      (cga_cursor),
     .cursor_shape_lo (cursor_shape_lo),
     .cursor_shape_hi (cursor_shape_hi),
-
+    .dac_out         (dac_out),
+    .dac_address     (dac_address),
+    .dac_we          (dac_we),
     // Клавиатура
-    .ps2_data   (ps2_data),
-    .ps2_hit    (ps2_hit),
+    .ps2_data        (ps2_data),
+    .ps2_hit         (ps2_hit),
 
     // SD-карта
     .sd_signal  (sd_signal),   // In   =1 Сообщение отослано на spi

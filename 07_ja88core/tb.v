@@ -73,6 +73,10 @@ wire        sd_signal;
 wire        sd_busy;
 wire        sd_timeout;
 
+wire [31:0] dac_out;
+wire [ 7:0] dac_address;
+wire        dac_we;
+
 core88 UnitCPU
 (
     .clock      (clock_25),
@@ -113,6 +117,9 @@ portctl PortCtlUnit
     .vga_cursor (vga_cursor),
     .ps2_data   (ps2_data),
     .ps2_hit    (ps2_hit),
+    .dac_out    (dac_out),
+    .dac_address(dac_address),
+    .dac_we     (dac_we),
 
     // SD-карта
     .sd_signal  (sd_signal),   // In   =1 Сообщение отослано на spi

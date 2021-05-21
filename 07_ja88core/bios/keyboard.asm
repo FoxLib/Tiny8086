@@ -198,17 +198,11 @@ int16_kb_nextkey:
 
 int16_kb_shiftflags:
 
-            push    ds bx
-            mov     bx, ax
+            push    ds
             mov     ds, [cs:SEG_40h]
-            mov     ah, [keyflags1-bios_data]
-            mov     al, ah
-            and     al, 3
-            je      @f
-            and     ah, 0xc     ; Клавиша SHIFT нажата?
-            or      al, ah
-@@:         mov     ah, bh
-            pop     bx ds
+            mov     al, [keyflags1-bios_data]
+            and     al, 15
+            pop     ds
             iret
 
 ; ----------------------------------------------------------------------

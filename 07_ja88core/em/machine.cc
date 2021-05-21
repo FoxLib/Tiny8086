@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
 
             switch (sdl_event.type) {
 
-                case SDL_QUIT: in_start = 0; break;
+                case SDL_QUIT: regdump(); in_start = 0; break;
 
                 // Нажатие на клавишу вызывает запрос прерывания
                 case SDL_KEYDOWN:
@@ -87,8 +87,8 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            // 25k x 55 ~ 1.3 MIPS
-            if (x86run(25000)) {
+            // 80k x 55 ~ 4.4 MIPS
+            if (x86run(80000)) {
 
                 printf("STOP AT %x:%x\n", segs[1], ip);
                 regdump();

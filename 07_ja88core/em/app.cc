@@ -5,6 +5,14 @@ void recalc_cursor() {
     cursor_y = addr / 80;
 }
 
+// Нарисовать точку на экране
+void pset(int x, int y, uint32_t color) {
+
+    if (x >= 0 && y >= 0 && x < width && y < height) {
+        ( (Uint32*)sdl_screen->pixels )[ x + width*y ] = color;
+    }
+}
+
 // Порты
 // FFh RW SPI Data
 // FFh  W SPI Command
@@ -17,13 +25,29 @@ void writememb(uint32_t address, uint8_t value) {
     RAM[address % RAMTOP] = value;
 
     // Записываемый байт находится в видеопамяти
-    if (address >= 0xB8000 && address < 0xB8FA0) {
+    if (videomode <= 1) {
 
-        address = (address - 0xB8000) >> 1;
-        int col = address % 80;
-        int row = address / 80;
-        address = 0xB8000 + 160*row + 2*col;
-        print_char(col, row, RAM[address], RAM[address + 1]);
+        if (address >= 0xB8000 && address < 0xB8FA0) {
+
+            address = (address - 0xB8000) >> 1;
+            int col = address % 80;
+            int row = address / 80;
+            address = 0xB8000 + 160*row + 2*col;
+            print_char(col, row, RAM[address], RAM[address + 1]);
+        }
+
+    } else if (videomode == 3) {
+
+        if (address >= 0xA0000 && address < 0xAFFFF) {
+
+            address -= 0xA0000;
+            int col = address % 320,
+                row = address / 320;
+            int clr = dac[ RAM[address + 0xA0000] ];
+
+            for (int k = 0; k < 16; k++)
+                pset(col*4+(k&3), row*4+(k>>2), clr);
+        }
     }
 }
 
@@ -72,6 +96,15 @@ void iowrite(uint16_t port, uint8_t data) {
         // Отсылка EOI
         case 0x20: if (data & 0x20) eoi_master = 0; break;
 
+        case 0x3C8: dac_reg = data; dac_cc = 0; dac_rgb = 0; break;
+        case 0x3C9:
+
+            if      (dac_cc == 0) { dac_cc = 1; dac_rgb &= 0x00ffff; dac_rgb |= ((int)(data&0x3f) << 18); }
+            else if (dac_cc == 1) { dac_cc = 2; dac_rgb &= 0xff00ff; dac_rgb |= ((int)(data&0x3f) << 10); }
+            else if (dac_cc == 2) { dac_cc = 0; dac_rgb &= 0xffff00; dac_rgb |= ((int)(data&0x3f) << 2); dac[dac_reg++] = dac_rgb; }
+
+            break;
+
         case 0x3D4: cga_register = data; break;
         case 0x3D5:
 
@@ -83,6 +116,11 @@ void iowrite(uint16_t port, uint8_t data) {
                 case 0x0F: cursor_lo = data;        recalc_cursor(); break;
             }
 
+            break;
+
+        case 0x3d8:
+
+            videomode = (data & 3);
             break;
 
         case 0xFE: SpiModule.spi_write_cmd(data); break;
@@ -114,6 +152,7 @@ void reset() {
 
     keyb_60h = 0;
     keyb_64h = 0;
+    videomode = 0;
 
     SpiModule.start();
 }
@@ -248,14 +287,6 @@ void memdump(int address) {
     }
 }
 
-// Нарисовать точку на экране
-void pset(int x, int y, uint32_t color) {
-
-    if (x >= 0 && y >= 0 && x < width && y < height) {
-        ( (Uint32*)sdl_screen->pixels )[ x + width*y ] = color;
-    }
-}
-
 // Печать символа
 void print_char(int col, int row, unsigned char pchar, uint8_t attr) {
 
@@ -297,6 +328,9 @@ void print_char(int col, int row, unsigned char pchar, uint8_t attr) {
 // Полное обновление экрана
 void screen_redraw() {
 
-    for (int a = 0xb8000; a <= 0xb9000; a += 2)
-        writememb(a, RAM[a]);
+    if (videomode <= 1) {
+        for (int a = 0xb8000; a <= 0xb9000; a += 2) writememb(a, RAM[a]);
+    } else if (videomode == 3) {
+        for (int a = 0xa0000; a <= 0xaffff; a++) writememb(a, RAM[a]);
+    }
 }

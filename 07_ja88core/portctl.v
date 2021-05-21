@@ -14,6 +14,9 @@ module portctl
     // Видеоадаптер
     output  reg  [ 1:0] videomode,
     output  reg  [10:0] vga_cursor,
+    output  reg  [31:0] dac_out,
+    output  reg  [ 7:0] dac_address,
+    output  reg         dac_we,
     output  reg  [ 5:0] cursor_shape_lo,
     output  reg  [ 4:0] cursor_shape_hi,
 
@@ -45,6 +48,11 @@ initial begin
     sd_signal   = 0;
     sd_cmd      = 0;
     sd_out      = 0;
+    dac_we      = 0;
+    dac_address = 0;
+    dac_reg     = 0;
+    dac_cursor  = 0;
+    dac_out     = 0;
 
 end
 
@@ -54,6 +62,8 @@ reg [15:0]  irq_pend = 16'b0000_0000_0000_0000; // Запросы
 reg [ 7:0]  vect_master = 8;
 reg         eoi_master = 0; // Ожидание обработки прерывания
 
+reg [ 7:0]  dac_reg;
+reg [ 1:0]  dac_cursor;
 reg [ 7:0]  cga_reg;
 
 // Таймер
@@ -81,12 +91,16 @@ reg         keyb_intr_latch = 0;
 
 always @(posedge clock) begin
 
+    // По умолчанию ничего не писать
+    dac_we <= 0;
+
     // Приведение к начальным значениям
     if (resetn == 0) begin
 
         videomode       <= 0; // 0-Тестовый, 2-screen13
         vect_master     <= 8;
         pit0_ff         <= 0;
+        dac_cursor      <= 0;
         irq_mask        <= 0;
         pit_channel0    <= 0;
         pit_mode        <= 4'b0110;
@@ -139,8 +153,10 @@ always @(posedge clock) begin
             // Программирование PIT
             16'h40: if (pit_mode[2:1])
             begin
+
                 pit_channel0 <= {port_o[7:0], pit_channel0[15:8]};
                 pit0_ff      <= ~pit0_ff;
+
             end
 
             // Выбор режима работы PIT
@@ -152,6 +168,22 @@ always @(posedge clock) begin
             // SD
             16'hFE: {sd_signal, sd_cmd} <= {port_o[7], port_o[1:0]};
             16'hFF: sd_out <= port_o;
+
+            // Программирование палитры
+            16'h3C8: begin dac_reg <= port_o; dac_cursor <= 0; end
+
+            // Запись данных по тетрадам RGB
+            16'h3C9: begin
+
+                case (dac_cursor)
+
+                    0: begin dac_cursor <= 1; dac_out[23:16] <= {port_o[6:0], 2'b00}; dac_address <= dac_reg; end
+                    1: begin dac_cursor <= 2; dac_out[ 15:8] <= {port_o[6:0], 2'b00}; dac_reg <= dac_reg + 1; end
+                    2: begin dac_cursor <= 0; dac_out[  7:0] <= {port_o[6:0], 2'b00}; dac_we <= 1; end
+
+                endcase
+
+            end
 
             // Выбор регистра CGA/EGA
             16'h3D4: cga_reg <= port_o;

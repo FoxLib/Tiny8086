@@ -57,6 +57,7 @@ reg [31:0]  op2     = 0;
 reg [31:0]  wb      = 0;    // Для записи в reg/rm
 reg [15:0]  tmp16   = 0;
 reg         is_intr = 0;
+reg [63:0]  rdtsc   = 0;
 
 // Модуль деления op1 / op2 -> divres | divrem
 reg [63:0]  diva    = 0;
